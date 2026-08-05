@@ -1,0 +1,252 @@
+import Image from "next/image";
+
+import { Hero } from "@/components/site/hero";
+import { PillarMark, type PillarMarkShape } from "@/components/site/pillar-mark";
+import { SiteFooter } from "@/components/site/site-footer";
+import { SiteHeader } from "@/components/site/site-header";
+import { ABOUT_INTRO, ALL_PARTNERS, FOUNDED_YEAR, PILLARS } from "@/content/about";
+import { isolateLatin } from "@/lib/bidi";
+import { OPEN_PROJECTS } from "@/content/projects";
+
+/**
+ * الصفحة الرئيسية — تُبنى قسمًا قسمًا.
+ *
+ * أُفرغت الأقسام التسعة القديمة بطلبٍ مباشر ليُعاد بناء كلٍّ منها وحده
+ * بتصميمه. المحتوى محفوظٌ في `src/content/*.ts` ويخدم صفحاته الخاصة،
+ * وكودُ الأقسام القديمة في `094d2b5:src/app/page.tsx` للرجوع.
+ *
+ * القسم الأول المبنيّ: **من نحن**. مصدر نصّه `ABOUT_INTRO`.
+ */
+
+export default function HomePage() {
+  const isOpen = OPEN_PROJECTS.length > 0;
+
+  return (
+    <>
+      <SiteHeader />
+
+      <main id="main">
+        <Hero isOpen={isOpen} />
+
+        {/* ══════════════════════════════════════════════════════════════
+            من نحن
+
+            البادج مائلٌ بزاوية الشعار (`.rake`) لا حلقةٌ دائرية: نظام v2
+            كلّه مبنيّ على القطع المائل، فحلقةٌ دائرية تُقرأ عنصرًا دخيلًا.
+            والتوقيع البصري (الحقل المائل) غائبٌ هنا عمدًا — محجوزٌ للواجهة
+            والترويسات والتذييل، فلا يتحوّل جدارًا. الجوّ يأتي من الضوء
+            الراكِع خلف `main`، والإيقاع من تباين المقاس: بيانٌ افتتاحيّ
+            كبير بخط العرض، ثم فقرةٌ أهدأ بخط المتن.
+            ═══════════════════════════════════════════════════════════════ */}
+        <section
+          id="about"
+          aria-labelledby="about-heading"
+          className="mx-auto w-full max-w-4xl px-s4 py-s8 sm:px-s7"
+        >
+          <h2
+            id="about-heading"
+            className="rake rake-sm inline-flex items-center bg-accent px-s6 py-s3 font-display text-2xl font-bold text-accent-fg sm:text-3xl"
+          >
+            من نحن؟
+          </h2>
+
+          {/* البيان الافتتاحي — الجملة الأبرز، بخط العرض ومقاسٍ كبير */}
+          <p className="mt-s7 max-w-3xl font-display text-2xl font-medium leading-relaxed text-fg sm:text-[2rem] sm:leading-[1.5]">
+            {ABOUT_INTRO.lede}
+          </p>
+
+          {/* الفقرة التعريفية — بخط المتن، بعرضٍ مقروء لا يتجاوز المقاس */}
+          <p className="mt-s6 max-w-measure text-lg leading-loose text-fg-muted">
+            {ABOUT_INTRO.body[0]}
+          </p>
+
+          {/* علامة سنة التأسيس — تفصيلٌ واقعيّ هادئ، بضربة ميلانٍ واحدة.
+              الرقم لاتينيّ بطلبٍ مباشر، ويُقرأ من `FOUNDED_YEAR` مباشرةً بلا
+              تحويل — ونصّ الفقرة أعلاه وُحِّد معه فلا تختلف السنة بين
+              موضعين في القسم نفسه. */}
+          <p className="mt-s6 inline-flex items-center gap-s3 text-sm font-semibold tracking-wide text-accent">
+            <span
+              aria-hidden
+              className="mis-slant inline-block h-4 w-1 shrink-0 bg-accent"
+            />
+            منذ عام {FOUNDED_YEAR}
+          </p>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════
+            الركائز — الهدف · الرسالة · الرؤية
+
+            أُعيد بناء العرض: النسخة الأولى قلّدت المرجع فجاءت باهتة، لأن
+            تركيب المرجع نفسه ثلاثُ علاماتِ سلوبٍ مكتوبة في قانون التصميم —
+            «ثلاث بطاقات متساوية كلٌّ فيها أيقونة داخل مربّع ملوّن» نمطٌ
+            جاهز، و«أيقونة داخل صندوق» ممنوعة نصًّا («جرّد العلامة: ضعها على
+            السطح عاريةً»)، والزوايا المدوّرة تخالف هوية الميلان.
+
+            الإبهار هنا من **المقاس والهوية** لا من الحركة — الحركة الواسعة
+            رُفضت من قبل («مره اوفر»). أربع روافع:
+
+
+            ١) الحافّة **مائلة ٢٤°** (`.rake`) لا مدوّرة: صيغة الحافّة
+               الوحيدة في نظام v2، فالبطاقة تُقرأ من عائلة الشعار.
+            ٢) **رقمٌ ضخم** (72px) يمينًا و**علامةٌ صغيرة** (40px) يسارًا.
+               جُرّبت نسخةٌ تعكس الوزن — علامةٌ بـ80px ورقيمةٌ صغيرة — على
+               حجّة أن البطولة تُعطى للمميِّز لا للعامّ، فرُفضت بطلبٍ مباشر
+               وأُعيد هذا التوزيع. لا يُقلب بلا طلب.
+            ٣) العلامة **عاريةٌ بلا صندوق** — «جرّد العلامة: ضعها على السطح
+               عاريةً» — بلونٍ نبريّ لا مشبع.
+            ٤) التفاعل **من الشكل نفسه**: يتعمّق القطع عند المرور
+               (`rake-interactive`) — لا ارتفاع ولا ظلّ ولا توهّج.
+
+            وللقسم رأسٌ **مرئيّ** الآن: كان `sr-only` فتطفو البطاقات بلا
+            مرساة بعد «من نحن». وهو هادئ عمدًا (رقيمة + ضربة ميلان) لا
+            بادجٌ ثانٍ يزاحم بادج «من نحن» الكبير.
+
+            محاذاة: `items-stretch` + `h-full`، والفقرة `flex-1` فترتفع
+            البطاقات لأطولها ويجلس كلُّ جزءٍ على سطرٍ مشترك.
+            ═══════════════════════════════════════════════════════════════ */}
+        <section
+          id="pillars"
+          aria-labelledby="pillars-heading"
+          className="mx-auto w-full max-w-6xl px-s4 pb-s8 sm:px-s7"
+        >
+          <div className="mb-s7 flex items-center gap-s3">
+            <span
+              aria-hidden
+              className="mis-slant inline-block h-4 w-1 shrink-0 bg-accent"
+            />
+            <h2
+              id="pillars-heading"
+              className="font-display text-sm font-semibold tracking-[0.15em] text-fg-muted"
+            >
+              ما نقوم عليه
+            </h2>
+          </div>
+
+          <ul className="grid items-stretch gap-s5 md:grid-cols-3">
+            {PILLARS.map((pillar, index) => (
+              <li
+                key={pillar.key}
+                className="rake rake-interactive flex h-full flex-col bg-bg-raised p-s6 shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-bg-sunken"
+              >
+                {/* رأس البطاقة: الرقم الضخم يمينًا والعلامة صغيرةً يسارًا.
+                    الأرقام لاتينية بطلبٍ مباشر. سلسلة الأرقام وحدها تنساب
+                    صحيحةً في سياق RTL بلا عزل: الأرقام محايدة الاتجاه
+                    ضعيفًا، فتُرسم يسارًا-يمينًا داخل السطر العربي. والعزل
+                    هنا يترك فجوةً قبلها بلا فائدة. */}
+                <div className="flex items-start justify-between gap-s4">
+                  <span
+                    aria-hidden
+                    className="font-display text-6xl font-bold leading-none text-accent/25 sm:text-7xl"
+                  >
+                    {`0${index + 1}`}
+                  </span>
+                  <PillarMark
+                    shape={pillar.mark as PillarMarkShape}
+                    className="mt-s2 h-10 w-10 shrink-0 text-accent"
+                  />
+                </div>
+
+                <h3 className="mt-s5 font-display text-2xl font-bold text-fg sm:text-3xl">
+                  {pillar.label}
+                </h3>
+
+                {/* ضربة الميلان الفاصلة — العنصر نفسه في «من نحن»، فيقرأ
+                    القسمان عائلةً واحدة */}
+                <span
+                  aria-hidden
+                  className="mis-slant mt-s4 inline-block h-1 w-10 shrink-0 bg-accent"
+                />
+
+                <p className="mt-s4 flex-1 leading-loose text-fg-muted">
+                  {pillar.body}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════
+            الشراكات — شريطٌ منساب
+
+            ٢٣ جهة، أُزيل تكرارها عبر المواسم (علم أربع مرّات · عزم وEY
+            ووادي الرياض مرّتين). و«مزن» في `PARTNERS` هي «Mozn» هنا:
+            الجهة نفسها بهجاءين.
+
+            ⚠️ **لا شعارات بعد.** لا يوجد في المستودع ملفُّ شعارٍ واحد،
+            ولا يُرسم شعارٌ بالتقدير: علامةٌ تجارية مُعاد رسمها بالعين
+            تُشحن ثم يصعب سحبها — قاعدةُ `Partner` و`project-mark.tsx`
+            نفسها. فيُعرض الاسم مكتوبًا، وهو أصدق من شعارٍ مزوّر.
+            حين تصل الملفات: ضعها في `public/partners/` واملأ `logo`،
+            وتبدّل هذي الواجهة من النصّ إلى الصورة وحدها.
+
+            الطقم مكرّرٌ مرّتين: الأول يُقرأ، والثاني `aria-hidden` لأنه
+            نسخةٌ بصرية تُكمل الالتفاف — فلا ينطق القارئُ الأسماء مرّتين.
+
+            الاتجاه `ltr` على الشريط عمدًا: حساب الإزاحة يصير قاطعًا،
+            والأسماء العربية تُحلّ اتجاهها وحدها لأنها حروفٌ قويّة الاتجاه.
+            واللاتينية تُعزل بـ `isolateLatin` فلا ينقلب ترتيبها.
+            ═══════════════════════════════════════════════════════════════ */}
+        <section
+          id="partners"
+          aria-labelledby="partners-heading"
+          className="w-full py-s8"
+        >
+          <div className="mx-auto mb-s7 w-full max-w-6xl px-s4 sm:px-s7">
+            <div className="flex items-center gap-s3">
+              <span
+                aria-hidden
+                className="mis-slant inline-block h-4 w-1 shrink-0 bg-accent"
+              />
+              <h2
+                id="partners-heading"
+                className="font-display text-sm font-semibold tracking-[0.15em] text-fg-muted"
+              >
+                شركاؤنا
+              </h2>
+            </div>
+          </div>
+
+          <div className="partners-viewport w-full" dir="ltr">
+            <div className="partners-rail">
+              {[false, true].map((isClone) => (
+                <ul
+                  key={String(isClone)}
+                  data-clone={isClone ? "" : undefined}
+                  aria-hidden={isClone || undefined}
+                  className="flex w-max shrink-0 items-center gap-s6 px-s3 sm:gap-s7"
+                >
+                  {ALL_PARTNERS.map((partner) => (
+                    <li key={partner.name} className="shrink-0">
+                      {partner.logo ? (
+                        <Image
+                          src={partner.logo}
+                          alt={`شعار ${partner.name}`}
+                          width={200}
+                          height={64}
+                          className="h-12 w-auto max-w-[200px] object-contain sm:h-14"
+                        />
+                      ) : (
+                        <span
+                          dir="rtl"
+                          className="flex h-12 items-center whitespace-nowrap border-s-2 border-accent bg-bg-raised px-s5 font-display text-base font-bold text-fg shadow-[inset_0_0_0_1px_var(--border)] sm:h-14 sm:text-lg"
+                        >
+                          {isolateLatin(partner.name)}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* `relative z-10` من أيام الحقل الثابت خلف الصفحة؛ يبقى لأن `main`
+          صار `relative` لأجل الضوء الراكِع، فالرفع يضمن ترتيب الرسم. */}
+      <div className="relative z-10">
+        <SiteFooter />
+      </div>
+    </>
+  );
+}
