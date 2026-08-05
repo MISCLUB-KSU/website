@@ -1,0 +1,392 @@
+@import "tailwindcss";
+
+/* رموز نظام التصميم v2 — مولّدة من `brand/v2/tokens.css`، وهي نفسها التي
+   تبني معاينات Claude Design. أعد التوليد بـ: node brand/v2/build.mjs
+   لا تُحرَّر `tokens.generated.css` هنا. */
+@import "./tokens.generated.css";
+
+/* ==========================================================================
+   نظام ألوان نادي MIS — مأخوذ حرفيًا من دليل الهوية الرسمي
+   (brand/mis-color-guide.png). خمسة ألوان معتمدة، ولا لون خارجها.
+   ========================================================================== */
+
+@theme {
+  /* ألوان الهوية الخمسة */
+  --color-snow: #f9f9f9; /* 01 Snow White */
+  --color-sky: #7faed9; /* 02 Sky Blue */
+  --color-primary: #034ca6; /* 03 Primary Blue */
+  --color-deep: #022d63; /* 04 Deep Blue */
+  --color-charcoal: #0f0f0f; /* 05 Charcoal Black */
+
+  /* تدرجات مشتقة — للحدود والخلفيات الخفيفة فقط، ما هي ألوان جديدة */
+  --color-sky-50: #f3f8fc;
+  --color-sky-100: #e4eef8;
+  --color-sky-200: #cbdff1;
+  --color-primary-600: #02418d;
+  --color-deep-900: #011c40;
+
+  /* ألوان وظيفية — للحالات فقط (نجاح/تحذير/خطأ)، ليست من الهوية */
+  --color-success: #10664e;
+  --color-warning: #a35f07;
+  --color-danger: #b62a26;
+
+  --font-sans: var(--font-plex-arabic), system-ui, sans-serif;
+
+  /* زاوية ميلان الشعار — العنصر البصري المميز للعلامة */
+  --mis-slant: 20deg;
+}
+
+/* ==========================================================================
+   رموز دلالية — المكوّنات تستخدم هذي، لا الألوان مباشرة.
+   يخلي تبديل الوضع الفاتح/الداكن يتم من مكان واحد.
+   ========================================================================== */
+
+:root,
+:root[data-theme="light"] {
+  --bg: var(--color-snow);
+  --bg-raised: #ffffff;
+  --bg-sunken: var(--color-sky-50);
+  --bg-invert: var(--color-deep);
+  --fg: var(--color-charcoal);
+  --fg-muted: #56616f;
+  --fg-invert: var(--color-snow);
+  --accent: var(--color-primary);
+  --accent-hover: var(--color-primary-600);
+  --accent-fg: var(--color-snow);
+  --border: var(--color-sky-200);
+  --border-strong: var(--color-sky);
+  --ring: var(--color-primary);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: var(--color-deep-900);
+    --bg-raised: var(--color-deep);
+    --bg-sunken: #01152f;
+    --bg-invert: var(--color-snow);
+    --fg: var(--color-snow);
+    --fg-muted: #9db4cf;
+    --fg-invert: var(--color-charcoal);
+    --accent: var(--color-sky);
+    --accent-hover: #9dc4e3;
+    --accent-fg: var(--color-deep-900);
+    --border: #0a3b7a;
+    --border-strong: var(--color-primary);
+    --ring: var(--color-sky);
+  }
+}
+
+/* الاختيار اليدوي يتغلّب على تفضيل النظام في الاتجاهين */
+:root[data-theme="dark"] {
+  --bg: var(--color-deep-900);
+  --bg-raised: var(--color-deep);
+  --bg-sunken: #01152f;
+  --bg-invert: var(--color-snow);
+  --fg: var(--color-snow);
+  --fg-muted: #9db4cf;
+  --fg-invert: var(--color-charcoal);
+  --accent: var(--color-sky);
+  --accent-hover: #9dc4e3;
+  --accent-fg: var(--color-deep-900);
+  --border: #0a3b7a;
+  --border-strong: var(--color-primary);
+  --ring: var(--color-sky);
+}
+
+/* ==========================================================================
+   نطاق الحبر — الرئيسية فوق الحقل الثابت.
+   يقلب الرموز الدلالية إلى لوحة الليل المقيسة، فتتحوّل كل المكوّنات
+   القائمة (البطاقات، الأسئلة، الروابط) تلقائيًا بلا لمس كلٍّ منها.
+   الفرق عن الوضع الليلي: الأسطح المرفوعة **زجاجية شفيفة** لا مصمتة —
+   فالحقل الثابت يُرى من خلالها، وهذا مقصد التصميم كله.
+   القيم من الكتلة الليلية نفسها المقيسة أعلاه — لا تقديرات جديدة.
+   ========================================================================== */
+
+.home-ink {
+  --bg: #02397e;
+  --bg-raised: rgb(249 249 249 / 0.1);
+  --bg-sunken: rgb(2 45 99 / 0.4);
+  --bg-invert: var(--color-snow);
+  --fg: var(--color-snow);
+  --fg-muted: #afc2d7; /* 5.19:1 على المرفوع #034392 */
+  --fg-invert: var(--color-charcoal);
+  --accent: #a4c5e3; /* 5.25:1 على السطح */
+  --accent-hover: #c2d9ec;
+  --accent-fg: var(--color-deep-900);
+  --border: rgb(249 249 249 / 0.25);
+  --border-strong: var(--color-sky);
+  --ring: var(--color-sky);
+  --success: #5fd3ae;
+  --warning: #e6b976;
+  --danger: #ff9d97;
+  --mark: var(--color-snow);
+  --line-control: #6ea3d4;
+  --ink-quiet: #a4c5e3;
+}
+
+/* ==========================================================================
+   الأساسيات
+   ========================================================================== */
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   الضوء الراكِع — مصدر ضوءٍ واحد يعبر الصفحة بزاوية الشعار.
+
+   الغرض: الجوّ كان يتوقف عند الطية — واجهةٌ لها توقيعها ثم أقسامٌ على لونٍ
+   واحد مسطّح إلى القاع. هذا يعطي الصفحةَ كلَّها عمقًا بلا تكرار الحقل
+   المائل (توقيعه محجوز للواجهة والترويسات والتذييل) وبلا أي حركة.
+
+   ثلاثة قرارات، كلٌّ منها يتفادى فخًّا مكتوبًا:
+
+   ١) على `main` لا على `body`، وبـ `background-image` لا بطبقةٍ مثبّتة.
+      `position: fixed` يجعل الخلفية تجرّ نفسها خلف التمرير — وذاك مرفوض
+      نصًّا: خلفيةٌ تتبع التمرير تُقرأ كسولة. هنا التدرّج يمتدّ على **طول
+      المستند كلّه**، فالزائر يمرّ *داخل* الضوء ولا يجرّه معه.
+
+   ٢) الزاوية مشتقّة `calc(90deg + var(--rake))` لا مكتوبة رقمًا. `--rake`
+      هو ٢٤° المقيسة من ملف الشعار — فلو صُحّحت زاوية العلامة يومًا تبعها
+      الضوء وحده. وهذا ما يجعل الأثر يخصّ هذا النادي لا أي موقع آخر.
+
+   ٣) لا هالة دائرية في المنتصف. البقعة المتوهّجة خلف العنصر من الممنوعات
+      الصريحة؛ المطلوب ضوءٌ **موجّه** له اتجاه وخفوتٌ حقيقي.
+
+   والطرفان رمزان (`--rake-lit` / `--rake-shade`) لأنهما ينقلبان بين
+   الوضعين: نهارًا الورق أفتح ما في الصفحة فلا يُضاف طرفٌ مضيء.
+   ========================================================================== */
+
+main {
+  position: relative;
+  background-color: var(--bg);
+  /* الطبقة العليا حبيبةٌ **للتنعيم لا للملمس**. بدونها يُشرَّط التدرّج:
+     خطّ التدرّج هنا 3207px، وأوسع شوط يغيّر قناة الأزرق 37.7 درجة فقط على
+     1732px — أي درجةٌ كل **45.9px**. وأي شريط أعرض من ~12px يُرى على سطحٍ
+     واسع، خصوصًا على الأزرق الداكن. الحبيبة تكسر التكمية فيصير الانتقال
+     متّصلًا. `soft-light` تُبقي إزاحة المتوسّط ضئيلة: تتذبذب حول اللون ولا
+     ترفعه، فلا يُغسل السطح رماديًّا.
+
+     العتامة **مقيسة لا مُقدَّرة**: رُسمت الحبيبة على canvas وحُسب انحرافها
+     المعياري بعد خلط `soft-light` فوق قناة الأزرق 126. لكسر شريطٍ عرضه
+     درجة واحدة يلزم σ ≳ 0.7 حتى تتخطّى البكسلات عتبة التكمية:
+       0.06 → σ=0.36 (ضعيف) · 0.10 → σ=0.58 (ضعيف)
+       0.14 → σ=0.80 ✅ إزاحة 1.65 درجة (0.6٪)
+       0.30 → σ=1.65 لكن إزاحة 3.6 درجات، وتبدأ تُرى ملمسًا
+     فاختيرت 0.14: أدنى قيمة تكفي، فتبقى الحبيبة غير مرئية.
+
+     ⚠️ هذي ليست حبيبة الاتجاه «أ» — تلك ملمسٌ يُرى بعتامة 0.30 وخلط
+     `overlay`؛ وهذي وظيفتها ألّا تُرى. */
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.14'/%3E%3C/svg%3E"),
+    linear-gradient(
+      calc(90deg + var(--rake)),
+      var(--rake-lit) 0%,
+      transparent 46%,
+      var(--rake-shade) 100%
+    );
+  background-repeat: repeat, no-repeat;
+  background-size: 200px 200px, auto;
+  background-blend-mode: soft-light, normal;
+}
+
+/* الأقسام الغائرة تُرشِّح الضوء بدل أن تحجبه.
+
+   بلا هذي القاعدة يظهر الضوء في الأقسام الشفّافة وحدها ويختفي تحت الغائرة،
+   فيُقرأ بقعًا متقطّعة لا مصدرًا واحدًا — أي نقيض الغرض. والعتامة تُخفَّض
+   هنا **للأقسام وحدها** (`main > section`) لا للرمز نفسه: `--bg-sunken`
+   يخدم ٢٩ موضعًا فيها أزرار وحقول إدخال، وشفافيتها فوق أبٍ عشوائي تُنتج
+   ألوانًا لا نتحكّم بها. المحدِّد هنا (0,1,2) يتغلّب على أداة Tailwind
+   (0,1,0) بلا `!important`. */
+main > section.bg-bg-sunken {
+  background-color: color-mix(in oklab, var(--bg-sunken) 78%, transparent);
+}
+
+/* الأقسام الغائرة تُرشِّح الضوء بدل أن تحجبه.
+
+   بلا هذي القاعدة يظهر الضوء في الأقسام الشفّافة وحدها ويختفي تحت الغائرة،
+   فيُقرأ بقعًا متقطّعة لا مصدرًا واحدًا — أي نقيض الغرض. والعتامة تُخفَّض
+   هنا **للأقسام وحدها** (`main > section`) لا للرمز نفسه: `--bg-sunken`
+   يخدم ٢٩ موضعًا فيها أزرار وحقول إدخال، وشفافيتها فوق أبٍ عشوائي تُنتج
+   ألوانًا لا نتحكّم بها. المحدِّد هنا (0,1,2) يتغلّب على أداة Tailwind
+   (0,1,0) بلا `!important`. */
+main > section.bg-bg-sunken {
+  background-color: color-mix(in oklab, var(--bg-sunken) 78%, transparent);
+}
+
+/* ==========================================================================
+   الضوء الراكِع — مصدر ضوءٍ واحد يعبر الصفحة بزاوية الشعار.
+
+   الغرض: الجوّ كان يتوقف عند الطية — واجهةٌ لها توقيعها ثم أقسامٌ على لونٍ
+   واحد مسطّح إلى القاع. هذا يعطي الصفحةَ كلَّها عمقًا بلا تكرار الحقل
+   المائل (توقيعه محجوز للواجهة والترويسات والتذييل) وبلا أي حركة.
+
+   ثلاثة قرارات، كلٌّ منها يتفادى فخًّا مكتوبًا:
+
+   ١) على `main` لا على `body`، وبـ `background-image` لا بطبقةٍ مثبّتة.
+      `position: fixed` يجعل الخلفية تجرّ نفسها خلف التمرير — وذاك مرفوض
+      نصًّا: خلفيةٌ تتبع التمرير تُقرأ كسولة. هنا التدرّج يمتدّ على **طول
+      المستند كلّه**، فالزائر يمرّ *داخل* الضوء ولا يجرّه معه.
+
+   ٢) الزاوية مشتقّة `calc(90deg + var(--rake))` لا مكتوبة رقمًا. `--rake`
+      هو ٢٤° المقيسة من ملف الشعار — فلو صُحّحت زاوية العلامة يومًا تبعها
+      الضوء وحده. وهذا ما يجعل الأثر يخصّ هذا النادي لا أي موقع آخر.
+
+   ٣) لا هالة دائرية في المنتصف. البقعة المتوهّجة خلف العنصر من الممنوعات
+      الصريحة؛ المطلوب ضوءٌ **موجّه** له اتجاه وخفوتٌ حقيقي.
+
+   والطرفان رمزان (`--rake-lit` / `--rake-shade`) لأنهما ينقلبان بين
+   الوضعين: نهارًا الورق أفتح ما في الصفحة فلا يُضاف طرفٌ مضيء.
+   ========================================================================== */
+
+main {
+  position: relative;
+  background-color: var(--bg);
+  /* الطبقة العليا حبيبةٌ **للتنعيم لا للملمس**. بدونها يُشرَّط التدرّج:
+     خطّ التدرّج هنا 3207px، وأوسع شوط يغيّر قناة الأزرق 37.7 درجة فقط على
+     1732px — أي درجةٌ كل **45.9px**. وأي شريط أعرض من ~12px يُرى على سطحٍ
+     واسع، خصوصًا على الأزرق الداكن. الحبيبة تكسر التكمية فيصير الانتقال
+     متّصلًا. `soft-light` تُبقي إزاحة المتوسّط ضئيلة: تتذبذب حول اللون ولا
+     ترفعه، فلا يُغسل السطح رماديًّا.
+
+     العتامة **مقيسة لا مُقدَّرة**: رُسمت الحبيبة على canvas وحُسب انحرافها
+     المعياري بعد خلط `soft-light` فوق قناة الأزرق 126. لكسر شريطٍ عرضه
+     درجة واحدة يلزم σ ≳ 0.7 حتى تتخطّى البكسلات عتبة التكمية:
+       0.06 → σ=0.36 (ضعيف) · 0.10 → σ=0.58 (ضعيف)
+       0.14 → σ=0.80 ✅ إزاحة 1.65 درجة (0.6٪)
+       0.30 → σ=1.65 لكن إزاحة 3.6 درجات، وتبدأ تُرى ملمسًا
+     فاختيرت 0.14: أدنى قيمة تكفي، فتبقى الحبيبة غير مرئية.
+
+     ⚠️ هذي ليست حبيبة الاتجاه «أ» — تلك ملمسٌ يُرى بعتامة 0.30 وخلط
+     `overlay`؛ وهذي وظيفتها ألّا تُرى. */
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.14'/%3E%3C/svg%3E"),
+    linear-gradient(
+      calc(90deg + var(--rake)),
+      var(--rake-lit) 0%,
+      transparent 46%,
+      var(--rake-shade) 100%
+    );
+  background-repeat: repeat, no-repeat;
+  background-size: 200px 200px, auto;
+  background-blend-mode: soft-light, normal;
+}
+
+/* عزل النص اللاتيني والأرقام داخل نص عربي — يمنع انعكاس الترتيب */
+[dir="ltr"] {
+  unicode-bidi: isolate;
+}
+
+/* الشريط ملتصق بالأعلى، فالقفز إلى مرساة يضعها تحته ما لم يُحجز ارتفاعه */
+html {
+  scroll-padding-block-start: 6rem;
+}
+
+/* تركيز لوحة المفاتيح ظاهر دائمًا — مطلب وصولية */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+/* ==========================================================================
+   الميلان — مستمد من الشعار نفسه (متوازيات مائلة)، لا زخرفة دخيلة.
+   ========================================================================== */
+
+.mis-slant {
+  transform: skewX(calc(var(--mis-slant) * -1));
+}
+
+.mis-slant > * {
+  transform: skewX(var(--mis-slant));
+}
+
+/* ==========================================================================
+   شريط الشركاء — انسيابٌ متّصل بلا نهاية.
+
+   طقمان متطابقان داخل مِزلجةٍ واحدة، والمِزلجة تُزاح `-50%` أي بعرض طقمٍ
+   كامل، فتعود إلى نقطة تُطابق ما غادرته تمامًا — لا قفزة عند الالتفاف.
+
+   ⚠️ **الفخّ الذي يتفاداه هذا الملف:** القاعدة العامة في آخر الصفحة تُلغي
+   الحركة لمن طلب تقليلها — فتقف المِزلجة عند نهاية إزاحتها (`-50%`) ويبقى
+   نصف الشركاء **خارج الشاشة بلا وسيلة وصول**، لأن الحاوية `overflow:
+   hidden`. أي أن المحتوى يُخفى بانتظار حركةٍ لن تنطلق، وهذا ممنوع.
+   فتُبطَّل الإزاحة صراحةً وتُفتح الحاوية للتمرير اليدوي، ويُخفى الطقم
+   الثاني فلا تتكرّر الأسماء أمام من يتصفّح بيده.
+
+   والحافّتان تتلاشيان بقناعٍ متدرّج: قطعُ الشعارات بحدٍّ حادّ يُقرأ عطلًا.
+   ========================================================================== */
+
+.partners-viewport {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 7%,
+    #000 93%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 7%,
+    #000 93%,
+    transparent
+  );
+}
+
+.partners-rail {
+  display: flex;
+  width: max-content;
+  animation: partners-drift 72s linear infinite;
+}
+
+/* التوقّف عند المرور أو التركيز: مهلةٌ لقراءة اسمٍ يمرّ */
+.partners-viewport:hover .partners-rail,
+.partners-viewport:focus-within .partners-rail {
+  animation-play-state: paused;
+}
+
+@keyframes partners-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .partners-viewport {
+    overflow-x: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  /* `!important` لازم: القاعدة العامة أدناه تنهي الحركة عند `-50%` */
+  .partners-rail {
+    animation: none !important;
+    transform: none !important;
+  }
+  .partners-rail > [data-clone] {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
