@@ -135,6 +135,54 @@
              vsHero: err(hero), vsSlots: slotErr, vsFoot: err(foot) };
   }
 
+  /* ٥) مراسي الأقسام: ستّة أهداف، نسبةُ كلٍّ نسبةَ ضلعه، والضلع ينطبق عليه */
+  function docks() {
+    var BOXES = window.__MARK_BOXES || [];
+    var layer = document.querySelector('[data-mark-layer]');
+    var els = Array.prototype.slice.call(
+      document.querySelectorAll('[data-mark-dock]')
+    );
+    var fail = [];
+    if (!BOXES.length) fail.push('__MARK_BOXES غير منشور — انظر المهمّة ٢');
+    /* ⚠️ الشرط `!==` وحده لا يكفي: قبل المهمّة ٢ يكون الطرفان صفرًا فيمرّ
+       صامتًا. فيُشترط العدد الحقيقي صراحةً. */
+    if (els.length !== 6) {
+      fail.push('الأهداف ' + els.length + ' والمتوقّع 6');
+    }
+    var rows = els.map(function (el) {
+      var i = Number(el.dataset.markDock);
+      var b = BOXES[i];
+      var r = el.getBoundingClientRect();
+      var dockAspect = r.height ? r.width / r.height : 0;
+      var shardAspect = b ? b.w / b.h : 0;
+      var shard = layer && layer.querySelector('[data-mark-shard="' + i + '"]');
+      var sr = shard && shard.getBoundingClientRect();
+      var row = {
+        dock: i,
+        dockAspect: +dockAspect.toFixed(4),
+        shardAspect: +shardAspect.toFixed(4),
+        aspectErr: +Math.abs(dockAspect - shardAspect).toFixed(4),
+        dx: sr ? Math.round(sr.left - r.left) : null,
+        dy: sr ? Math.round(sr.top - r.top) : null,
+        dw: sr ? Math.round(sr.width - r.width) : null,
+        dh: sr ? Math.round(sr.height - r.height) : null
+      };
+      if (!b) fail.push('هدفٌ برقم ضلعٍ خارج المدى: ' + el.dataset.markDock);
+      else if (row.aspectErr > 0.02) {
+        fail.push('نسبة الهدف ' + i + ' = ' + row.dockAspect +
+                  ' والضلع ' + row.shardAspect);
+      }
+      return row;
+    });
+    var seen = {};
+    rows.forEach(function (r) {
+      if (seen[r.dock]) fail.push('رقم ضلعٍ مكرَّر: ' + r.dock);
+      seen[r.dock] = 1;
+    });
+    return { found: els.length, expected: BOXES.length, rows: rows,
+             fail: fail, pass: fail.length === 0 };
+  }
+
   /* ٤) هل تحجب القطعُ نصًّا؟ بترتيب الرسم الحقيقي لا بتقاطع المستطيلات */
   function coverage() {
     var layer = document.querySelector('[data-mark-layer]');
@@ -162,9 +210,9 @@
   }
 
   function all() {
-    return { tokens: tokens(), contrast: contrast(), morph: morph(), coverage: coverage(),
+    return { tokens: tokens(), contrast: contrast(), morph: morph(), docks: docks(), coverage: coverage(),
              horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1 };
   }
-  window.__audit = { tokens: tokens, contrast: contrast, morph: morph, coverage: coverage, all: all };
+  window.__audit = { tokens: tokens, contrast: contrast, morph: morph, docks: docks, coverage: coverage, all: all };
   return 'audit جاهزة — استعمل __audit.all()';
 })();
