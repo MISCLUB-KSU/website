@@ -65,9 +65,11 @@
       document.querySelectorAll('[data-mark-dock]')
     );
     var fail = [];
-    if (!BOXES.length) fail.push('__MARK_BOXES غير منشور — انظر المهمّة ٣');
-    if (els.length !== BOXES.length) {
-      fail.push('الأهداف ' + els.length + ' والمتوقّع ' + BOXES.length);
+    if (!BOXES.length) fail.push('__MARK_BOXES غير منشور — انظر المهمّة ٢');
+    /* ⚠️ الشرط `!==` وحده لا يكفي: قبل المهمّة ٢ يكون الطرفان صفرًا فيمرّ
+       صامتًا. فيُشترط العدد الحقيقي صراحةً. */
+    if (els.length !== 6) {
+      fail.push('الأهداف ' + els.length + ' والمتوقّع 6');
     }
     var rows = els.map(function (el) {
       var i = Number(el.dataset.markDock);
@@ -108,14 +110,20 @@
 
 - [ ] **الخطوة ٢: شغّله وتأكّد أنه يرسب**
 
-في لوحة المتصفّح على `http://localhost:3300`:
+الحصّالة **لا تُحمَّل تلقائيًّا** — هي دالّةٌ فوريّة تُلصق في سياق الصفحة
+وتُسند `window.__audit`. فالتشغيل خطوتان في لوحة المتصفّح على
+`http://localhost:3300`:
+
+1. اقرأ `scripts/audit.js` كاملًا وألصق محتواه في `javascript_tool`.
+2. ثم:
 
 ```js
 __audit.docks()
 ```
 
-المتوقّع: `pass: false` · `found: 0` · و`fail` فيه «الأهداف 0 والمتوقّع 0»
-و«‎__MARK_BOXES غير منشور». هذا الرسوب هو الدليل أن الفحص يميّز.
+المتوقّع: `pass: false` · `found: 0` · `expected: 0` · و`fail` فيه **سطران
+بالضبط**: «‎__MARK_BOXES غير منشور — انظر المهمّة ٢» و«الأهداف 0 والمتوقّع 6».
+هذا الرسوب هو الدليل أن الفحص يميّز.
 
 - [ ] **الخطوة ٣: الارتكاب (بطلب حسام)**
 
