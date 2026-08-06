@@ -166,11 +166,6 @@ export function RegistrationForm({ initialChoice }: RegistrationFormProps) {
           فيرفع المرفقَ بلا جافاسكربت أصلًا. وكتابتهما يدويًا يُطلق تحذير React
           «will get overridden» في التطوير بلا فائدة. مُتحقَّق منه في مصدر
           الصفحة المُرسَل من الخادم. */}
-      {/* لا يُكتب `encType` ولا `method` هنا: النموذج الذي `action` فيه دالّةٌ
-          يرسمهما `Next` بنفسه — `multipart/form-data` و`POST` — في HTML الخادم،
-          فيرفع المرفقَ بلا جافاسكربت أصلًا. وكتابتهما يدويًا يُطلق تحذير React
-          «will get overridden» في التطوير بلا فائدة. مُتحقَّق منه في مصدر
-          الصفحة المُرسَل من الخادم. */}
       <form
         ref={formRef}
         action={formAction}
