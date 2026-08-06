@@ -79,14 +79,17 @@ export default function HomePage() {
               موضعين في القسم نفسه. ⚠️ مُمرَّرٌ عبر `isolateLatin` بعد
               دمجه في جملة واحدة — نفس سبب الفقرة أعلاه. */}
           <p className="mt-s6 inline-flex items-center gap-s3 text-sm font-semibold tracking-wide text-accent">
-            {/* مرسى الضلع 3 — أنحف الأضلاع (نسبة 0.7994)، فهو الأنسب لضربةٍ
-                رأسيّة سطريّة. العرض 13px = 16 × 0.7994. */}
+            {/* مرسى الضلع 3 — أنحف الأضلاع (نسبة 0.7994). الغلاف مستقيمٌ
+                يحمل صندوق الهبوط، والميلان ينتقل للعنصر الداخليّ فلا يُحسب
+                على القياس. العرض 12.8px = 16 × 0.7994. */}
             <span
               aria-hidden
               data-mark-dock="3"
               data-mark-static=""
-              className="mis-slant inline-block h-4 w-[13px] shrink-0 bg-accent"
-            />
+              className="inline-block h-4 w-[12.8px] shrink-0"
+            >
+              <span className="mis-slant block h-full w-full bg-accent" />
+            </span>
             {isolateLatin(`منذ عام ${FOUNDED_YEAR}`)}
           </p>
         </section>
@@ -129,13 +132,16 @@ export default function HomePage() {
         >
           <div className="mb-s7 flex items-center gap-s3">
             {/* مرسى الضلع 4 — نسبة 1.1469، توأم الضلع 5 في رأس «شركاؤنا»
-                فيقرأ الرأسان عائلةً واحدة. العرض 18px = 16 × 1.1469. */}
+                فيقرأ الرأسان عائلةً واحدة. الغلاف مستقيمٌ، والميلان في
+                الداخل. العرض 18.4px = 16 × 1.1469. */}
             <span
               aria-hidden
               data-mark-dock="4"
               data-mark-static=""
-              className="mis-slant inline-block h-4 w-[18px] shrink-0 bg-accent"
-            />
+              className="inline-block h-4 w-[18.4px] shrink-0"
+            >
+              <span className="mis-slant block h-full w-full bg-accent" />
+            </span>
             <h2
               id="pillars-heading"
               className="font-display text-sm font-semibold tracking-[0.15em] text-fg-muted"
@@ -172,18 +178,18 @@ export default function HomePage() {
                   {pillar.label}
                 </h3>
 
-                {/* ضربة الميلان الفاصلة — العنصر نفسه في «من نحن»، فيقرأ
-                    القسمان عائلةً واحدة */}
-                {/* مرسى الأضلاع 0 · 1 · 2 — نِسَبها متطابقة عمليًّا
-                    (1.4932 · 1.4964 · 1.4932) فتبقى البطاقات الثلاث
-                    متطابقة. الارتفاع 27px = 40 ÷ 1.4932؛ العرض 40px محفوظ
-                    فلا يتزحزح شيءٌ أفقيًّا، ويزيد ارتفاع البطاقة ~23px. */}
+                {/* مرسى الأضلاع 0 · 1 · 2 — نِسَبها متطابقة عمليًّا فتبقى
+                    البطاقات الثلاث متطابقة. الغلاف مستقيمٌ يحمل صندوق
+                    الهبوط، والميلان في العنصر الداخليّ. الارتفاع 26.8px =
+                    40 ÷ 1.4932؛ العرض 40px محفوظ فلا يتزحزح شيءٌ أفقيًّا. */}
                 <span
                   aria-hidden
                   data-mark-dock={String(index)}
                   data-mark-static=""
-                  className="mis-slant mt-s4 inline-block h-[27px] w-10 shrink-0 bg-accent"
-                />
+                  className="mt-s4 inline-block h-[26.8px] w-10 shrink-0"
+                >
+                  <span className="mis-slant block h-full w-full bg-accent" />
+                </span>
 
                 {/* ⚠️ `isolateLatin` لازمة: ركيزة «الهدف» تحوي "(MIS)" وسط
                     جملة عربية — كانت تُرسَم خامًا فتنعكس بصريًّا. الركيزتان
@@ -226,13 +232,16 @@ export default function HomePage() {
           <div className="mx-auto mb-s7 w-full max-w-6xl px-s4 sm:px-s7">
             <div className="flex items-center gap-s3">
               {/* مرسى الضلع 5 — نسبة 1.1469، توأم الضلع 4 في رأس «ما نقوم
-                  عليه». العرض 18px = 16 × 1.1469. */}
+                  عليه». الغلاف مستقيمٌ، والميلان في الداخل. العرض 18.4px =
+                  16 × 1.1469. */}
               <span
                 aria-hidden
                 data-mark-dock="5"
                 data-mark-static=""
-                className="mis-slant inline-block h-4 w-[18px] shrink-0 bg-accent"
-              />
+                className="inline-block h-4 w-[18.4px] shrink-0"
+              >
+                <span className="mis-slant block h-full w-full bg-accent" />
+              </span>
               <h2
                 id="partners-heading"
                 className="font-display text-sm font-semibold tracking-[0.15em] text-fg-muted"
