@@ -4,6 +4,7 @@ import { Mark } from "@/components/site/mark";
 import { MobileMenu } from "@/components/site/mobile-menu";
 import { NavLinks } from "@/components/site/nav-links";
 import { ScrollLift } from "@/components/site/scroll-lift";
+import { ThemeToggle } from "@/components/site/theme-toggle";
 import { NAVIGATION, PRIMARY_ACTION } from "@/content/navigation";
 
 /**
@@ -78,6 +79,11 @@ export function SiteHeader() {
               <NavLinks as="list" className="flex flex-col" />
             </nav>
           </MobileMenu>
+
+          {/* المبدّل قبل الزرّ — موضعه محجوز في حساب عرض الشريط أعلاه (٢٢٩px
+              للعلامة والمبدّل والزرّ). على الجوال يدفعه `ms-auto` القائمةِ
+              فيبقى الثلاثة متجاورين في الطرف. */}
+          <ThemeToggle />
 
           <Link
             href={PRIMARY_ACTION.href}
