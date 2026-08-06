@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+/* ⚠️ `dark:` في Tailwind v4 يتبع `prefers-color-scheme` **وحده**. وهذا الموقع
+   يبدّل بـ`data-theme` أيضًا (المبدّل اليدوي)، فكان `dark:` لا ينقلب مع
+   الاختيار اليدوي: مقيسًا على نظامٍ فاتح + اختيار «داكن»، بقيت علامة الشريط
+   `#022d63` على أرضية `#011c40` — تباين 1.32:1.
+   المنطق أدناه نسخةٌ حرفيّة من تسلسل `tokens.generated.css` نفسه، فلا
+   تفترق آليّتان. */
+@custom-variant dark {
+  &:where(:root[data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+}
+
 /* رموز نظام التصميم v2 — مولّدة من `brand/v2/tokens.css`، وهي نفسها التي
    تبني معاينات Claude Design. أعد التوليد بـ: node brand/v2/build.mjs
    لا تُحرَّر `tokens.generated.css` هنا. */
@@ -72,6 +89,16 @@
   --color-bg-sunken: var(--surface-sunken);
   --color-surface-ink: var(--surface-ink);
   --color-surface-floor: var(--surface-floor);
+  /* دور **مقدِّمة** للعلامة والعنوان — لا يُخلط بـ`--surface-floor` أعلاه.
+     ذاك دور أرضية، وحين استُعمل لونَ نصّ نجح في النهار مصادفةً (أرضية
+     كحليّة على صفحة ثلجية) وسقط في الليل إلى 1.00:1: صارت الأرضية هي
+     خلفية الصفحة نفسها، فاختفى العنوان والعلامة وأسماء المشاريع. */
+  --color-mark: var(--mark);
+  /* العلامةُ **رسمًا** لا نصًّا. في النهار هي نفسها `--mark` بلا فرق، وفي
+     الليل تنزل درجةً: الأبيض على الكحلي يُقرأ أعلى صوتًا من الكحلي على
+     الأبيض عند النسبة نفسها (16.07:1 ليلًا مقابل 10.56:1 نهارًا لنفس
+     الدور)، فالصفائح الضخمة تزاحم العنوان. النصّ يبقى على `--mark`. */
+  --color-mark-quiet: var(--mark-quiet);
   --color-on-ink: var(--on-ink);
   --color-on-ink-dim: var(--on-ink-dim);
   --color-on-ink-quiet: var(--on-ink-quiet);
@@ -121,6 +148,11 @@
   --border: var(--color-sky-200);
   --border-strong: var(--color-sky);
   --ring: var(--color-primary);
+  /* العلامة محفورةٌ في الصفحة: كحليّ الأرضية على الثلج — 10.56:1.
+     نفس قيمة `--surface-floor` النهاريّة بالضبط، فلا يتغيّر النهار بشعرة. */
+  --mark: var(--ink-floor);
+  /* نهارًا لا فرق بين النصّ والرسم — كما كان دائمًا. الفرق ليليٌّ فقط. */
+  --mark-quiet: var(--ink-floor);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -138,6 +170,14 @@
     --border: #0a3b7a;
     --border-strong: var(--color-primary);
     --ring: var(--color-sky);
+    /* تنقلب العلامة مع الأرضية — وهي القاعدة التي أرساها `.home-ink` أدناه
+       (`--mark: var(--color-snow)`) حين يصير السياق حبرًا. تُعمَّم هنا. */
+    --mark: var(--snow);
+    /* الصفائحُ درجةً أهدأ من العنوان — قرار حسام بعد رؤيتها ثلجيّةً ضخمة.
+       `--on-ink-dim` نفسها، وهي درجةٌ مضبوطةٌ أصلًا في نظام الرموز لأسوأ
+       خلفيةٍ في الحقل المائل. 9.31:1 على الأرضية — فوق عتبة الرسوم الدالّة
+       (3:1) بثلاثة أضعاف، والعنوانُ يبقى 16.07:1 فيتقدّمها في التسلسل. */
+    --mark-quiet: var(--on-ink-dim);
   }
 }
 
@@ -156,6 +196,8 @@
   --border: #0a3b7a;
   --border-strong: var(--color-primary);
   --ring: var(--color-sky);
+  --mark: var(--snow);
+  --mark-quiet: var(--on-ink-dim);
 }
 
 /* ==========================================================================

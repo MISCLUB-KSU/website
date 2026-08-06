@@ -202,7 +202,7 @@ export function MarkMorph() {
       data-mark-layer=""
       aria-hidden
       dir="ltr"
-      className="pointer-events-none fixed inset-0 z-[1] text-surface-floor"
+      className="pointer-events-none fixed inset-0 z-[1] text-mark-quiet"
     />
   );
 }
