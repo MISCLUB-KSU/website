@@ -49,8 +49,10 @@
 
 **الواجهات:**
 - ينتج: `__audit.docks()` تُرجع `{ found, expected, rows, fail, pass }` حيث
-  `rows[i] = { dock, shard, dockAspect, shardAspect, aspectErr, dx, dy, dw, dh }`.
-  تستهلكها المهمّات ٢ و٣ و٤.
+  `rows[i] = { dock, dockAspect, shardAspect, aspectErr, dx, dy, dw, dh }` —
+  **ثمانية حقول، ولا حقل باسم `shard`.** تستهلكها المهمّات ٢ و٣ و٤.
+- وتُسجَّل `docks` في سطر `window.__audit = {...}` كأخواتها، وإلّا فُقد
+  الاستدعاء المباشر `__audit.docks()` الذي تنصّ عليه الخطوة ٢.
 
 - [ ] **الخطوة ١: اكتب الفحص الذي يرسب**
 
