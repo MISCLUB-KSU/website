@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import { MARK_POINTS } from "@/lib/geometry.generated";
-import { MARK_BOXES } from "@/lib/mark-boxes";
+import { MARK_BOXES, type MarkBox } from "@/lib/mark-boxes";
 
 /**
  * العلامة تتشكّل مع التمرير.
@@ -156,6 +156,10 @@ export function MarkMorph() {
         host.appendChild(d);
         return d;
       });
+      /* تُنشر للحصّالة وحدها (`__audit.docks`) — القياس يحتاج نِسَب الأضلاع
+         الحقيقية، ولا مصدر لها في DOM. لا يقرؤها كودُ المنتج. */
+      (window as unknown as { __MARK_BOXES?: readonly MarkBox[] }).__MARK_BOXES =
+        BOXES;
     };
 
     const teardown = () => {
@@ -165,6 +169,8 @@ export function MarkMorph() {
       frame = 0;
       host.textContent = "";
       shards = [];
+      delete (window as unknown as { __MARK_BOXES?: readonly MarkBox[] })
+        .__MARK_BOXES;
       host.style.visibility = "";
       document.documentElement.classList.remove("mark-morphing");
       live = false;
