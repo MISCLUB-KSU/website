@@ -79,9 +79,13 @@ export default function HomePage() {
               موضعين في القسم نفسه. ⚠️ مُمرَّرٌ عبر `isolateLatin` بعد
               دمجه في جملة واحدة — نفس سبب الفقرة أعلاه. */}
           <p className="mt-s6 inline-flex items-center gap-s3 text-sm font-semibold tracking-wide text-accent">
+            {/* مرسى الضلع 3 — أنحف الأضلاع (نسبة 0.7994)، فهو الأنسب لضربةٍ
+                رأسيّة سطريّة. العرض 13px = 16 × 0.7994. */}
             <span
               aria-hidden
-              className="mis-slant inline-block h-4 w-1 shrink-0 bg-accent"
+              data-mark-dock="3"
+              data-mark-static=""
+              className="mis-slant inline-block h-4 w-[13px] shrink-0 bg-accent"
             />
             {isolateLatin(`منذ عام ${FOUNDED_YEAR}`)}
           </p>
@@ -124,9 +128,13 @@ export default function HomePage() {
           className="mx-auto w-full max-w-6xl px-s4 pb-s8 sm:px-s7"
         >
           <div className="mb-s7 flex items-center gap-s3">
+            {/* مرسى الضلع 4 — نسبة 1.1469، توأم الضلع 5 في رأس «شركاؤنا»
+                فيقرأ الرأسان عائلةً واحدة. العرض 18px = 16 × 1.1469. */}
             <span
               aria-hidden
-              className="mis-slant inline-block h-4 w-1 shrink-0 bg-accent"
+              data-mark-dock="4"
+              data-mark-static=""
+              className="mis-slant inline-block h-4 w-[18px] shrink-0 bg-accent"
             />
             <h2
               id="pillars-heading"
@@ -166,9 +174,15 @@ export default function HomePage() {
 
                 {/* ضربة الميلان الفاصلة — العنصر نفسه في «من نحن»، فيقرأ
                     القسمان عائلةً واحدة */}
+                {/* مرسى الأضلاع 0 · 1 · 2 — نِسَبها متطابقة عمليًّا
+                    (1.4932 · 1.4964 · 1.4932) فتبقى البطاقات الثلاث
+                    متطابقة. الارتفاع 27px = 40 ÷ 1.4932؛ العرض 40px محفوظ
+                    فلا يتزحزح شيءٌ أفقيًّا، ويزيد ارتفاع البطاقة ~23px. */}
                 <span
                   aria-hidden
-                  className="mis-slant mt-s4 inline-block h-1 w-10 shrink-0 bg-accent"
+                  data-mark-dock={String(index)}
+                  data-mark-static=""
+                  className="mis-slant mt-s4 inline-block h-[27px] w-10 shrink-0 bg-accent"
                 />
 
                 {/* ⚠️ `isolateLatin` لازمة: ركيزة «الهدف» تحوي "(MIS)" وسط
@@ -211,9 +225,13 @@ export default function HomePage() {
         >
           <div className="mx-auto mb-s7 w-full max-w-6xl px-s4 sm:px-s7">
             <div className="flex items-center gap-s3">
+              {/* مرسى الضلع 5 — نسبة 1.1469، توأم الضلع 4 في رأس «ما نقوم
+                  عليه». العرض 18px = 16 × 1.1469. */}
               <span
                 aria-hidden
-                className="mis-slant inline-block h-4 w-1 shrink-0 bg-accent"
+                data-mark-dock="5"
+                data-mark-static=""
+                className="mis-slant inline-block h-4 w-[18px] shrink-0 bg-accent"
               />
               <h2
                 id="partners-heading"
