@@ -118,15 +118,25 @@ export function SiteFooter() {
 
       {/* اجتماع العلامة — الشعار ملتصقٌ بالحافّة السفلى بلا فجوة تحته،
           فيُقرأ توقيعًا لا نصًّا مركونًا.
-          ⚠️ `data-mark-static` على الغلاف لا على `Mark` — فهو لا ينشر خصائص. */}
-      <div
-        aria-hidden
-        data-mark-anchor="foot"
-        className="mx-auto mt-s8 w-full max-w-[72rem] px-s4 sm:px-s7"
-        style={{ aspectRatio: "2701 / 1016" }}
-      >
-        <div data-mark-static="" className="h-full w-full">
-          <Mark decorative className="h-full w-full text-on-ink" />
+          ⚠️ `data-mark-static` على الغلاف لا على `Mark` — فهو لا ينشر خصائص.
+          ⚠️ **حشو الجهتين (`px-s4`/`sm:px-s7`) على غلافٍ خارجيٍّ يحيط
+          بالمرساة، لا على `[data-mark-anchor]` نفسها.** كان الحشو على نفس
+          عنصر المرساة، فيدخل داخل الصندوق الذي يقيسه `getBoundingClientRect`
+          (يشمل الحشو دومًا) بينما الشعار الساكن بداخلها يملأ صندوق
+          *المحتوى* فقط (`h-full w-full` بعد الحشو) — فيكبر `kFoot` في
+          `mark-morph.tsx` عن حجم الشعار المرسوم فعليًا. قِيس فعليًّا: على
+          1280px الشعار المتشكّل 1152px@x=64 مقابل الساكن 1056px@x=112
+          (٤٨px لكل جهة)، وعلى 320px: 320 مقابل 288. المرساة الآن بلا حشوٍ
+          خاصٍّ بها، فصندوقها المقيس هو صندوق الشعار المرسوم بالضبط. */}
+      <div aria-hidden className="mx-auto mt-s8 w-full max-w-[72rem] px-s4 sm:px-s7">
+        <div
+          data-mark-anchor="foot"
+          className="w-full"
+          style={{ aspectRatio: "2701 / 1016" }}
+        >
+          <div data-mark-static="" className="h-full w-full">
+            <Mark decorative className="h-full w-full text-on-ink" />
+          </div>
         </div>
       </div>
     </footer>
