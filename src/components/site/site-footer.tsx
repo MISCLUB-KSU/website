@@ -25,7 +25,7 @@ export function SiteFooter() {
      السفلي (64px) يبقى: هو إيقاع الأقسام لا هامش التذييل. */
   return (
     <footer className="raked-field grain text-on-ink">
-      <div className="mx-auto max-w-6xl px-s4 pt-s7 sm:px-s7">
+      <div className="above-mark mx-auto max-w-6xl px-s4 pt-s7 sm:px-s7">
         <nav
           className="grid gap-s6 sm:grid-cols-2 lg:grid-cols-3"
           aria-label="روابط التذييل"
@@ -109,6 +109,20 @@ export function SiteFooter() {
           <p className="text-sm text-on-ink-dim">
             نادي نظم المعلومات الإدارية — جامعة الملك سعود
           </p>
+        </div>
+      </div>
+
+      {/* اجتماع العلامة — الشعار ملتصقٌ بالحافّة السفلى بلا فجوة تحته،
+          فيُقرأ توقيعًا لا نصًّا مركونًا.
+          ⚠️ `data-mark-static` على الغلاف لا على `Mark` — فهو لا ينشر خصائص. */}
+      <div
+        aria-hidden
+        data-mark-anchor="foot"
+        className="mx-auto mt-s8 w-full max-w-[72rem] px-s4 sm:px-s7"
+        style={{ aspectRatio: "2701 / 1016" }}
+      >
+        <div data-mark-static="" className="h-full w-full">
+          <Mark decorative className="h-full w-full text-on-ink" />
         </div>
       </div>
     </footer>
