@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Hero } from "@/components/site/hero";
 import { MarkMorph } from "@/components/site/mark-morph";
 import { PillarMark, type PillarMarkShape } from "@/components/site/pillar-mark";
+import { ProjectIndex } from "@/components/site/project-index";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { ABOUT_INTRO, ALL_PARTNERS, FOUNDED_YEAR, PILLARS } from "@/content/about";
@@ -29,6 +30,8 @@ export default function HomePage() {
 
       <main id="main">
         <Hero isOpen={isOpen} />
+
+        <ProjectIndex />
 
         {/* ══════════════════════════════════════════════════════════════
             من نحن
