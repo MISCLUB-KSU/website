@@ -183,6 +183,76 @@
              fail: fail, pass: fail.length === 0 };
   }
 
+  /* ٦) مسحٌ عبر التمرير: التغطية تُقاس على **شكل** المتوازي لا صندوقه، لأن
+     `coverage()` تسأل عمّا فوق النصّ والأضلاع تحته فتمرّ دائمًا. */
+  function sweep(points) {
+    var n = points || 61;
+    var layer = document.querySelector('[data-mark-layer]');
+    var svgs = layer ? layer.querySelectorAll('svg') : [];
+    var polys = layer ? layer.querySelectorAll('polygon') : [];
+    var max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    var worst = { pct: 0, y: 0, text: null };
+    /* ⚠️ فخّ بيئيّ موثَّقٌ (تقرير المهمّة ٤): تبويب لوحة المعاينة يقرأ
+       document.hidden === true طوال الجلسة، فـ requestAnimationFrame
+       الحقيقي لا يُطلَق عند scroll — و`place()` داخل mark-morph.tsx
+       مجدولةٌ عبره حصرًا. حلُّ المهمّة ٤ (لقطة شاشة تُصرِّف الطابور) لا
+       يصلح لهذه الحلقة: هي متزامنةٌ بالكامل على ٦١ نقطة، ولا يمكن طلب
+       لقطة شاشة من داخل جافاسكربت بين نقطةٍ وأخرى. و`place` نفسها
+       مغلقةٌ داخل useEffect في mark-morph.tsx ولا تُنشَر على window، فلا
+       نملك استدعاءها مباشرة (خيار الموجز الأول). البديل الصريح المتّبع
+       هنا: نجعل `requestAnimationFrame` ينفّذ ردّ نداءه فورًا ومتزامنًا
+       (بدل انتظار إطارٍ حقيقي لن يصل)، ثم نُطلق حدث `scroll` يدويًا على
+       window — فيستدعي هذا معالج mark-morph الحقيقي (`schedule` ثم
+       `place`) بمساره الإنتاجي الفعلي، لا بإعادة حساب هندسةٍ محليّة قد
+       تنحرف عن الحقيقة. نافذة التصحيح ضيّقةٌ عمدًا (تُستعاد
+       `requestAnimationFrame` الحقيقية فور عودة `dispatchEvent`، ضمن
+       try/finally) لتفادي التقاط أي حلقة rAF أخرى في الصفحة قد تُعيد
+       جدولة نفسها ذاتيًا لو بقي التصحيح فعّالًا طوال المسح. */
+    function flush() {
+      var real = window.requestAnimationFrame;
+      window.requestAnimationFrame = function (cb) { cb(0); return 0; };
+      try {
+        window.dispatchEvent(new Event('scroll'));
+      } finally {
+        window.requestAnimationFrame = real;
+      }
+    }
+    function inAny(cx, cy) {
+      for (var k = 0; k < polys.length; k++) {
+        var p = polys[k], ctm = p.getScreenCTM();
+        if (!ctm) continue;
+        var pt = (p.ownerSVGElement || svgs[0]).createSVGPoint();
+        pt.x = cx; pt.y = cy;
+        var l = pt.matrixTransform(ctm.inverse());
+        try { if (p.isPointInFill(l)) return true; } catch (e) { /* بلا دعم */ }
+      }
+      return false;
+    }
+    for (var s = 0; s <= n; s++) {
+      window.scrollTo(0, Math.round((max * s) / n));
+      flush();
+      var els = document.querySelectorAll('main h1, main h2, main h3, main p, main li');
+      for (var e = 0; e < els.length; e++) {
+        var r = els[e].getBoundingClientRect();
+        if (r.width < 8 || r.height < 8 || r.bottom < 0 || r.top > window.innerHeight) continue;
+        var on = 0, tot = 0;
+        for (var i = 0; i <= 40; i++) {
+          for (var j = 0; j <= 12; j++) {
+            var x = r.left + (r.width * i) / 40, y = r.top + (r.height * j) / 12;
+            if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) continue;
+            tot++; if (inAny(x, y)) on++;
+          }
+        }
+        var pct = tot ? (100 * on) / tot : 0;
+        if (pct > worst.pct) {
+          worst = { pct: +pct.toFixed(2), y: window.scrollY,
+                    text: els[e].textContent.trim().slice(0, 30) };
+        }
+      }
+    }
+    return { points: n + 1, worst: worst, pass: worst.pct === 0 };
+  }
+
   /* ٤) هل تحجب القطعُ نصًّا؟ بترتيب الرسم الحقيقي لا بتقاطع المستطيلات */
   function coverage() {
     var layer = document.querySelector('[data-mark-layer]');
@@ -210,9 +280,9 @@
   }
 
   function all() {
-    return { tokens: tokens(), contrast: contrast(), morph: morph(), docks: docks(), coverage: coverage(),
+    return { tokens: tokens(), contrast: contrast(), morph: morph(), docks: docks(), coverage: coverage(), sweep: sweep(),
              horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1 };
   }
-  window.__audit = { tokens: tokens, contrast: contrast, morph: morph, docks: docks, coverage: coverage, all: all };
+  window.__audit = { tokens: tokens, contrast: contrast, morph: morph, docks: docks, coverage: coverage, sweep: sweep, all: all };
   return 'audit جاهزة — استعمل __audit.all()';
 })();
