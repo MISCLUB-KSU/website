@@ -15,7 +15,11 @@ import { ABOUT_SECTION, FOOTER_LINKS } from "@/content/navigation";
  */
 
 const LINK_CLASS =
-  "inline-flex min-h-11 items-center text-sm text-on-ink-dim " +
+  /* ⚠️ **`px-s2` إلزامي لا زخرفة** — نفس علّة `nav-links.tsx`: بلا حشوٍ
+     أفقي كان عرض «اللجان» 33.56px (أقصر بـ10.44px) و«المقالات» 43.21px.
+     الحشو مُضاف على الجهتين فيرفع «اللجان» — أضيق رابطٍ في التذييل — إلى
+     ٤٩.٥٦px، بهامش أمان لا بالحدّ بالضبط. */
+  "inline-flex min-h-11 items-center px-s2 text-sm text-on-ink-dim " +
   "transition-colors hover:text-snow";
 
 export function SiteFooter() {

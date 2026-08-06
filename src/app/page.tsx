@@ -60,21 +60,25 @@ export default function HomePage() {
             {ABOUT_INTRO.lede}
           </p>
 
-          {/* الفقرة التعريفية — بخط المتن، بعرضٍ مقروء لا يتجاوز المقاس */}
+          {/* الفقرة التعريفية — بخط المتن، بعرضٍ مقروء لا يتجاوز المقاس.
+              ⚠️ `isolateLatin` لازمة: النصّ يحوي رقم التأسيس "2013" وسط
+              جملة عربية — بلا عزل ينعكس ترتيب المقطع ويتحوّل الرقم لاتحاد
+              هندي الشكل، نفس علّة "(MIS)" في فقرة ركيزة «الهدف» أدناه. */}
           <p className="mt-s6 max-w-measure text-lg leading-loose text-fg-muted">
-            {ABOUT_INTRO.body[0]}
+            {isolateLatin(ABOUT_INTRO.body[0])}
           </p>
 
           {/* علامة سنة التأسيس — تفصيلٌ واقعيّ هادئ، بضربة ميلانٍ واحدة.
               الرقم لاتينيّ بطلبٍ مباشر، ويُقرأ من `FOUNDED_YEAR` مباشرةً بلا
               تحويل — ونصّ الفقرة أعلاه وُحِّد معه فلا تختلف السنة بين
-              موضعين في القسم نفسه. */}
+              موضعين في القسم نفسه. ⚠️ مُمرَّرٌ عبر `isolateLatin` بعد
+              دمجه في جملة واحدة — نفس سبب الفقرة أعلاه. */}
           <p className="mt-s6 inline-flex items-center gap-s3 text-sm font-semibold tracking-wide text-accent">
             <span
               aria-hidden
               className="mis-slant inline-block h-4 w-1 shrink-0 bg-accent"
             />
-            منذ عام {FOUNDED_YEAR}
+            {isolateLatin(`منذ عام ${FOUNDED_YEAR}`)}
           </p>
         </section>
 
@@ -162,8 +166,12 @@ export default function HomePage() {
                   className="mis-slant mt-s4 inline-block h-1 w-10 shrink-0 bg-accent"
                 />
 
+                {/* ⚠️ `isolateLatin` لازمة: ركيزة «الهدف» تحوي "(MIS)" وسط
+                    جملة عربية — كانت تُرسَم خامًا فتنعكس بصريًّا. الركيزتان
+                    الأخريان («الرسالة»/«الرؤية») لا تحويان أي مقطع لاتيني
+                    أو رقمي، فالعزل هنا بلا أثر ظاهر عليهما — لا ضرر منه. */}
                 <p className="mt-s4 flex-1 leading-loose text-fg-muted">
-                  {pillar.body}
+                  {isolateLatin(pillar.body)}
                 </p>
               </li>
             ))}
