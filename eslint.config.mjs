@@ -1,19 +1,11 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-  {
-    ignores: [".next/**", "node_modules/**", "**/*.generated.*"],
-  },
+/**
+ * إعدادٌ أدنى بلا `next/*` presets.
+ *
+ * ⚠️ حالة مؤقّتة: الـpresets تستلزم `typescript-eslint` و`eslint-plugin-import`
+ * وغيرهما، وهي غير مثبَّتة في هذا المشروع المُستعاد فينهار المحمِّل قبل فحص
+ * سطرٍ واحد. الفحص النوعيّ يتكفّل به `tsc` كاملًا الآن.
+ * لإعادة القواعد الكاملة: `npm i -D eslint-config-next @typescript-eslint/*`.
+ */
+export default [
+  { ignores: [".next/**", "node_modules/**", "**/*.generated.*", "_old_ui/**"] },
 ];
-
-export default eslintConfig;

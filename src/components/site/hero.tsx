@@ -1,21 +1,18 @@
-import Link from "next/link";
-
-import { Reveal } from "@/components/motion";
-import { RakedField } from "@/components/site/raked-field";
-import { PRIMARY_ACTION } from "@/content/navigation";
+import { Mark } from "@/components/site/mark";
 
 /**
- * الواجهة الأولى.
+ * الواجهة الأولى — «العلامة المحفورة».
  *
- * الحقل المائل يعيش **هنا** لا خلف الصفحة كلّها: القاعدة في `.impeccable.md`
- * أن الميلان توقيعٌ لا نمط — موضعان اثنان في الموقع، هذا والتذييل.
+ * **التركيب:** مسرحٌ ملتصق بارتفاع الطية. العلامة بمقاسٍ ضخم أسفل يسار تنزف
+ * عن الحافّة المنتهية وتجلس على القاع، والنصّ أعلى يمين، وحقلٌ فاتح حافّته
+ * مقصوصة ٢٤° يفصل المستويين. المكدّس المعتاد مكسورٌ عمدًا: لا لصيقة فوق
+ * العنوان ولا زرّ تحته — الإجراء في الشريط وحده.
  *
- * التركيب مقصود ألّا يكون الكومة المعتادة (لصيقة ← عنوان ← سطر ← زرّان):
- * المحتوى مرسًى إلى قاع الإطار، والحالة تجلس على خطّ قاعدة العنوان لا تحته.
+ * ⚠️ **لا يُخفى محتوًى بانتظار حركة.** العنوان والشارح والحالة مرسومةٌ كاملةً
+ * من أول إطار. والحركة كلّها في `MarkMorph`، وهي زخرفة.
  *
- * ⚠️ **قائمة المشاريع الستة أُزيلت من هنا** بطلب مباشر. كانت نقلًا لبنية
- * المرجع (قائمة خدمات أحادية المسافة)، وهي تزاحم العنوان وتكرّر ما في قسم
- * المشاريع أسفل الصفحة. النصوص الأربعة أدناه هي نصوص الواجهة الأصلية.
+ * حافّة الحقل مبنيّةٌ من `linear-gradient` بزاوية `90° + 24°`، فتكون دقيقةً
+ * **بالبناء** مهما تغيّر ارتفاع الكتلة — لا بحسابٍ يدويّ يفسد عند أي مقاس.
  */
 
 type HeroProps = {
@@ -25,53 +22,113 @@ type HeroProps = {
 
 export function Hero({ isOpen }: HeroProps) {
   return (
-    <section className="raked-field grain grid min-h-[calc(100svh-var(--header-h))] grid-rows-[1fr_auto] px-s4 py-s6 text-on-ink sm:px-s7 sm:py-s7">
-      <RakedField id="hero" />
+    <section
+      aria-labelledby="hero-heading"
+      className="relative grid h-[150svh]"
+    >
+      <div className="sticky top-[var(--header-h)] h-[calc(100svh-var(--header-h))] overflow-hidden [grid-area:1/1]">
+        {/* الحقل الفاتح — الزاوية من التدرّج نفسه، ٩٠°+٢٤° */}
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-[linear-gradient(114deg,var(--surface-sunken)_0_57%,transparent_57%)]"
+        />
 
-      <div className="mx-auto grid w-full max-w-6xl items-end gap-s5 self-end lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-s7">
-        <div>
-          <Reveal>
-            {/* اسم الجهة لا لصيقة زينة: سطر واحد بلا كبسولة ولا حروف مباعدة */}
-            <p className="mb-s3 text-sm font-medium text-on-ink">
-              نادي نظم المعلومات الإدارية في جامعة الملك سعود
-            </p>
-          </Reveal>
+        {/* مرساة العلامة: التخطيط يحكم أين ترتسم، ولا إحداثيات في JS.
+            ⚠️ `Mark` يقبل `className` و`decorative` فقط ولا ينشر خصائص
+            أخرى — فـ`data-mark-static` تُوضع على الغلاف لا عليه.
 
-          <Reveal>
-            {/* سطران بكسر مقصود بعد الفاصلة — على الجوال يترك للنص أن ينساب.
-                بلا `leading-`: الارتفاع من `--lh-display` وحده. */}
-            <h1 className="max-w-[22ch] font-display text-display font-bold text-snow">
-              بين الإدارة والتقنية،
-              <br className="hidden sm:block" /> نصنع الأثر.
-            </h1>
-          </Reveal>
+            ⚠️ **الجوّال القصير حالةٌ ثالثة، لا مجرّد أضيق.** نسبة الجوّال
+            المعتادة (٢٣٥٪ العرض) ثابتة النسبة (2701:1016)، فارتفاعها يكبر
+            معها — ٢٨٣px على عرض 320. على مسرحٍ طويل هذا يبقى ضمن المسافة
+            بين الشارح والكولوفون، لكن على مسرحٍ قصير (568px ارتفاعًا
+            فأقلّ ≈ 492px للمسرح) يبتلع تلك المسافة كاملةً فيعلو فوق
+            الكولوفون. قِسته حيًّا: shard #3 (الشريحة الكاملة الارتفاع
+            وسط العلامة) يغطّي فعليًّا سطري الكولوفون عند القياس
+            بـ`elementFromPoint` — لا تقاطعَ صناديقَ نظريًّا بل تغطيةٌ
+            مؤكَّدة. تصغير العرض وحده لا يفصلهما (الكولوفون بعرضٍ شبه
+            كامل للشاشة أصلًا)؛ فالحلّ ارتفاعٌ مضبوطٌ بشرط ثانٍ
+            (`max-height`) لا عرضٌ فقط.
 
-          <Reveal>
-            <p className="mt-s4 max-w-[54ch] text-lead text-snow">
-              مجتمع طلابي يحوّل المعرفة إلى خبرة، والأفكار إلى مشاريع، والطموح
-              إلى مستقبل مهني أوضح.
-            </p>
-          </Reveal>
+            القيم (١١٨٪ عرض ≈ 142px ارتفاع) مقيسةٌ حيًّا لتملأ عرض الشاشة
+            كاملًا ضمن الفجوة الحقيقية بين الشارح (ينتهي 301px) والكولوفون
+            (يبدأ 496px)، بهامشٍ ١٩px عن الشارح و٣٤px عن الكولوفون —
+            لا تصغيرٌ إلى شعارٍ صغير، بل نفس الحجم تقريبًا مُعادَ توضيعه.
+
+            كانت هنا ملاحظةٌ عن علّةٍ منفصلة: بين تمرير 570-645px تتقارب
+            الأضلاعُ الستّة أثناء انتقالها نحو خاناتها فتكتسح شريطًا كان
+            يغطّي الكولوفون — أُصلحت الآن ببنية الكولوفون نفسها (مسرحٌ
+            ملتصقٌ ثانٍ أسفل هذا القسم)، لا بهندسة هذا المرساة. */}
+        <div
+          aria-hidden
+          data-mark-anchor="hero"
+          className="absolute bottom-[-3%] left-[-10%] w-[72%] max-md:bottom-[-4%] max-md:left-[-46%] max-md:w-[235%] max-md:[@media(max-height:700px)]:bottom-[22%] max-md:[@media(max-height:700px)]:left-[-10%] max-md:[@media(max-height:700px)]:w-[118%]"
+          style={{ aspectRatio: "2701 / 1016" }}
+        >
+          <div data-mark-static="" className="h-full w-full">
+            <Mark decorative className="h-full w-full text-surface-floor" />
+          </div>
         </div>
 
-        <Reveal className="grid justify-items-start gap-s3">
-          <p className="inline-flex items-center gap-s2 text-sm font-semibold text-snow">
-            <span aria-hidden className="mis-slant inline-block h-3.5 w-1 bg-snow" />
+        <div className="absolute inset-x-s4 top-s5 max-w-[60rem] sm:inset-x-s7">
+          <h1
+            id="hero-heading"
+            /* ⚠️ **تجاوزٌ ضيّق دون 350px فقط.** أرضية `clamp` في `--t-display`
+               تستقرّ على 2rem عند هذي العروض، وقسم العنوان الأول «بين
+               الإدارة والتقنية،» يفيض بـ٢٠.٤٥px داخل حاوية 288px عند 320px
+               فينكسر سطرين فيصير المجموع ثلاثة — يخالف «سطران لا ثالث».
+               مقيسٌ لا مقدَّر: 1.8rem يفسح للنصّ نفسه هامش أمانٍ ثابتًا،
+               ويُطبَّق أضيق نطاقٍ ممكن (`max-[349px]`) فلا يُصغَّر العنوان
+               فوق 349px حيث `text-display` وحدها تكفي أصلًا لسطرين. */
+            className="font-display text-display max-[349px]:text-[1.8rem] font-bold leading-display tracking-[-0.014em] text-surface-floor"
+          >
+            بين الإدارة والتقنية،
+            <br />
+            نصنع الأثر.
+          </h1>
+          <p className="mt-s5 max-w-[36ch] text-lead leading-body text-fg-muted">
+            مجتمع طلابي يحوّل المعرفة إلى خبرة، والأفكار إلى مشاريع، والطموح إلى
+            مستقبل مهني أوضح.
+          </p>
+        </div>
+      </div>
+
+      {/* ⚠️ **الكولوفون في مسرحٍ ملتصقٍ ثانٍ منفصل، لا داخل الأوّل عمدًا.**
+          `position: sticky` يُنشئ سياق تراكبٍ إلزاميًا (كـ`isolation:
+          isolate` تمامًا) — أيّ z-index داخل المسرح الأوّل محبوسٌ فيه ولا
+          يمكنه منافسة طبقة MarkMorph خارجه؛ هذا ما تكتسحه القطعُ الطائرة
+          أثناء انتقالها من الواجهة نحو الخانات (مقاسٌ عبر elementFromPoint
+          على 320×568 و768×1024). الحلّ ليس z-index داخل المسرح الأوّل —
+          ذاك لن ينجح أبدًا — بل مسرحٌ ملتصقٌ **مستقلّ**: يحمل z-index
+          صريحًا خاصًا به فيقارَن مباشرةً بطبقة MarkMorph (z-[1]) لا
+          بمحتوى المسرح الأوّل، فيفوز دون شرط توقيتٍ أو تعادل.
+
+          `[grid-area:1/1]` على الشبكة في `<section>` تُطابق المسرحين في
+          نفس الخانة، فيلتصقان بنفس `top` في نفس اللحظة بالضبط — لا فرق
+          توقيتٍ بينهما.
+
+          ⚠️ **`pointer-events-none` على الغلاف، لكن `auto` على صندوق
+          النصّ تحديدًا — لا على الغلاف وحده ولا على كليهما.** الغلاف
+          يمتدّ ارتفاع المسرح كاملًا (`h-[calc(100svh-var(--header-h))]`)
+          فيغطّي مكان العنوان أعلى الشاشة أيضًا رغم أن الكولوفون نفسه
+          أسفلها فقط؛ لو بقي الغلاف قابلًا للنقر لحجب أي اختبار إصابة على
+          العنوان (`elementFromPoint` يعيد صندوق الغلاف الشفّاف بدل
+          العنوان أو القطعة الطائرة خلفه). ولو صار الغلاف بلا استثناء
+          `pointer-events:none` تُورَث إلى فقرتَي الكولوفون فتصبحان غير
+          قابلتين لاختبار الإصابة أصلًا — فيتخطّاهما `elementFromPoint`
+          (الذي يعتمده `__audit.coverage()`) إلى ما خلفهما بصرف النظر عن
+          z-index، فيبدو الفحص سليمًا حتى لو غطّتهما قطعةٌ فعلًا. الحلّ:
+          `none` على الغلاف الواسع، `auto` مُعادٌ صراحةً على صندوق النصّ
+          الضيّق وحده — يرث أبناؤه (`<p>`) الإعادة فيبقيان قابلين
+          للاختبار، وما تبقّى من الغلاف يبقى شفّافًا لأي اختبارٍ آخر. */}
+      <div className="pointer-events-none sticky top-[var(--header-h)] z-[2] h-[calc(100svh-var(--header-h))] [grid-area:1/1]">
+        {/* `start-*` هي أداة الإزاحة المنطقية في Tailwind v4 — في RTL تعني
+            اليمين، وهو المطلوب: الكولوفون يبدأ من حيث تبدأ القراءة. */}
+        <div className="pointer-events-auto absolute bottom-s5 start-s4 max-w-[34rem] text-sm leading-body text-fg-muted sm:start-s7">
+          <p>نادي نظم المعلومات الإدارية · جامعة الملك سعود</p>
+          <p className="font-semibold text-fg">
             {isOpen ? "التقديم مفتوح" : "التقديم مغلق حاليًا"}
           </p>
-          {isOpen ? (
-            <Link
-              href={PRIMARY_ACTION.href}
-              className="rake rake-sm rake-interactive inline-flex min-h-11 items-center bg-snow px-s5 font-semibold text-deep transition-colors hover:bg-sky"
-            >
-              {PRIMARY_ACTION.label}
-            </Link>
-          ) : (
-            <p className="max-w-[28ch] text-sm text-snow">
-              يُفتح التقديم لكل اللجان والمشاريع في اللحظة نفسها. تابع الإعلان.
-            </p>
-          )}
-        </Reveal>
+        </div>
       </div>
     </section>
   );

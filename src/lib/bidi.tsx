@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode } from "react";
 
 /**
- * يعزل كل مقطع لاتيني أو رقمي داخل نص عربي.
+ * يعزل كل عبارة لاتينية أو رقمية داخل نص عربي.
  *
  * لماذا أداةٌ بدل عزل يدوي في المحتوى: هذا أكثر خطأ يتكرّر في واجهات `RTL`،
  * ويعتمد على تذكّر كاتب المحتوى في كل مرة. والمحتوى هنا منقول حرفيًا من
@@ -11,8 +11,25 @@ import { Fragment, type ReactNode } from "react";
  *
  *   isolateLatin('أن يكون MISology المرجع الأول')
  *   → أن يكون <span dir="ltr">MISology</span> المرجع الأول
+ *
+ * ⚠️ **العبارة كلّها تُعزل في صندوقٍ واحد، لا كلمةً كلمة.** عبارةٌ من كلمتين
+ * («Job Shadowing») لو خرجت في صندوقين متجاورين —
+ * `<span dir="ltr">Job</span> <span dir="ltr">Shadowing</span>` — انقلب
+ * ترتيبهما بصريًا إلى «Shadowing Job»: صندوقان معزولان يفصل بينهما فراغٌ
+ * محايد يُرتَّبان وفق اتجاه الفقرة المحيطة (RTL) لا وفق ترتيبهما في المصدر.
+ * رُصد هذا فعليًّا في فهرس المشاريع (مشروع «Job Shadowing») — أول محتوًى في
+ * المستودع بعبارة لاتينية من كلمتين، فلم يكشفه شيء قبله. لذا يضمّ النمط
+ * أدناه كلمات العبارة المتتالية في مطابقةٍ واحدة، بشرط فراغٍ مفردٍ بينها؛
+ * فراغٌ يليه حرفٌ عربي يُنهي العبارة ويبقى خارج العزل.
+ *
+ *   isolateLatin('التقديم مغلق حاليًا في Job Shadowing هذا الفصل')
+ *   → ...حاليًا في <span dir="ltr">Job Shadowing</span> هذا الفصل
  */
-const LATIN_RUN = /([A-Za-z][A-Za-z0-9._@&+/-]*|\d[\d.,:/-]*\d|\d)/g;
+const LATIN_TOKEN = "[A-Za-z][A-Za-z0-9._@&+/-]*|\\d[\\d.,:/-]*\\d|\\d";
+const LATIN_RUN = new RegExp(
+  `((?:${LATIN_TOKEN})(?: (?:${LATIN_TOKEN}))*)`,
+  "g",
+);
 
 export function isolateLatin(text: string): ReactNode {
   const parts = text.split(LATIN_RUN);

@@ -1,9 +1,7 @@
 import Image from "next/image";
 
 import { Hero } from "@/components/site/hero";
-import { MarkMorph } from "@/components/site/mark-morph";
 import { PillarMark, type PillarMarkShape } from "@/components/site/pillar-mark";
-import { ProjectIndex } from "@/components/site/project-index";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { ABOUT_INTRO, ALL_PARTNERS, FOUNDED_YEAR, PILLARS } from "@/content/about";
@@ -25,13 +23,10 @@ export default function HomePage() {
 
   return (
     <>
-      <MarkMorph />
       <SiteHeader />
 
       <main id="main">
         <Hero isOpen={isOpen} />
-
-        <ProjectIndex />
 
         {/* ══════════════════════════════════════════════════════════════
             من نحن
@@ -60,25 +55,21 @@ export default function HomePage() {
             {ABOUT_INTRO.lede}
           </p>
 
-          {/* الفقرة التعريفية — بخط المتن، بعرضٍ مقروء لا يتجاوز المقاس.
-              ⚠️ `isolateLatin` لازمة: النصّ يحوي رقم التأسيس "2013" وسط
-              جملة عربية — بلا عزل ينعكس ترتيب المقطع ويتحوّل الرقم لاتحاد
-              هندي الشكل، نفس علّة "(MIS)" في فقرة ركيزة «الهدف» أدناه. */}
+          {/* الفقرة التعريفية — بخط المتن، بعرضٍ مقروء لا يتجاوز المقاس */}
           <p className="mt-s6 max-w-measure text-lg leading-loose text-fg-muted">
-            {isolateLatin(ABOUT_INTRO.body[0])}
+            {ABOUT_INTRO.body[0]}
           </p>
 
           {/* علامة سنة التأسيس — تفصيلٌ واقعيّ هادئ، بضربة ميلانٍ واحدة.
               الرقم لاتينيّ بطلبٍ مباشر، ويُقرأ من `FOUNDED_YEAR` مباشرةً بلا
               تحويل — ونصّ الفقرة أعلاه وُحِّد معه فلا تختلف السنة بين
-              موضعين في القسم نفسه. ⚠️ مُمرَّرٌ عبر `isolateLatin` بعد
-              دمجه في جملة واحدة — نفس سبب الفقرة أعلاه. */}
+              موضعين في القسم نفسه. */}
           <p className="mt-s6 inline-flex items-center gap-s3 text-sm font-semibold tracking-wide text-accent">
             <span
               aria-hidden
               className="mis-slant inline-block h-4 w-1 shrink-0 bg-accent"
             />
-            {isolateLatin(`منذ عام ${FOUNDED_YEAR}`)}
+            منذ عام {FOUNDED_YEAR}
           </p>
         </section>
 
@@ -166,12 +157,8 @@ export default function HomePage() {
                   className="mis-slant mt-s4 inline-block h-1 w-10 shrink-0 bg-accent"
                 />
 
-                {/* ⚠️ `isolateLatin` لازمة: ركيزة «الهدف» تحوي "(MIS)" وسط
-                    جملة عربية — كانت تُرسَم خامًا فتنعكس بصريًّا. الركيزتان
-                    الأخريان («الرسالة»/«الرؤية») لا تحويان أي مقطع لاتيني
-                    أو رقمي، فالعزل هنا بلا أثر ظاهر عليهما — لا ضرر منه. */}
                 <p className="mt-s4 flex-1 leading-loose text-fg-muted">
-                  {isolateLatin(pillar.body)}
+                  {pillar.body}
                 </p>
               </li>
             ))}
@@ -255,17 +242,11 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* ⚠️ كانت هنا `<div className="relative z-10">` — بقيّةٌ «من أيام
-          الحقل الثابت خلف الصفحة» (تعليقها الأصلي) التي لم تعد موجودة.
-          أثرها الآن: `z-10` مع عزل `.raked-field` (`isolation: isolate`)
-          يرفعان التذييل **كتلةً واحدة** فوق طبقة `MarkMorph` (`z-[1]`),
-          فأرضية التذييل المصمتة تُرسم فوق الأضلاع الطائرة دائمًا — حتى
-          حين تهبط بدقّة على مرساتها. النتيجة: علامةٌ «تجتمع» هندسيًّا
-          (`vsFoot: 0`) لكنها **غير مرئية أبدًا** خلف أرضية التذييل — يفشل
-          الغرض الوحيد من هذي المهمّة. رُفع الغلاف فعاد التذييل يشارك في
-          الترتيب الطبيعي (كـ`main` تمامًا)، فتُرسم الأضلاعُ فوقه كما تُرسم
-          فوق أي قسم آخر، ويحميها نصَّه بصنف `above-mark` كما في البقيّة. */}
-      <SiteFooter />
+      {/* `relative z-10` من أيام الحقل الثابت خلف الصفحة؛ يبقى لأن `main`
+          صار `relative` لأجل الضوء الراكِع، فالرفع يضمن ترتيب الرسم. */}
+      <div className="relative z-10">
+        <SiteFooter />
+      </div>
     </>
   );
 }

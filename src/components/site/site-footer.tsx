@@ -15,7 +15,11 @@ import { ABOUT_SECTION, FOOTER_LINKS } from "@/content/navigation";
  */
 
 const LINK_CLASS =
-  "inline-flex min-h-11 items-center text-sm text-on-ink-dim " +
+  /* ⚠️ **`px-s2` إلزامي لا زخرفة** — نفس علّة `nav-links.tsx`: بلا حشوٍ
+     أفقي كان عرض «اللجان» 33.56px (أقصر بـ10.44px) و«المقالات» 43.21px.
+     الحشو مُضاف على الجهتين فيرفع «اللجان» — أضيق رابطٍ في التذييل — إلى
+     ٤٩.٥٦px، بهامش أمان لا بالحدّ بالضبط. */
+  "inline-flex min-h-11 items-center px-s2 text-sm text-on-ink-dim " +
   "transition-colors hover:text-snow";
 
 export function SiteFooter() {
@@ -25,7 +29,7 @@ export function SiteFooter() {
      السفلي (64px) يبقى: هو إيقاع الأقسام لا هامش التذييل. */
   return (
     <footer className="raked-field grain text-on-ink">
-      <div className="mx-auto max-w-6xl px-s4 pt-s7 sm:px-s7">
+      <div className="above-mark mx-auto max-w-6xl px-s4 pt-s7 sm:px-s7">
         <nav
           className="grid gap-s6 sm:grid-cols-2 lg:grid-cols-3"
           aria-label="روابط التذييل"
@@ -109,6 +113,30 @@ export function SiteFooter() {
           <p className="text-sm text-on-ink-dim">
             نادي نظم المعلومات الإدارية — جامعة الملك سعود
           </p>
+        </div>
+      </div>
+
+      {/* اجتماع العلامة — الشعار ملتصقٌ بالحافّة السفلى بلا فجوة تحته،
+          فيُقرأ توقيعًا لا نصًّا مركونًا.
+          ⚠️ `data-mark-static` على الغلاف لا على `Mark` — فهو لا ينشر خصائص.
+          ⚠️ **حشو الجهتين (`px-s4`/`sm:px-s7`) على غلافٍ خارجيٍّ يحيط
+          بالمرساة، لا على `[data-mark-anchor]` نفسها.** كان الحشو على نفس
+          عنصر المرساة، فيدخل داخل الصندوق الذي يقيسه `getBoundingClientRect`
+          (يشمل الحشو دومًا) بينما الشعار الساكن بداخلها يملأ صندوق
+          *المحتوى* فقط (`h-full w-full` بعد الحشو) — فيكبر `kFoot` في
+          `mark-morph.tsx` عن حجم الشعار المرسوم فعليًا. قِيس فعليًّا: على
+          1280px الشعار المتشكّل 1152px@x=64 مقابل الساكن 1056px@x=112
+          (٤٨px لكل جهة)، وعلى 320px: 320 مقابل 288. المرساة الآن بلا حشوٍ
+          خاصٍّ بها، فصندوقها المقيس هو صندوق الشعار المرسوم بالضبط. */}
+      <div aria-hidden className="mx-auto mt-s8 w-full max-w-[72rem] px-s4 sm:px-s7">
+        <div
+          data-mark-anchor="foot"
+          className="w-full"
+          style={{ aspectRatio: "2701 / 1016" }}
+        >
+          <div data-mark-static="" className="h-full w-full">
+            <Mark decorative className="h-full w-full text-on-ink" />
+          </div>
         </div>
       </div>
     </footer>
