@@ -79,6 +79,10 @@
         return n.nodeType === 3 && n.textContent.trim();
       });
       if (!hasText) return;
+      /* عناصر بمساحة صفر (قوائم جوال مطويّة داخل حاوية تُصفَّر ارتفاعها لا
+         بـ display:none) لا تُرسم فعليًا — فحص لونها كذبٌ لا دفاعًا. */
+      var rect = el.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
       var cs = getComputedStyle(el);
       if (cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity === 0) return;
       var fs = parseFloat(cs.fontSize), w = parseInt(cs.fontWeight, 10) || 400;
