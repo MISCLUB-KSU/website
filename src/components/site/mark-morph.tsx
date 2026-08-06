@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import { MARK_POINTS } from "@/lib/geometry.generated";
+import { MARK_BOXES } from "@/lib/mark-boxes";
 
 /**
  * العلامة تتشكّل مع التمرير.
@@ -33,19 +34,11 @@ import { MARK_POINTS } from "@/lib/geometry.generated";
  * القرار يُعاد كل استدعاءٍ لـ`place()` فيتعافى تلقائيًا حين تكتمل المرساتان.
  */
 
-/** الصندوق المحيط بضلعٍ داخل `viewBox` الشعار */
-type Box = { x: number; y: number; w: number; h: number };
-
 const VIEWBOX_W = 2701;
 
-const BOXES: readonly Box[] = MARK_POINTS.map((points) => {
-  const pairs = points.split(" ").map((pair) => pair.split(",").map(Number));
-  const xs = pairs.map(([x]) => x);
-  const ys = pairs.map(([, y]) => y);
-  const x = Math.min(...xs);
-  const y = Math.min(...ys);
-  return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
-});
+/* الصناديق تأتي من `@/lib/mark-boxes` — مصدرٌ مشتركٌ مع `project-index.tsx`
+   بدل حسابٍ محلّي مكرَّر (انظر تعليق ذلك الملف). */
+const BOXES = MARK_BOXES;
 
 const clamp = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 /** تسارعٌ ثم تباطؤ — يجعل الانتقال يبدأ ويستقرّ بهدوء */
