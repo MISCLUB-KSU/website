@@ -1,5 +1,4 @@
 import { Mark } from "@/components/site/mark";
-import { PRIMARY_ACTION } from "@/content/navigation";
 
 /**
  * الواجهة الأولى — «العلامة المحفورة».
@@ -51,7 +50,14 @@ export function Hero({ isOpen }: HeroProps) {
         <div className="absolute inset-x-s4 top-s5 max-w-[60rem] sm:inset-x-s7">
           <h1
             id="hero-heading"
-            className="font-display text-display font-bold leading-display tracking-[-0.014em] text-surface-floor"
+            /* ⚠️ **تجاوزٌ ضيّق دون 350px فقط.** أرضية `clamp` في `--t-display`
+               تستقرّ على 2rem عند هذي العروض، وقسم العنوان الأول «بين
+               الإدارة والتقنية،» يفيض بـ٢٠.٤٥px داخل حاوية 288px عند 320px
+               فينكسر سطرين فيصير المجموع ثلاثة — يخالف «سطران لا ثالث».
+               مقيسٌ لا مقدَّر: 1.8rem يفسح للنصّ نفسه هامش أمانٍ ثابتًا،
+               ويُطبَّق أضيق نطاقٍ ممكن (`max-[349px]`) فلا يُصغَّر العنوان
+               فوق 349px حيث `text-display` وحدها تكفي أصلًا لسطرين. */
+            className="font-display text-display max-[349px]:text-[1.8rem] font-bold leading-display tracking-[-0.014em] text-surface-floor"
           >
             بين الإدارة والتقنية،
             <br />

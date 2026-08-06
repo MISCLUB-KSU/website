@@ -113,6 +113,7 @@
     var slots = [].slice.call(document.querySelectorAll('[data-mark-slot]'));
     var sh = [].slice.call(document.querySelectorAll('[data-mark-shard]'));
     if (!sh.length) return { skipped: 'لا طبقة متشكّلة (تقليل حركة أو بلا JS)' };
+    if (!hero || !foot) return { skipped: 'مرساة الواجهة أو التذييل غير موجودة' };
     function err(anchor, k) {
       var a = anchor.getBoundingClientRect(), s = a.width / 2701;
       return +Math.max.apply(null, sh.map(function (el, i) {

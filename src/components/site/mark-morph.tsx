@@ -24,6 +24,13 @@ import { MARK_POINTS } from "@/lib/geometry.generated";
  * ⚠️ **إحداثيات فيزيائية لا منطقية.** الطبقة `dir="ltr"` وتُموضَع بـ
  * `left/top`؛ الحساب يأتي من `rect.left`. استعمال `inset-inline-start` هنا
  * أزاح كل شيء بعرض الشاشة في أول بناء — لأنها تعني «اليمين» في RTL.
+ *
+ * ⚠️ **صفحةٌ ناقصة إحدى المرساتين تُخفي الطبقة كاملةً، لا ترسم عطلًا.**
+ * `[data-mark-anchor="hero"]` و`[data-mark-anchor="foot"]` كلاهما لازم؛
+ * بلا أحدهما تُخفى الطبقة (`visibility:hidden`) وتُزال `mark-morphing` عن
+ * `<html>` فتبقى العلامات الثابتة ظاهرة — بدل ترك الأضلاع الستّة مبنيّة
+ * بلا `transform`، فترتسم بأبعادها الخام (حتى 812×1016px) في زاوية الشاشة.
+ * القرار يُعاد كل استدعاءٍ لـ`place()` فيتعافى تلقائيًا حين تكتمل المرساتان.
  */
 
 /** الصندوق المحيط بضلعٍ داخل `viewBox` الشعار */
@@ -63,7 +70,23 @@ export function MarkMorph() {
       const hero = document.querySelector<HTMLElement>('[data-mark-anchor="hero"]');
       const foot = document.querySelector<HTMLElement>('[data-mark-anchor="foot"]');
       const slots = Array.from(document.querySelectorAll<HTMLElement>("[data-mark-slot]"));
-      if (!hero || !foot) return;
+
+      /* ⚠️ **صفحةٌ ناقصة إحدى المرساتين تُخفي الطبقة كاملةً — لا ترسم
+         أضلاعًا بأبعادها الخام عند (0,0).** كل صفحةٍ داخلية اليوم (اللجان
+         والمشاريع والمقالات...) بلا أي مرساة، وكذا الرئيسية قبل اكتمال
+         مرساة التذييل. `build()` أنشأت الأضلاع بلا شرط، فبقاؤها بلا
+         `transform` يُظهرها بعرضها/ارتفاعها الخام (حتى 812×1016px) في زاوية
+         الشاشة — كتلةٌ مموّهة تحجب المحتوى، لا تدهورًا آمنًا. الإخفاء هنا
+         مرتبطٌ بنتيجة كل استدعاء (لا مرّةً عند البناء) فيتعافى تلقائيًا في
+         اللحظة التي تكتمل فيها المرساتان، ويُخفي الطبقة من جديد لو غابت
+         إحداهما لاحقًا. */
+      if (!hero || !foot) {
+        host.style.visibility = "hidden";
+        document.documentElement.classList.remove("mark-morphing");
+        return;
+      }
+      host.style.visibility = "";
+      document.documentElement.classList.add("mark-morphing");
 
       const a = hero.getBoundingClientRect();
       const f = foot.getBoundingClientRect();
@@ -131,6 +154,7 @@ export function MarkMorph() {
       frame = 0;
       host.textContent = "";
       shards = [];
+      host.style.visibility = "";
       document.documentElement.classList.remove("mark-morphing");
       live = false;
     };
@@ -142,7 +166,8 @@ export function MarkMorph() {
       }
       if (live) return;
       live = true;
-      document.documentElement.classList.add("mark-morphing");
+      /* `mark-morphing` وإظهار الطبقة يُقرَّران داخل place() نفسها —
+         مرتبطان بوجود المرساتين فعليًا لا بمجرّد قرار "تشغيل" المكوّن. */
       build();
       window.addEventListener("scroll", schedule, { passive: true });
       window.addEventListener("resize", schedule);
