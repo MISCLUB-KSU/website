@@ -37,6 +37,71 @@
 }
 
 /* ==========================================================================
+   جسر الرموز → Tailwind v4
+
+   `tokens.generated.css` يعرّف الرموز في `:root` فقط، وTailwind لا يولّد
+   صنفًا لرمزٍ غير مسجَّل في `@theme`. فبدون هذي الكتلة تنزل `px-s4` و
+   `text-fg` و`font-display` **صامتةً بلا خطأ بناء** — وهذا ما جعل عنوان
+   الواجهة يُرسم 16px أبيض على أبيض.
+
+   `inline` مقصودة: تُبقي القيمة `var(--token)` حيّةً وقت التشغيل، فينقلب
+   الوضع الداكن مع `[data-theme="dark"]` بلا إعادة توليد.
+   ========================================================================== */
+@theme inline {
+  /* المسافات — سلّم 4px */
+  --spacing-s1: var(--s1);
+  --spacing-s2: var(--s2);
+  --spacing-s3: var(--s3);
+  --spacing-s4: var(--s4);
+  --spacing-s5: var(--s5);
+  --spacing-s6: var(--s6);
+  --spacing-s7: var(--s7);
+  --spacing-s8: var(--s8);
+  --spacing-s9: var(--s9);
+  --spacing-s10: var(--s10);
+
+  /* الأدوار الدلالية — لا الألوان الخام */
+  --color-fg: var(--ink);
+  --color-fg-muted: var(--ink-quiet);
+  --color-fg-invert: var(--on-ink);
+  --color-accent: var(--action);
+  --color-accent-hover: var(--action-hover);
+  --color-accent-fg: var(--on-action);
+  --color-bg: var(--surface);
+  --color-bg-raised: var(--surface-raised);
+  --color-bg-sunken: var(--surface-sunken);
+  --color-surface-ink: var(--surface-ink);
+  --color-surface-floor: var(--surface-floor);
+  --color-on-ink: var(--on-ink);
+  --color-on-ink-dim: var(--on-ink-dim);
+  --color-on-ink-quiet: var(--on-ink-quiet);
+  --color-border: var(--line);
+  --color-border-quiet: var(--line-quiet);
+  --color-border-strong: var(--line-control);
+  --color-ring: var(--focus);
+
+  /* المقاسات وارتفاعات السطور */
+  --text-display: var(--t-display);
+  --text-lead: var(--t-lead);
+  --leading-display: var(--lh-display);
+  --leading-head: var(--lh-head);
+  --leading-body: var(--lh-body);
+
+  /* عرض الفقرة المريح */
+  --container-measure: var(--measure);
+}
+
+/* ⚠️ الخطّان **قيمتان حرفيّتان** لا `var()`: اسم مفتاح Tailwind
+   (`--font-display`) يطابق اسم الرمز الخام حرفًا بحرف، فـ`var(--font-display)`
+   داخل `@theme` تشير إلى نفسها فتبطل. والقيمة هنا تغلب قيمة الرموز لأنها
+   تُكتب بعدها على `:root` — فلا تفترق نسختان. وحصّالة القياس تتحقّق من
+   تطابقهما، فإن أعاد `brand/v2/build.mjs` توليد خطٍّ جديد رسب الفحص. */
+@theme {
+  --font-display: "Noto Kufi Arabic", "Plex Kufi", system-ui, sans-serif;
+  --font-text: "IBM Plex Sans Arabic", system-ui, sans-serif;
+}
+
+/* ==========================================================================
    رموز دلالية — المكوّنات تستخدم هذي، لا الألوان مباشرة.
    يخلي تبديل الوضع الفاتح/الداكن يتم من مكان واحد.
    ========================================================================== */
