@@ -1,6 +1,7 @@
 import Image from "next/image";
 
 import { Hero } from "@/components/site/hero";
+import { MarkMorph } from "@/components/site/mark-morph";
 import { PillarMark, type PillarMarkShape } from "@/components/site/pillar-mark";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
@@ -23,6 +24,7 @@ export default function HomePage() {
 
   return (
     <>
+      <MarkMorph />
       <SiteHeader />
 
       <main id="main">
