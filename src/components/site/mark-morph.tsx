@@ -100,10 +100,28 @@ export function MarkMorph() {
       const rects = rowsUsable ? slots.map((s) => s.getBoundingClientRect()) : null;
 
       const t1 = rects ? ease(clamp((window.innerHeight - rects[0].top) / (window.innerHeight * 0.5))) : 0;
+
+      /* ⚠️ **`t2` من المسافة المتبقّية حتى قاع الصفحة، لا من موضع المرساة.**
+         الصيغة القديمة (`innerHeight - f.top`) تشترط أن ترتفع حافّة مرساة
+         التذييل العلوية إلى نحو `innerHeight × 0.58` لتتشبّع — وارتفاع
+         تلك المرساة مقفولٌ بنسبة الشعار (2701:1016)، فعلى عرضٍ ضيّق يكون
+         التذييل نفسه قصيرًا فلا يبلغ قاع الصفحة تلك النقطة إطلاقًا:
+         t2 تتوقّف عند ~0.5 والعلامة لا تكتمل أبدًا (مقيسٌ: vsFoot 385.6
+         عند 768×1024، و1793.6 عند 320×568 — بينما 1280×800 وحدها تصل 0،
+         لأن تذييلها أطول من `innerHeight×0.42` هناك بمحض الصدفة).
+
+         العلاج: يقود التقدّمَ ما تبقّى من التمرير الفعلي حتى `maxScroll`
+         (نهاية المستند)، لا موضعَ المرساة على الشاشة. حين `remaining=0`
+         فـ`t2=ease(1)=1` **دائمًا**، مهما كان عرض الفتحة أو طول التذييل —
+         الاجتماع يكتمل عند القاع بالضبط في كل مرّة. طول المضمار
+         (`innerHeight × 0.42`) بقي كما كان: نفس الإحساس بالسرعة، تغيّر
+         المرجع فقط لا مدّة الانتقال. */
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      const remaining = maxScroll - window.scrollY;
       const t2 =
         t1 < 1 && rects
           ? 0
-          : ease(clamp((window.innerHeight - f.top) / (window.innerHeight * 0.42)));
+          : ease(clamp(1 - remaining / (window.innerHeight * 0.42)));
 
       shards.forEach((shard, i) => {
         const b = BOXES[i];
