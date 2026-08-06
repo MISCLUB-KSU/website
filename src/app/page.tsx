@@ -3,7 +3,6 @@ import Image from "next/image";
 import { Hero } from "@/components/site/hero";
 import { MarkMorph } from "@/components/site/mark-morph";
 import { PillarMark, type PillarMarkShape } from "@/components/site/pillar-mark";
-import { ProjectIndex } from "@/components/site/project-index";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { ABOUT_INTRO, ALL_PARTNERS, FOUNDED_YEAR, PILLARS } from "@/content/about";
@@ -31,7 +30,13 @@ export default function HomePage() {
       <main id="main">
         <Hero isOpen={isOpen} />
 
-        <ProjectIndex />
+        {/* ⚠️ قسم «ما نعمل عليه» (`ProjectIndex`) حُذف بطلب حسام.
+            وهذا يُلغي **المحطّة الوسطى** في تشكّل العلامة: كانت
+            الواجهة ← ستّ خانات ← التذييل، فصارت الواجهة ← التذييل.
+            لا يلزم تعديل `MarkMorph`: `rowsUsable = slots.length === 6`
+            تُعطّل المرحلة كلّها عند أي عددٍ آخر — والصفر منها — فتنتقل
+            العلامة مباشرةً. والطبقة لا تختفي إلا بغياب مرساتَي الواجهة
+            والتذييل، وهما باقيتان. `project-index.tsx` صار بلا مستورد. */}
 
         {/* ══════════════════════════════════════════════════════════════
             من نحن
