@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { Leaders } from "@/components/site/leaders";
 import { PageHeader } from "@/components/site/page-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
@@ -20,7 +21,9 @@ export const metadata: Metadata = {
  * لا يقرأ الخطوط. الهيكل هنا قائمة متداخلة — تُقرأ بالعين وبالقارئ سواء.
  *
  * ملاحظة خصوصية: أسماء رؤساء اللجان والوحدات موجودة في العرض المعتمد
- * ولا تُنشر — بقرار الرئاسة.
+ * ولا تُنشر — بقرار الرئاسة. وقد صار لها **موضعٌ جاهز** أعلى الصفحة
+ * (`<Leaders />`) يقرأ `LEADERS` من `content/people.ts`؛ والقائمة فارغةٌ
+ * فيحذف نفسه، فلا يظهر منه شيء حتى يصدر القرار وتُؤخذ موافقة كل شخص.
  */
 export default function StructurePage() {
   return (
@@ -37,6 +40,10 @@ export default function StructurePage() {
         />
 
         <div className="mx-auto max-w-6xl px-s4 py-s8 sm:px-s7">
+          {/* رأس الهيكل قبل لجانه. يحذف نفسه ما دامت `LEADERS` فارغة —
+              وهي كذلك حتى يصدر قرار الرئاسة بنشر الأسماء. */}
+          <Leaders />
+
           <ol className="grid gap-s5">
             {COMMITTEES.map((committee, index) => (
               <li
