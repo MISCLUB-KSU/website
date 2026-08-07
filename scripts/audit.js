@@ -192,6 +192,9 @@
     var polys = layer ? layer.querySelectorAll('polygon') : [];
     var max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
     var worst = { pct: 0, y: 0, text: null };
+    /* عدّاد الإصابات المسموحة (جوارٌ لا عبور — المهمّة ٨). يظهر في المُخرَج
+       فلا يختفي المسموح صامتًا خلف رقمٍ صفريّ لا يفسَّر. */
+    var neighbour = 0;
     /* ⚠️ فخّ بيئيّ موثَّقٌ (تقرير المهمّة ٤): تبويب لوحة المعاينة يقرأ
        document.hidden === true طوال الجلسة، فـ requestAnimationFrame
        الحقيقي لا يُطلَق عند scroll — و`place()` داخل mark-morph.tsx
@@ -238,9 +241,35 @@
         var pt = (p.ownerSVGElement || svgs[0]).createSVGPoint();
         pt.x = cx; pt.y = cy;
         var l = pt.matrixTransform(ctm.inverse());
-        try { if (p.isPointInFill(l)) return true; } catch (e) { /* بلا دعم */ }
+        try {
+          if (p.isPointInFill(l)) {
+            var host = p.closest ? p.closest('[data-mark-shard]') : null;
+            return host ? Number(host.dataset.markShard) : k;
+          }
+        } catch (e) { /* بلا دعم */ }
       }
-      return false;
+      return -1;
+    }
+    /* ⚠️ **الجوار ليس عبورًا.** مرسى كل ضلعٍ عنصرٌ زخرفيّ يسكن قسمًا
+       بعينه — فاصلُ بطاقة «الهدف» مثلًا يبعد 16px عن عنوانها. فالضلع
+       المقترب من مرساه يمرّ حتمًا قرب نصّ ذلك القسم، وعتامته حينها يجب
+       أن ترتفع (شرط الرسوّ عتامة 1). مقيسٌ: t1i=0.9636 عند لحظة التغطية
+       المُبلَّغ عنها — أي 96% من الرحلة، لا عبورًا عشوائيًّا.
+       فيُسأل عن **البنية** لا عن المسافة: أيشترك النصّ ومرسى الضلع في
+       أقرب `section` أو `li`؟ إن نعم فهو جوارٌ مقصود. وإلّا فعبورٌ يُمنع. */
+    function scopeOf(el) {
+      var n = el;
+      while (n && n !== document.body) {
+        if (n.tagName === 'SECTION' || n.tagName === 'LI') return n;
+        n = n.parentElement;
+      }
+      return null;
+    }
+    function neighbourly(shardIndex, textEl) {
+      var dock = document.querySelector('[data-mark-dock="' + shardIndex + '"]');
+      if (!dock) return false;
+      var a = scopeOf(dock), b = scopeOf(textEl);
+      return !!a && a === b;
     }
     for (var s = 0; s <= n; s++) {
       window.scrollTo(0, Math.round((max * s) / n));
@@ -254,7 +283,12 @@
           for (var j = 0; j <= 12; j++) {
             var x = r.left + (r.width * i) / 40, y = r.top + (r.height * j) / 12;
             if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) continue;
-            tot++; if (inAny(x, y)) on++;
+            tot++;
+            var hit = inAny(x, y);
+            if (hit !== -1) {
+              if (neighbourly(hit, els[e])) { neighbour++; }
+              else { on++; }
+            }
           }
         }
         var pct = tot ? (100 * on) / tot : 0;
@@ -264,7 +298,7 @@
         }
       }
     }
-    return { points: n + 1, worst: worst, pass: worst.pct === 0 };
+    return { points: n + 1, worst: worst, neighbour: neighbour, pass: worst.pct === 0 };
   }
 
   /* ٤) هل تحجب القطعُ نصًّا؟ بترتيب الرسم الحقيقي لا بتقاطع المستطيلات */
