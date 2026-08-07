@@ -301,9 +301,11 @@ export default function HomePage() {
                   {PARTNER_ROWS[row].map((partner) => (
                     <li key={partner.name} className="shrink-0">
                       {partner.logo ? (
-                        /* اللوح داكن، فالنسخة الفاتحة (`logoDark`) هي التي
-                           تُعرض حين تتوفّر. ومتى غابت بقيت الواحدة — لا فلتر
-                           ولا عكس ألوان، فذلك إعادةُ تلوينٍ لعلامةٍ تجارية. */
+                        /* لكل شريكٍ الآن نسختان: `logo` للوضع الفاتح
+                           و`logoDark` للداكن، والتبديل بـ `dark:` لا بفلتر.
+                           ⚠️ وأحدَ عشرَ من النسخ الداكنة **مُعاد تلوينها** لا
+                           رسميّة — القرار وحدوده موثَّقان في `about.ts` عند
+                           تعريف `logoDark`. */
                         <>
                           <Image
                             src={partner.logo}

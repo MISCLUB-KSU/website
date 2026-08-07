@@ -120,34 +120,81 @@ export const PARTNERS: readonly Partner[] = [
  */
 export type PartnerBadge = {
   name: string;
-  /** مسار داخل `public/partners/` — يبقى فارغًا حتى يصل الأصل */
+  /** مسار داخل `public/partners/light/` — يُعرض في الوضع الفاتح */
   logo?: string;
   /**
-   * نسخةٌ فاتحة تُعرض في الوضع الداكن وحدها.
+   * مسار داخل `public/partners/dark/` — يُعرض في الوضع الداكن وحده.
    *
    * أكثر شعارات الشركاء داكنةٌ على شفّاف: تعمل على الأرضية الثلجية وتبهت
-   * على الأرضية المحايدة `#101010`. والحلّ نسخةٌ رسميّةٌ فاتحة من الجهة
-   * نفسها — **لا فلترٌ ولا عكسُ ألوان**، فتلك إعادةُ تلوينٍ لعلامةٍ تجارية
-   * تمنعها قاعدة هذا الملف.
+   * على أرضية اللوح الداكنة `#212530`. مقيسًا قبل هذي الحزمة: **STC** أقصى
+   * تباينٍ في شعاره كلّه 1.25:1، و**طويق** 1.78:1، و**لين** 2.55:1 — أي صفرٌ
+   * من بكسلاتها فوق 3:1، فتختفي تمامًا. و**MRSOOL** عكسها: يختفي نهارًا
+   * (2.3:1 على الأبيض).
    *
-   * ومتى غابت، يبقى الشعار الواحد في الوضعين — أصدقُ من نسخةٍ مصنوعة.
+   * ⚠️ **والحزمة المركّبة تخالف قاعدةً كانت هنا.** كان مكتوبًا: «نسخةٌ
+   * رسميّةٌ فاتحة من الجهة نفسها — لا فلترٌ ولا عكسُ ألوان، فتلك إعادةُ
+   * تلوينٍ لعلامةٍ تجارية». وفي الحزمة **ثلاثةٌ فقط** رسميّةٌ من الجهة
+   * (عزم · علم · EY)، و**أحدَ عشرَ** أُعيد تلوينها (`adaptive` في
+   * `manifest.csv`)، وعشرةٌ نُسخت بلا تغيير.
+   *
+   * ركّبها حسام كاملةً بقرارٍ صريح (٨ أغسطس ٢٠٢٦) بعد عرض البدائل. فالقاعدة
+   * لم تُحذف بل صار لها استثناءٌ **مؤقّت وموثَّق**: كل نسخةٍ `adaptive` تُستبدل
+   * بالسالبة الرسميّة متى وصلت من الجهة. ولا يُضاف `adaptive` جديدٌ بلا قرارٍ
+   * مثله.
+   *
+   * ⚠️ **وثلاثةٌ ما زالت متعثّرةً بعد التركيب** — صنّفتها الحزمة `unchanged`
+   * («الأصل مناسب») وهو غير صحيح، مقيسًا على الأرضيتين:
+   *
+   *   · `dark/tuwaiq.webp`  — أقصى 1.78:1 ليلًا، صفرٌ فوق 3:1. الملفّ مطابقٌ
+   *                            للفاتح بايتًا ببايت، فلا نسخة داكنة أصلًا.
+   *   · `light/mrsool.png`  — أقصى 2.33:1 **نهارًا**: شعارٌ أبيض على أبيض.
+   *                            عطلُه معكوس، والحزمة لم تعالجه.
+   *   · `dark/sbr.png`      — 5.5% فوق 3:1: بلاطةٌ معتمة وعلامةٌ فاتحة صغيرة.
+   *
+   * الحلّ لها: نسخةٌ سالبةٌ رسميّة من طويق وسبر، وفاتحةٌ… بل **داكنة** من
+   * MRSOOL. وحتى تصل، البديل الذي لا يمسّ العلامة: بلاطةٌ خلفها بلون الوضع
+   * المقابل.
    */
   logoDark?: string;
 };
 
 export const ALL_PARTNERS: readonly PartnerBadge[] = [
-  { name: "قمم", logo: "/partners/qimam.png" },
+  {
+    name: "قمم",
+    logo: "/partners/light/qimam.png",
+    logoDark: "/partners/dark/qimam.png",
+  },
   // «سبل» = `splonline.com.sa` — أكّده حسام (٧ أغسطس). الشعار ملوّن
   // (سماوي #00c8e1 + أخضر داكن #153c3f) فيعمل في الوضعين: 11.40:1 نهارًا
   // و9.38:1 ليلًا — والسماويّ وحده يحمل العلامة حين يبهت الأخضر.
-  { name: "سبل", logo: "/partners/spl.svg" },
+  {
+    name: "سبل",
+    logo: "/partners/light/spl.svg",
+    logoDark: "/partners/dark/spl.svg",
+  },
   // النسخة الأفقية في `baag.org.sa` بيضاء بالكامل فتختفي نهارًا؛ فأُخذت
   // العلامة الملوّنة (بنفسجي وسماوي) من الأيقونة المربّعة في الموقع نفسه.
-  { name: "باق", logo: "/partners/baag.png" },
-  { name: "جاهز", logo: "/partners/jahez.svg" },
-  { name: "T2", logo: "/partners/t2.png" },
+  {
+    name: "باق",
+    logo: "/partners/light/baag.png",
+    logoDark: "/partners/dark/baag.png",
+  },
+  {
+    name: "جاهز",
+    logo: "/partners/light/jahez.svg",
+    logoDark: "/partners/dark/jahez.svg",
+  },
+  {
+    name: "T2",
+    logo: "/partners/light/t2.png",
+    logoDark: "/partners/dark/t2.png",
+  },
   // النسخة البيضاء `elmlogoWhite.svg` من `elm.sa` — `fill="white"` نقيّة.
-  { name: "علم", logo: "/partners/elm.png", logoDark: "/partners/elm-white.svg" },
+  {
+    name: "علم",
+    logo: "/partners/light/elm.png",
+    logoDark: "/partners/dark/elm.svg",
+  },
   // «سبر» = `trysbr.com` — أكّده حسام (٧ أغسطس). الشعار الأفقي في موقعهم
   // أبيضُ بالكامل (`#fbfbfb`) فيختفي نهارًا، ولا يُعاد تلوين علامة تجارية.
   // فأُخذت أيقونتهم الرسمية `trysbr.com/icon.png` (500px): بلاطةٌ معتمة
@@ -156,36 +203,81 @@ export const ALL_PARTNERS: readonly PartnerBadge[] = [
   // 2.947 ولا تطابق نسبة شعارهم المؤكَّد (1.335)، وموضعه في مجلّد
   // `clients/` — فالأرجح أنه شعار عميلٍ لهم لا شعارهم. وضعُه كان
   // سيُعلن شراكةً مع جهةٍ خاطئة باسم النادي.
-  { name: "سبر", logo: "/partners/sbr.png" },
+  {
+    name: "سبر",
+    logo: "/partners/light/sbr.png",
+    logoDark: "/partners/dark/sbr.png",
+  },
   // ⚠️ يحتاج تأكيدك: أُخذ من `rvc.com.sa` — شركة وادي الرياض، الذراع
   // الاستثمارية لجامعة الملك سعود. الاحتمال عالٍ لأن النادي في الجامعة
   // نفسها، لكنه استنتاجٌ لا نصّ.
-  { name: "شركة وادي الرياض", logo: "/partners/rvc.svg" },
-  { name: "سدايا", logo: "/partners/sdaia.svg" },
-  { name: "أكاديمية طويق", logo: "/partners/tuwaiq.webp" },
+  {
+    name: "شركة وادي الرياض",
+    logo: "/partners/light/rvc.svg",
+    logoDark: "/partners/dark/rvc.svg",
+  },
+  {
+    name: "سدايا",
+    logo: "/partners/light/sdaia.svg",
+    logoDark: "/partners/dark/sdaia.svg",
+  },
+  {
+    name: "أكاديمية طويق",
+    logo: "/partners/light/tuwaiq.webp",
+    logoDark: "/partners/dark/tuwaiq.webp",
+  },
   // «عزم السعودية» — من أيقونة `azm.com` الرسمية (512px)، إذ يُرسم شعار
   // الترويسة في الموقع inline فلا يوجد كملفّ مستقلّ.
   // النسخة البيضاء من `azm.com/suadia-azm.png` (تذييل موقعهم): 19.03:1 ليلًا
   // مقابل 1.47:1 للنسخة الداكنة — الزوج يغطّي الوضعين.
-  { name: "عزم", logo: "/partners/azm.png", logoDark: "/partners/azm-white.png" },
+  {
+    name: "عزم",
+    logo: "/partners/light/azm.png",
+    logoDark: "/partners/dark/azm.png",
+  },
   // النسخة السالبة مستخرجةٌ من SVG ترويسة `ey.com` — أبيض + الشعاع الأصفر
   // `#ffe600`، وهي التي يستعملها EY على خلفيّاتهم الداكنة. أُخذت العلامة
   // وحدها دون سطر الشعار النصّي لأنه لا يُقرأ عند ارتفاع 48px.
-  { name: "EY", logo: "/partners/ey.svg", logoDark: "/partners/ey-white.svg" },
-  { name: "سابك", logo: "/partners/sabic.svg" },
+  {
+    name: "EY",
+    logo: "/partners/light/ey.svg",
+    logoDark: "/partners/dark/ey.svg",
+  },
+  {
+    name: "سابك",
+    logo: "/partners/light/sabic.svg",
+    logoDark: "/partners/dark/sabic.svg",
+  },
   // ⚠️ أُخذ أولًا من `cntxt.tech` ثم صُحّح إلى `cntxt.com` — النطاق الرسمي
   // الذي أكّده حسام. النطاقان قد يعودان لجهتين مختلفتين تمامًا.
-  { name: "CNTXT", logo: "/partners/cntxt.webp" },
+  {
+    name: "CNTXT",
+    logo: "/partners/light/cntxt.webp",
+    logoDark: "/partners/dark/cntxt.webp",
+  },
   {
     name: "هيئة الزكاة والضريبة والجمارك",
-    logo: "/partners/zatca.svg",
+    logo: "/partners/light/zatca.svg",
+    logoDark: "/partners/dark/zatca.svg",
   },
-  { name: "منشآت", logo: "/partners/monshaat.svg" },
+  {
+    name: "منشآت",
+    logo: "/partners/light/monshaat.svg",
+    logoDark: "/partners/dark/monshaat.svg",
+  },
   // علامة Neotek المربّعة من `icon.svg` في موقعهم — الترويسة تُرسم inline.
-  { name: "Neotek", logo: "/partners/neotek.svg" },
+  {
+    name: "Neotek",
+    logo: "/partners/light/neotek.svg",
+    logoDark: "/partners/dark/neotek.svg",
+  },
   // ⚠️ يحتاج تأكيدك: أُخذ من `lean.sa` — Lean Business Services. الاسم
   // «لين» تشترك فيه شركاتٌ عدّة، فإن لم تكن هي فاحذف `logo` وحده.
-  { name: "لين", logo: "/partners/lean.svg" },
+  {
+    name: "لين",
+    logo: "/partners/light/lean.svg",
+    logoDark: "/partners/dark/lean.svg",
+  },
   // ⚠️ **شعار PwC الحالي (هويّة ٢٠٢٥)** — من ويكيميديا كومنز، مصدرُه
   // `pwc.com`، ملكيّةٌ عامّة (دون عتبة الأصالة) مع حفظ حقّ العلامة.
   // كان قبله شعارُ ٢٠١١ بالنقاط الملوّنة، وهو **متقادِم**: غيّرت PwC هويّتها
@@ -199,17 +291,41 @@ export const ALL_PARTNERS: readonly PartnerBadge[] = [
   //
   // ⚠️ **يبقى مفتوحًا:** الكلمة `fill="black"` فتختفي على اللوح الداكن.
   // ولا تُقلب بيدٍ إلى الأبيض — تُطلب النسخة السالبة الرسميّة من PwC.
-  { name: "PWC", logo: "/partners/pwc.svg" },
-  { name: "مداريم", logo: "/partners/madareem.png" },
+  {
+    name: "PWC",
+    logo: "/partners/light/pwc.svg",
+    logoDark: "/partners/dark/pwc.svg",
+  },
+  {
+    name: "مداريم",
+    logo: "/partners/light/madareem.png",
+    logoDark: "/partners/dark/madareem.png",
+  },
   // Mozn = `mozn.ai` — أكّده حسام (٧ أغسطس)، وهي «مزن» في `PARTNERS` أعلاه.
   // شعارها الأفقي `mozn.svg` أبيضُ مع لمسةٍ سماوية (`#03E7E7`) فيختفي نصفه
   // نهارًا. فأُخذت أيقونة الويب الرسمية من نطاقهم (256px): بلاطةٌ معتمة
   // 100% بخلفيةٍ كحليّة داكنة، تُقرأ في الوضعين — نفس منهج «عزم» و«Neotek»
   // أعلاه حين يكون شعار الترويسة غير متاحٍ كملفٍّ مستقلّ.
-  { name: "Mozn", logo: "/partners/mozn.png" },
-  { name: "STC", logo: "/partners/stc.svg" },
-  { name: "Thiqah", logo: "/partners/thiqah.png" },
-  { name: "MRSOOL", logo: "/partners/mrsool.png" },
+  {
+    name: "Mozn",
+    logo: "/partners/light/mozn.png",
+    logoDark: "/partners/dark/mozn.png",
+  },
+  {
+    name: "STC",
+    logo: "/partners/light/stc.svg",
+    logoDark: "/partners/dark/stc.svg",
+  },
+  {
+    name: "Thiqah",
+    logo: "/partners/light/thiqah.png",
+    logoDark: "/partners/dark/thiqah.png",
+  },
+  {
+    name: "MRSOOL",
+    logo: "/partners/light/mrsool.png",
+    logoDark: "/partners/dark/mrsool.png",
+  },
 ];
 
 /** رعاة معرض LearnX — منقولون من صفحة «رعاة النجاح» في الملف التعريفي. */
