@@ -9,9 +9,14 @@ import { useEffect, useState } from "react";
  * عنصرٌ جاهز يُعرف من نظرة أنه من قالب، والشطر المائل هنا مشتقّ من هندسة
  * الشعار: نصف حبر ونصف بياض، فيُقرأ معناه بلا شرح ولا يصلح لعلامة أخرى.
  *
- * **ثلاث حالات لا اثنتان:** «تلقائي» يتبع تفضيل النظام، ثم فاتح، ثم داكن.
- * بدون «تلقائي» يُحبَس الزائر في اختيارٍ اتّخذه مرّة ولا يستطيع الرجوع إلى
- * إعداد جهازه.
+ * **حالتان لا ثلاث** (قرار حسام، ٦ أغسطس ٢٠٢٦): فاتح ⇄ داكن. كان هنا حالة
+ * ثالثة «تتبع النظام»، وحُذفت لأن مبدّلًا ثلاثيّ الحالات يربك زائرًا يتوقّع
+ * مفتاحًا يقلب لا دورةً تمرّ بثلاث.
+ *
+ * وما فُقد منها استُبقي: **أول زيارة تتبع جهاز الزائر** — لا يُكتب
+ * `data-theme` إطلاقًا قبل أول ضغطة، فتحكم كتلة `prefers-color-scheme` في
+ * `tokens.generated.css`. الضغطة الأولى تحوّله إلى اختيارٍ صريح ومحفوظ.
+ * فالخسارة الوحيدة: من اختار مرّةً لا يملك زرًّا للرجوع إلى إعداد جهازه.
  *
  * الاختيار يُطبَّق على `documentElement` مباشرةً لا عبر حالة React: النصّ في
  * `layout` يقرأه قبل أول رسم، فلا ترتدّ الصفحة من فاتح إلى داكن أمام العين.
@@ -25,64 +30,62 @@ export const THEME_KEY = "mis-theme";
  */
 export const THEME_INIT_SCRIPT = `try{var t=localStorage.getItem("${THEME_KEY}");if(t==="light"||t==="dark"){document.documentElement.dataset.theme=t}}catch(e){}`;
 
-type Choice = "auto" | "light" | "dark";
+type Theme = "light" | "dark";
 
-const NEXT: Record<Choice, Choice> = {
-  auto: "light",
-  light: "dark",
-  dark: "auto",
+const LABEL: Record<Theme, string> = {
+  light: "المظهر فاتح — اضغط للداكن",
+  dark: "المظهر داكن — اضغط للفاتح",
 };
 
-const LABEL: Record<Choice, string> = {
-  auto: "المظهر: يتبع النظام",
-  light: "المظهر: فاتح",
-  dark: "المظهر: داكن",
-};
+function apply(theme: Theme) {
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem(THEME_KEY, theme);
+}
 
-function apply(choice: Choice) {
-  const root = document.documentElement;
-  if (choice === "auto") {
-    delete root.dataset.theme;
-    localStorage.removeItem(THEME_KEY);
-  } else {
-    root.dataset.theme = choice;
-    localStorage.setItem(THEME_KEY, choice);
-  }
+/** ما يراه الزائر الآن: اختيارُه المحفوظ إن وُجد، وإلا فتفضيل جهازه. */
+function currentTheme(): Theme {
+  const chosen = document.documentElement.dataset.theme;
+  if (chosen === "light" || chosen === "dark") return chosen;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 export function ThemeToggle() {
-  /* يبدأ «تلقائي» ليطابق ما رسمه الخادم، ثم يُصحَّح بعد أول إطار —
-     القراءة من `localStorage` أثناء العرض تختلف عن الخادم فتكسر الترطيب. */
-  const [choice, setChoice] = useState<Choice>("auto");
+  /* يبدأ «فاتح» ليطابق ما رسمه الخادم، ثم يُصحَّح بعد أول إطار — الخادم لا
+     يعرف `localStorage` ولا تفضيل الجهاز، فقراءتهما أثناء العرض تكسر الترطيب.
+     التصحيح يمسّ وسمَ الزرّ وأيقونته فقط؛ ألوان الصفحة سبقته بنصّ `<head>`. */
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      const saved = document.documentElement.dataset.theme;
-      if (saved === "light" || saved === "dark") setChoice(saved);
-    });
-    return () => cancelAnimationFrame(frame);
+    const frame = requestAnimationFrame(() => setTheme(currentTheme()));
+    /* من لم يختر بعد يتبع جهازه — فإن بدّله وهو على الصفحة تبعته الأيقونة.
+       يتوقّف الإنصات عند أول اختيار صريح، فلا يُنقض اختيار الزائر. */
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onSystemChange = () => {
+      if (!document.documentElement.dataset.theme) setTheme(currentTheme());
+    };
+    mq.addEventListener("change", onSystemChange);
+    return () => {
+      cancelAnimationFrame(frame);
+      mq.removeEventListener("change", onSystemChange);
+    };
   }, []);
 
   return (
     <button
       type="button"
       onClick={() => {
-        const next = NEXT[choice];
+        const next: Theme = theme === "dark" ? "light" : "dark";
         apply(next);
-        setChoice(next);
+        setTheme(next);
       }}
-      aria-label={`${LABEL[choice]} — اضغط للتبديل`}
-      title={LABEL[choice]}
-      className="inline-flex size-11 shrink-0 items-center justify-center text-fg transition-colors hover:text-accent"
+      aria-label={LABEL[theme]}
+      title={LABEL[theme]}
+      /* `text-fg-muted` لا `text-fg`: الفحميّ الصافي كان أدكنَ عنصرٍ في الشريط
+         بجوار علامةٍ كحليّة وزرٍّ أزرق، فيسحب العين إلى ضابطٍ ثانويّ. والخافت
+         يبقى فوق عتبة الرسوم الدالّة في الوضعين — 7.13:1 نهارًا و5.25:1 ليلًا. */
+      className="inline-flex size-11 shrink-0 items-center justify-center text-fg-muted transition-colors hover:text-accent"
     >
-      <svg
-        viewBox="0 0 20 20"
-        aria-hidden
-        className="size-[18px]"
-        /* «تلقائي» يُميَّز بحلقة خارجية لا بلون ثالث — اللون يحمل معنى
-           في هذا النظام، وإضافة لون رابع لحالة واجهة يُفسده. */
-        style={{ opacity: choice === "auto" ? 0.55 : 1 }}
-      >
+      <svg viewBox="0 0 20 20" aria-hidden className="size-[18px]">
         <rect
           x="0.9"
           y="0.9"
@@ -92,8 +95,14 @@ export function ThemeToggle() {
           stroke="currentColor"
           strokeWidth="1.8"
         />
-        {/* النصف الممتلئ — الشطر بزاوية الشعار نفسها */}
-        <polygon points="0.9,0.9 14.4,0.9 5.6,19.1 0.9,19.1" fill="currentColor" />
+        {/* النصف الممتلئ — الشطر بزاوية الشعار نفسها. وينعكس مع الوضع:
+            المربّع يقلب نصفَه المحبَّر كما تقلب الصفحةُ أرضيتها، فتُقرأ الحالة
+            من الشكل لا من الوسم وحده. المرآة حول x=10، والإطار متماثل فلا يتأثّر. */}
+        <polygon
+          points="0.9,0.9 14.4,0.9 5.6,19.1 0.9,19.1"
+          fill="currentColor"
+          transform={theme === "dark" ? "translate(20,0) scale(-1,1)" : undefined}
+        />
       </svg>
     </button>
   );

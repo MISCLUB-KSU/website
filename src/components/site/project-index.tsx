@@ -110,7 +110,14 @@ export function ProjectIndex() {
                   >
                     <span
                       data-mark-static=""
-                      className="absolute inset-0 bg-surface-floor"
+                      /* ⚠️ `bg-mark-quiet` لا `bg-surface-floor`: هذه العلامةُ
+                         **رسمٌ** لا أرضية، و`--surface-floor` ليلًا = خلفيةُ
+                         الصفحة نفسها (#011c40) — فكانت الستّ تختفي كلّيًّا
+                         عند 1.00:1 لمن أوقف JS أو طلب تقليل الحركة، وهي
+                         الحالة الوحيدة التي تظهر فيها أصلًا (الضلعُ الهابط
+                         يُخفيها بـvisibility:hidden متى وُجد). والقيمة
+                         النهاريّة واحدة (`--ink-floor`) فلا يتغيّر النهار. */
+                      className="absolute inset-0 bg-mark-quiet"
                       style={{
                         clipPath: `polygon(${runPct}% 0, 100% 0, ${100 - runPct}% 100%, 0 100%)`,
                       }}
@@ -120,7 +127,7 @@ export function ProjectIndex() {
                 <span className="w-[2ch] shrink-0 font-display text-sm font-medium text-fg-muted">
                   {`0${index + 1}`}
                 </span>
-                <span className="shrink-0 font-display text-xl font-bold text-surface-floor sm:text-2xl">
+                <span className="shrink-0 font-display text-xl font-bold text-mark sm:text-2xl">
                   {isolateLatin(project.name)}
                 </span>
                 {project.tagline ? (

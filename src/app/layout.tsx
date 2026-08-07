@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans_Arabic, Noto_Kufi_Arabic } from "next/font/google";
+import Script from "next/script";
 
 import { MotionProvider } from "@/components/motion";
+import { THEME_INIT_SCRIPT } from "@/components/site/theme-toggle";
 import "./globals.css";
 
 /**
@@ -75,8 +77,18 @@ export default function RootLayout({ children }: RootLayoutProps) {
       lang="ar"
       dir="rtl"
       className={`${plexArabic.variable} ${kufi.variable} h-full antialiased`}
+      /* النصّ أدناه يكتب `data-theme` قبل أول رسم، فيختلف الوسم عن الخادم عمدًا */
+      suppressHydrationWarning
     >
       <body className="flex min-h-full flex-col">
+        {/* يقرأ الاختيار المحفوظ ويطبّقه **قبل** أول رسم. بدونه تُرسم الصفحة
+            بوضع النظام ثم تقفز إلى المحفوظ — وميضٌ يراه الزائر كل مرّة.
+            نصّ ثابت مكتوب في `theme-toggle.tsx`، لا مدخل فيه من أحد.
+            `beforeInteractive` هي وسيلة Next لحقنه في HTML الأوّلي؛ و`<script>`
+            عاريًا داخل مكوّن يُخرج تحذير React 19 «سكربت داخل مكوّن». */}
+        <Script id="mis-theme-init" strategy="beforeInteractive">
+          {THEME_INIT_SCRIPT}
+        </Script>
         {/* طبقة الحركة — تُوقف نفسها لمن طلب تقليل الحركة. لا تُخفي محتوى:
             انظر القاعدة في رأس `components/motion.tsx`. */}
         <MotionProvider>{children}</MotionProvider>

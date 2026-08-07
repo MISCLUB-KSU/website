@@ -3,12 +3,19 @@ import Image from "next/image";
 import { Hero } from "@/components/site/hero";
 import { MarkMorph } from "@/components/site/mark-morph";
 import { PillarMark, type PillarMarkShape } from "@/components/site/pillar-mark";
-import { ProjectIndex } from "@/components/site/project-index";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { ABOUT_INTRO, ALL_PARTNERS, FOUNDED_YEAR, PILLARS } from "@/content/about";
 import { isolateLatin } from "@/lib/bidi";
 import { OPEN_PROJECTS } from "@/content/projects";
+
+/* شطرُ الشركاء صفّين: نصفٌ لكلٍّ فلا يتكرّر شعارٌ بين الصفّين. الشطر عند
+   المنتصف بالأعلى (`ceil`) فيأخذ الصفّ الأوّل الزائدَ حين يكون العدد فرديًّا. */
+const PARTNER_HALF = Math.ceil(ALL_PARTNERS.length / 2);
+const PARTNER_ROWS = [
+  ALL_PARTNERS.slice(0, PARTNER_HALF),
+  ALL_PARTNERS.slice(PARTNER_HALF),
+] as const;
 
 /**
  * الصفحة الرئيسية — تُبنى قسمًا قسمًا.
@@ -31,7 +38,13 @@ export default function HomePage() {
       <main id="main">
         <Hero isOpen={isOpen} />
 
-        <ProjectIndex />
+        {/* ⚠️ قسم «ما نعمل عليه» (`ProjectIndex`) حُذف بطلب حسام.
+            وهذا يُلغي **المحطّة الوسطى** في تشكّل العلامة: كانت
+            الواجهة ← ستّ خانات ← التذييل، فصارت الواجهة ← التذييل.
+            لا يلزم تعديل `MarkMorph`: `rowsUsable = slots.length === 6`
+            تُعطّل المرحلة كلّها عند أي عددٍ آخر — والصفر منها — فتنتقل
+            العلامة مباشرةً. والطبقة لا تختفي إلا بغياب مرساتَي الواجهة
+            والتذييل، وهما باقيتان. `project-index.tsx` صار بلا مستورد. */}
 
         {/* ══════════════════════════════════════════════════════════════
             من نحن
@@ -74,10 +87,17 @@ export default function HomePage() {
               موضعين في القسم نفسه. ⚠️ مُمرَّرٌ عبر `isolateLatin` بعد
               دمجه في جملة واحدة — نفس سبب الفقرة أعلاه. */}
           <p className="mt-s6 inline-flex items-center gap-s3 text-sm font-semibold tracking-wide text-accent">
+            {/* مرسى الضلع 3 — أنحف الأضلاع (نسبة 0.7994). الغلاف مستقيمٌ
+                يحمل صندوق الهبوط، والميلان ينتقل للعنصر الداخليّ فلا يُحسب
+                على القياس. العرض 12.8px = 16 × 0.7994. */}
             <span
               aria-hidden
-              className="mis-slant inline-block h-4 w-1 shrink-0 bg-accent"
-            />
+              data-mark-dock="3"
+              data-mark-static=""
+              className="inline-block h-4 w-[12.8px] shrink-0"
+            >
+              <span className="mis-slant block h-full w-full bg-accent" />
+            </span>
             {isolateLatin(`منذ عام ${FOUNDED_YEAR}`)}
           </p>
         </section>
@@ -119,10 +139,17 @@ export default function HomePage() {
           className="mx-auto w-full max-w-6xl px-s4 pb-s8 sm:px-s7"
         >
           <div className="mb-s7 flex items-center gap-s3">
+            {/* مرسى الضلع 4 — نسبة 1.1469، توأم الضلع 5 في رأس «شركاء النجاح»
+                فيقرأ الرأسان عائلةً واحدة. الغلاف مستقيمٌ، والميلان في
+                الداخل. العرض 18.4px = 16 × 1.1469. */}
             <span
               aria-hidden
-              className="mis-slant inline-block h-4 w-1 shrink-0 bg-accent"
-            />
+              data-mark-dock="4"
+              data-mark-static=""
+              className="inline-block h-4 w-[18.4px] shrink-0"
+            >
+              <span className="mis-slant block h-full w-full bg-accent" />
+            </span>
             <h2
               id="pillars-heading"
               className="font-display text-sm font-semibold tracking-[0.15em] text-fg-muted"
@@ -159,12 +186,18 @@ export default function HomePage() {
                   {pillar.label}
                 </h3>
 
-                {/* ضربة الميلان الفاصلة — العنصر نفسه في «من نحن»، فيقرأ
-                    القسمان عائلةً واحدة */}
+                {/* مرسى الأضلاع 0 · 1 · 2 — نِسَبها متطابقة عمليًّا فتبقى
+                    البطاقات الثلاث متطابقة. الغلاف مستقيمٌ يحمل صندوق
+                    الهبوط، والميلان في العنصر الداخليّ. الارتفاع 26.8px =
+                    40 ÷ 1.4932؛ العرض 40px محفوظ فلا يتزحزح شيءٌ أفقيًّا. */}
                 <span
                   aria-hidden
-                  className="mis-slant mt-s4 inline-block h-1 w-10 shrink-0 bg-accent"
-                />
+                  data-mark-dock={String(index)}
+                  data-mark-static=""
+                  className="mt-s4 inline-block h-[26.8px] w-10 shrink-0"
+                >
+                  <span className="mis-slant block h-full w-full bg-accent" />
+                </span>
 
                 {/* ⚠️ `isolateLatin` لازمة: ركيزة «الهدف» تحوي "(MIS)" وسط
                     جملة عربية — كانت تُرسَم خامًا فتنعكس بصريًّا. الركيزتان
@@ -206,38 +239,66 @@ export default function HomePage() {
         >
           <div className="mx-auto mb-s7 w-full max-w-6xl px-s4 sm:px-s7">
             <div className="flex items-center gap-s3">
+              {/* مرسى الضلع 5 — نسبة 1.1469، توأم الضلع 4 في رأس «ما نقوم
+                  عليه». الغلاف مستقيمٌ، والميلان في الداخل. العرض 18.4px =
+                  16 × 1.1469. */}
               <span
                 aria-hidden
-                className="mis-slant inline-block h-4 w-1 shrink-0 bg-accent"
-              />
+                data-mark-dock="5"
+                data-mark-static=""
+                className="inline-block h-4 w-[18.4px] shrink-0"
+              >
+                <span className="mis-slant block h-full w-full bg-accent" />
+              </span>
               <h2
                 id="partners-heading"
                 className="font-display text-sm font-semibold tracking-[0.15em] text-fg-muted"
               >
-                شركاؤنا
+                شركاء النجاح
               </h2>
             </div>
           </div>
 
-          <div className="partners-viewport w-full" dir="ltr">
-            <div className="partners-rail">
-              {[false, true].map((isClone) => (
+          {/* صفّان متعاكسان على لوحٍ أفتح من الأرضية. القائمة تُشطر نصفين
+              فلا يتكرّر شعارٌ بين الصفّين، وكلُّ صفٍّ يُستنسخ مرّةً ليدور بلا
+              فجوة. الصفّ الثاني يحمل `data-reverse` فيجري عكسه. */}
+          <div className="partners-panel flex w-full flex-col gap-s5 py-s6">
+            {[0, 1].map((row) => (
+              <div key={row} className="partners-viewport w-full" dir="ltr">
+                <div className="partners-rail" data-reverse={row === 1 ? "" : undefined}>
+                  {[false, true].map((isClone) => (
                 <ul
                   key={String(isClone)}
                   data-clone={isClone ? "" : undefined}
                   aria-hidden={isClone || undefined}
                   className="flex w-max shrink-0 items-center gap-s6 px-s3 sm:gap-s7"
                 >
-                  {ALL_PARTNERS.map((partner) => (
+                  {PARTNER_ROWS[row].map((partner) => (
                     <li key={partner.name} className="shrink-0">
                       {partner.logo ? (
-                        <Image
-                          src={partner.logo}
-                          alt={`شعار ${partner.name}`}
-                          width={200}
-                          height={64}
-                          className="h-12 w-auto max-w-[200px] object-contain sm:h-14"
-                        />
+                        /* اللوح داكن، فالنسخة الفاتحة (`logoDark`) هي التي
+                           تُعرض حين تتوفّر. ومتى غابت بقيت الواحدة — لا فلتر
+                           ولا عكس ألوان، فذلك إعادةُ تلوينٍ لعلامةٍ تجارية. */
+                        <>
+                          <Image
+                            src={partner.logo}
+                            alt={`شعار ${partner.name}`}
+                            width={200}
+                            height={64}
+                            className={`h-12 w-auto max-w-[200px] object-contain sm:h-14${
+                              partner.logoDark ? " dark:hidden" : ""
+                            }`}
+                          />
+                          {partner.logoDark ? (
+                            <Image
+                              src={partner.logoDark}
+                              alt={`شعار ${partner.name}`}
+                              width={200}
+                              height={64}
+                              className="hidden h-12 w-auto max-w-[200px] object-contain dark:block sm:h-14"
+                            />
+                          ) : null}
+                        </>
                       ) : (
                         <span
                           dir="rtl"
@@ -248,9 +309,11 @@ export default function HomePage() {
                       )}
                     </li>
                   ))}
-                </ul>
-              ))}
-            </div>
+                    </ul>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       </main>

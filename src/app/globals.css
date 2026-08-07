@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+/* ⚠️ `dark:` في Tailwind v4 يتبع `prefers-color-scheme` **وحده**. وهذا الموقع
+   يبدّل بـ`data-theme` أيضًا (المبدّل اليدوي)، فكان `dark:` لا ينقلب مع
+   الاختيار اليدوي: مقيسًا على نظامٍ فاتح + اختيار «داكن»، بقيت علامة الشريط
+   `#022d63` على أرضية `#011c40` — تباين 1.32:1.
+   المنطق أدناه نسخةٌ حرفيّة من تسلسل `tokens.generated.css` نفسه، فلا
+   تفترق آليّتان. */
+@custom-variant dark {
+  &:where(:root[data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+}
+
 /* رموز نظام التصميم v2 — مولّدة من `brand/v2/tokens.css`، وهي نفسها التي
    تبني معاينات Claude Design. أعد التوليد بـ: node brand/v2/build.mjs
    لا تُحرَّر `tokens.generated.css` هنا. */
@@ -72,6 +89,16 @@
   --color-bg-sunken: var(--surface-sunken);
   --color-surface-ink: var(--surface-ink);
   --color-surface-floor: var(--surface-floor);
+  /* دور **مقدِّمة** للعلامة والعنوان — لا يُخلط بـ`--surface-floor` أعلاه.
+     ذاك دور أرضية، وحين استُعمل لونَ نصّ نجح في النهار مصادفةً (أرضية
+     كحليّة على صفحة ثلجية) وسقط في الليل إلى 1.00:1: صارت الأرضية هي
+     خلفية الصفحة نفسها، فاختفى العنوان والعلامة وأسماء المشاريع. */
+  --color-mark: var(--mark);
+  /* العلامةُ **رسمًا** لا نصًّا. في النهار هي نفسها `--mark` بلا فرق، وفي
+     الليل تنزل درجةً: الأبيض على الكحلي يُقرأ أعلى صوتًا من الكحلي على
+     الأبيض عند النسبة نفسها (16.07:1 ليلًا مقابل 10.56:1 نهارًا لنفس
+     الدور)، فالصفائح الضخمة تزاحم العنوان. النصّ يبقى على `--mark`. */
+  --color-mark-quiet: var(--mark-quiet);
   --color-on-ink: var(--on-ink);
   --color-on-ink-dim: var(--on-ink-dim);
   --color-on-ink-quiet: var(--on-ink-quiet);
@@ -121,41 +148,56 @@
   --border: var(--color-sky-200);
   --border-strong: var(--color-sky);
   --ring: var(--color-primary);
+  /* العلامة محفورةٌ في الصفحة: كحليّ الأرضية على الثلج — 10.56:1.
+     نفس قيمة `--surface-floor` النهاريّة بالضبط، فلا يتغيّر النهار بشعرة. */
+  --mark: var(--ink-floor);
+  /* نهارًا لا فرق بين النصّ والرسم — كما كان دائمًا. الفرق ليليٌّ فقط. */
+  --mark-quiet: var(--ink-floor);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: var(--color-deep-900);
-    --bg-raised: var(--color-deep);
-    --bg-sunken: #01152f;
+    --bg: #16181d;
+    --bg-raised: #212530;
+    --bg-sunken: #101218;
     --bg-invert: var(--color-snow);
     --fg: var(--color-snow);
-    --fg-muted: #9db4cf;
+    --fg-muted: #9aa0ab;
     --fg-invert: var(--color-charcoal);
     --accent: var(--color-sky);
-    --accent-hover: #9dc4e3;
-    --accent-fg: var(--color-deep-900);
-    --border: #0a3b7a;
-    --border-strong: var(--color-primary);
+    --accent-hover: #a4c5e3;
+    --accent-fg: var(--color-charcoal);
+    --border: #3c424f;
+    --border-strong: #727a88;
     --ring: var(--color-sky);
+    /* تنقلب العلامة مع الأرضية — وهي القاعدة التي أرساها `.home-ink` أدناه
+       (`--mark: var(--color-snow)`) حين يصير السياق حبرًا. تُعمَّم هنا. */
+    --mark: var(--snow);
+    /* الصفائحُ درجةً أهدأ من العنوان — قرار حسام بعد رؤيتها ثلجيّةً ضخمة.
+       `--on-ink-dim` نفسها، وهي درجةٌ مضبوطةٌ أصلًا في نظام الرموز لأسوأ
+       خلفيةٍ في الحقل المائل. 9.31:1 على الأرضية — فوق عتبة الرسوم الدالّة
+       (3:1) بثلاثة أضعاف، والعنوانُ يبقى 16.07:1 فيتقدّمها في التسلسل. */
+    --mark-quiet: var(--sky);
   }
 }
 
 /* الاختيار اليدوي يتغلّب على تفضيل النظام في الاتجاهين */
 :root[data-theme="dark"] {
-  --bg: var(--color-deep-900);
-  --bg-raised: var(--color-deep);
-  --bg-sunken: #01152f;
+  --bg: #16181d;
+  --bg-raised: #212530;
+  --bg-sunken: #101218;
   --bg-invert: var(--color-snow);
   --fg: var(--color-snow);
-  --fg-muted: #9db4cf;
+  --fg-muted: #9aa0ab;
   --fg-invert: var(--color-charcoal);
   --accent: var(--color-sky);
-  --accent-hover: #9dc4e3;
-  --accent-fg: var(--color-deep-900);
-  --border: #0a3b7a;
-  --border-strong: var(--color-primary);
+  --accent-hover: #a4c5e3;
+  --accent-fg: var(--color-charcoal);
+  --border: #3c424f;
+  --border-strong: #727a88;
   --ring: var(--color-sky);
+  --mark: var(--snow);
+  --mark-quiet: var(--sky);
 }
 
 /* ==========================================================================
@@ -541,11 +583,13 @@ h3 {
 .partners-rail {
   display: flex;
   width: max-content;
-  animation: partners-drift 72s linear infinite;
+  animation: partners-drift 40s linear infinite;
 }
 
-/* التوقّف عند المرور أو التركيز: مهلةٌ لقراءة اسمٍ يمرّ */
-.partners-viewport:hover .partners-rail,
+/* ⚠️ **لا توقّف عند مرور الفأرة** — بطلب حسام. كان الشريط يقف عند
+   `:hover` فيبدو معطَّلًا لمن يمرّ بالمؤشّر عابرًا.
+   لكن `:focus-within` يبقى: من يتنقّل بلوحة المفاتيح يحتاج الشريط ساكنًا
+   ليقرأ ما وصل إليه، وإلّا هرب العنصر المركَّز من تحت عينه. */
 .partners-viewport:focus-within .partners-rail {
   animation-play-state: paused;
 }
@@ -557,6 +601,27 @@ h3 {
   to {
     transform: translateX(-50%);
   }
+}
+
+/* الصفّ الثاني يجري في الاتّجاه المعاكس — يبدأ من `-50%` وينتهي عند الصفر،
+   فيتحرّك يمينًا بينما يتحرّك الأوّل يسارًا. التعاكس يمنع الصفّين من أن
+   يُقرآ كتلةً واحدة تنزلق، ويُبقي العين تلتقط شعارًا من هذا ومن ذاك. */
+@keyframes partners-drift-reverse {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.partners-rail[data-reverse] {
+  animation-name: partners-drift-reverse;
+}
+
+/* لوحُ الشعارات — داكنٌ يتبع الأرضية صعودًا بدرجة. */
+.partners-panel {
+  background: var(--surface-raised);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -135,6 +135,172 @@
              vsHero: err(hero), vsSlots: slotErr, vsFoot: err(foot) };
   }
 
+  /* ٥) مراسي الأقسام: ستّة أهداف، نسبةُ كلٍّ نسبةَ ضلعه، والضلع ينطبق عليه */
+  function docks() {
+    var BOXES = window.__MARK_BOXES || [];
+    var layer = document.querySelector('[data-mark-layer]');
+    var els = Array.prototype.slice.call(
+      document.querySelectorAll('[data-mark-dock]')
+    );
+    var fail = [];
+    if (!BOXES.length) fail.push('__MARK_BOXES غير منشور — انظر المهمّة ٢');
+    /* ⚠️ الشرط `!==` وحده لا يكفي: قبل المهمّة ٢ يكون الطرفان صفرًا فيمرّ
+       صامتًا. فيُشترط العدد الحقيقي صراحةً. */
+    if (els.length !== 6) {
+      fail.push('الأهداف ' + els.length + ' والمتوقّع 6');
+    }
+    var rows = els.map(function (el) {
+      var i = Number(el.dataset.markDock);
+      var b = BOXES[i];
+      var r = el.getBoundingClientRect();
+      var dockAspect = r.height ? r.width / r.height : 0;
+      var shardAspect = b ? b.w / b.h : 0;
+      var shard = layer && layer.querySelector('[data-mark-shard="' + i + '"]');
+      var sr = shard && shard.getBoundingClientRect();
+      var row = {
+        dock: i,
+        dockAspect: +dockAspect.toFixed(4),
+        shardAspect: +shardAspect.toFixed(4),
+        aspectErr: +Math.abs(dockAspect - shardAspect).toFixed(4),
+        dx: sr ? Math.round(sr.left - r.left) : null,
+        dy: sr ? Math.round(sr.top - r.top) : null,
+        dw: sr ? Math.round(sr.width - r.width) : null,
+        dh: sr ? Math.round(sr.height - r.height) : null
+      };
+      if (!b) fail.push('هدفٌ برقم ضلعٍ خارج المدى: ' + el.dataset.markDock);
+      else if (row.aspectErr > 0.02) {
+        fail.push('نسبة الهدف ' + i + ' = ' + row.dockAspect +
+                  ' والضلع ' + row.shardAspect);
+      }
+      return row;
+    });
+    var seen = {};
+    rows.forEach(function (r) {
+      if (seen[r.dock]) fail.push('رقم ضلعٍ مكرَّر: ' + r.dock);
+      seen[r.dock] = 1;
+    });
+    return { found: els.length, expected: BOXES.length, rows: rows,
+             fail: fail, pass: fail.length === 0 };
+  }
+
+  /* ٦) مسحٌ عبر التمرير: التغطية تُقاس على **شكل** المتوازي لا صندوقه، لأن
+     `coverage()` تسأل عمّا فوق النصّ والأضلاع تحته فتمرّ دائمًا. */
+  function sweep(points) {
+    var n = points || 61;
+    var layer = document.querySelector('[data-mark-layer]');
+    var svgs = layer ? layer.querySelectorAll('svg') : [];
+    var polys = layer ? layer.querySelectorAll('polygon') : [];
+    var max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    var worst = { pct: 0, y: 0, text: null };
+    /* عدّاد الإصابات المسموحة (جوارٌ لا عبور — المهمّة ٨). يظهر في المُخرَج
+       فلا يختفي المسموح صامتًا خلف رقمٍ صفريّ لا يفسَّر. */
+    var neighbour = 0;
+    /* ⚠️ فخّ بيئيّ موثَّقٌ (تقرير المهمّة ٤): تبويب لوحة المعاينة يقرأ
+       document.hidden === true طوال الجلسة، فـ requestAnimationFrame
+       الحقيقي لا يُطلَق عند scroll — و`place()` داخل mark-morph.tsx
+       مجدولةٌ عبره حصرًا. حلُّ المهمّة ٤ (لقطة شاشة تُصرِّف الطابور) لا
+       يصلح لهذه الحلقة: هي متزامنةٌ بالكامل على ٦١ نقطة، ولا يمكن طلب
+       لقطة شاشة من داخل جافاسكربت بين نقطةٍ وأخرى. و`place` نفسها
+       مغلقةٌ داخل useEffect في mark-morph.tsx ولا تُنشَر على window، فلا
+       نملك استدعاءها مباشرة (خيار الموجز الأول). البديل الصريح المتّبع
+       هنا: نجعل `requestAnimationFrame` ينفّذ ردّ نداءه فورًا ومتزامنًا
+       (بدل انتظار إطارٍ حقيقي لن يصل)، ثم نُطلق حدث `scroll` يدويًا على
+       window — فيستدعي هذا معالج mark-morph الحقيقي (`schedule` ثم
+       `place`) بمساره الإنتاجي الفعلي، لا بإعادة حساب هندسةٍ محليّة قد
+       تنحرف عن الحقيقة. نافذة التصحيح ضيّقةٌ عمدًا (تُستعاد
+       `requestAnimationFrame` الحقيقية فور عودة `dispatchEvent`، ضمن
+       try/finally) لتفادي التقاط أي حلقة rAF أخرى في الصفحة قد تُعيد
+       جدولة نفسها ذاتيًا لو بقي التصحيح فعّالًا طوال المسح. */
+    function flush() {
+      var real = window.requestAnimationFrame;
+      window.requestAnimationFrame = function (cb) { cb(0); return 0; };
+      try {
+        window.dispatchEvent(new Event('scroll'));
+      } finally {
+        window.requestAnimationFrame = real;
+      }
+    }
+    /* ⚠️ **ضلعٌ شفّافٌ لا يغطّي شيئًا.** الفحص كان يختبر الهندسة وحدها
+       (`isPointInFill`) فيَعُدّ ضلعًا عتامتُه صفر مغطّيًا — وهذا قياسُ وهم:
+       مقيسٌ على 390 عند y=1239 أن الضلع 3 «يغطّي 37.9%» وعتامته صفرٌ
+       بالضبط. والضلع نصف الشفّاف يغطّي فعلًا فيبقى محسوبًا: العتبة 0.05
+       تستثني المعدوم وحده، لا الخافت.
+       تُقرأ العتامة من العنصر الحاوي `[data-mark-shard]` لا من المتوازي
+       نفسه — هناك تُكتب في `mark-morph.tsx`. */
+    var OPAQUE_MIN = 0.05;
+    function visible(p) {
+      var host = p.closest ? p.closest('[data-mark-shard]') : null;
+      if (!host) return true;
+      return parseFloat(window.getComputedStyle(host).opacity) >= OPAQUE_MIN;
+    }
+    function inAny(cx, cy) {
+      for (var k = 0; k < polys.length; k++) {
+        var p = polys[k], ctm = p.getScreenCTM();
+        if (!ctm) continue;
+        if (!visible(p)) continue;
+        var pt = (p.ownerSVGElement || svgs[0]).createSVGPoint();
+        pt.x = cx; pt.y = cy;
+        var l = pt.matrixTransform(ctm.inverse());
+        try {
+          if (p.isPointInFill(l)) {
+            var host = p.closest ? p.closest('[data-mark-shard]') : null;
+            return host ? Number(host.dataset.markShard) : k;
+          }
+        } catch (e) { /* بلا دعم */ }
+      }
+      return -1;
+    }
+    /* ⚠️ **الجوار ليس عبورًا.** مرسى كل ضلعٍ عنصرٌ زخرفيّ يسكن قسمًا
+       بعينه — فاصلُ بطاقة «الهدف» مثلًا يبعد 16px عن عنوانها. فالضلع
+       المقترب من مرساه يمرّ حتمًا قرب نصّ ذلك القسم، وعتامته حينها يجب
+       أن ترتفع (شرط الرسوّ عتامة 1). مقيسٌ: t1i=0.9636 عند لحظة التغطية
+       المُبلَّغ عنها — أي 96% من الرحلة، لا عبورًا عشوائيًّا.
+       فيُسأل عن **البنية** لا عن المسافة: أيشترك النصّ ومرسى الضلع في
+       أقرب `section` أو `li`؟ إن نعم فهو جوارٌ مقصود. وإلّا فعبورٌ يُمنع. */
+    function scopeOf(el) {
+      var n = el;
+      while (n && n !== document.body) {
+        if (n.tagName === 'SECTION' || n.tagName === 'LI') return n;
+        n = n.parentElement;
+      }
+      return null;
+    }
+    function neighbourly(shardIndex, textEl) {
+      var dock = document.querySelector('[data-mark-dock="' + shardIndex + '"]');
+      if (!dock) return false;
+      var a = scopeOf(dock), b = scopeOf(textEl);
+      return !!a && a === b;
+    }
+    for (var s = 0; s <= n; s++) {
+      window.scrollTo(0, Math.round((max * s) / n));
+      flush();
+      var els = document.querySelectorAll('main h1, main h2, main h3, main p, main li');
+      for (var e = 0; e < els.length; e++) {
+        var r = els[e].getBoundingClientRect();
+        if (r.width < 8 || r.height < 8 || r.bottom < 0 || r.top > window.innerHeight) continue;
+        var on = 0, tot = 0;
+        for (var i = 0; i <= 40; i++) {
+          for (var j = 0; j <= 12; j++) {
+            var x = r.left + (r.width * i) / 40, y = r.top + (r.height * j) / 12;
+            if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) continue;
+            tot++;
+            var hit = inAny(x, y);
+            if (hit !== -1) {
+              if (neighbourly(hit, els[e])) { neighbour++; }
+              else { on++; }
+            }
+          }
+        }
+        var pct = tot ? (100 * on) / tot : 0;
+        if (pct > worst.pct) {
+          worst = { pct: +pct.toFixed(2), y: window.scrollY,
+                    text: els[e].textContent.trim().slice(0, 30) };
+        }
+      }
+    }
+    return { points: n + 1, worst: worst, neighbour: neighbour, pass: worst.pct === 0 };
+  }
+
   /* ٤) هل تحجب القطعُ نصًّا؟ بترتيب الرسم الحقيقي لا بتقاطع المستطيلات */
   function coverage() {
     var layer = document.querySelector('[data-mark-layer]');
@@ -162,9 +328,9 @@
   }
 
   function all() {
-    return { tokens: tokens(), contrast: contrast(), morph: morph(), coverage: coverage(),
+    return { tokens: tokens(), contrast: contrast(), morph: morph(), docks: docks(), coverage: coverage(), sweep: sweep(),
              horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1 };
   }
-  window.__audit = { tokens: tokens, contrast: contrast, morph: morph, coverage: coverage, all: all };
+  window.__audit = { tokens: tokens, contrast: contrast, morph: morph, docks: docks, coverage: coverage, sweep: sweep, all: all };
   return 'audit جاهزة — استعمل __audit.all()';
 })();
