@@ -51,6 +51,21 @@ const ease = (t: number) =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 
+/* ── وصول العلامة داخل المرسى ──────────────────────────────────────────
+   ثوابت الحركة التي تُكمل رحلةَ الضلع داخل بطاقةٍ معتمةٍ تحجبه.
+
+   `DOCK_ARRIVAL` نقطةُ بدء الظهور على خطّ `tDock`: قبلها الضلع في منتصف
+   الطريق وظهورُ العلامة معه يُريها مرّتين، وعندها يصير الضلع على حافّة
+   البطاقة فيتّصل التسليم. و«آخر 45٪» عند عتبة 0.5 من الشاشة تعني نحو
+   0.22 من ارتفاعها — حركةٌ قصيرة لا مشهدٌ ثانٍ.
+
+   `ARRIVAL_RISE` هبوطٌ من أعلى لأن الضلع نازلٌ من الواجهة، و`ARRIVAL_SCALE`
+   ضمورٌ يحاكي ضموره وهو يقترب من مرساه. كلاهما صغير عمدًا: قانون الموقع
+   يقدّم الهدوء على الإبهار، والمقصود إحساسُ وصولٍ لا استعراض. */
+const DOCK_ARRIVAL = 0.55;
+const ARRIVAL_RISE = 14;
+const ARRIVAL_SCALE = 1.35;
+
 export function MarkMorph() {
   const hostRef = useRef<HTMLDivElement>(null);
 
@@ -76,12 +91,15 @@ export function MarkMorph() {
          يجري بالنسبة (ثلاثة أضلاعٍ متطابقة النسبة لبطاقات الركائز) لا
          بترتيب التمرير، فقراءةٌ بالترتيب تُسند الضلع الخطأ للهدف الخطأ. */
       const docks = new Map<number, DOMRect>();
+      /* العناصر نفسها لا مستطيلاتها وحدها — يحتاجها التسليم أدناه */
+      const dockEls = new Map<number, HTMLElement>();
       document
         .querySelectorAll<HTMLElement>("[data-mark-dock]")
         .forEach((el) => {
           const i = Number(el.dataset.markDock);
           if (Number.isInteger(i) && i >= 0 && i < BOXES.length) {
             docks.set(i, el.getBoundingClientRect());
+            dockEls.set(i, el);
           }
         });
 
@@ -97,6 +115,17 @@ export function MarkMorph() {
       if (!hero || !rest) {
         host.style.visibility = "hidden";
         document.documentElement.classList.remove("mark-morphing");
+        /* ⚠️ وأنماط الوصول تُمحى هنا أيضًا. الخروج يقع **بعد** استدعاءٍ سابق
+           قد يكون ترك `opacity: 0` على مرسًى لم يبلغه ضلعه بعد؛ ورفعُ
+           `mark-morphing` يوقف قاعدةَ الإخفاء العامّة لكنه لا يمسّ النمط
+           السطريّ — فتبقى العلامة معدومةَ العتامة بلا شيءٍ يُظهرها، وهي
+           الحالةُ التي جاء هذا كلّه ليمنعها. */
+        dockEls.forEach((el) => {
+          if (el.dataset.markHandoff === undefined) return;
+          el.style.visibility = "";
+          el.style.opacity = "";
+          el.style.transform = "";
+        });
         return;
       }
       host.style.visibility = "";
@@ -122,6 +151,40 @@ export function MarkMorph() {
         return r
           ? ease(clamp((window.innerHeight - r.top) / (window.innerHeight * 0.5)))
           : 0;
+      });
+
+      /* ══ الوصول داخل المرسى ══
+         مرساةٌ داخل بطاقةٍ معتمةٍ مرفوعة (`data-mark-handoff`) لا يُرى فيها
+         الضلعُ الواصل: يصل بإحداثيّاته الصحيحة ثم يُرسم خلف البطاقة. فتُكمل
+         العلامةُ الثابتة الرحلةَ **داخل** البطاقة — هي ابنتها فلا شيء يعلوها.
+
+         والتبديل الثنائيّ (ظاهر/مخفي) كان يُقرأ ومضةً لا حركة، فالوصول يُقاد
+         بـ `tDock` نفسه الذي يقود الضلع: تهبط العلامة من أعلى وتضمر من 1.5
+         إلى 1 بينما الضلعُ ينزل ويضمر خارجها. حركتان بمصدرٍ واحد فتُقرآن
+         حركةً واحدة تعبر حافّة البطاقة.
+
+         السلّم المحلّي (آخر 45٪ من الاقتراب) يمنع التعارض: قبله الضلعُ في
+         منتصف الطريق وظهورُ العلامة معه يُريها مرّتين، وبعده يكون الضلع تحت
+         البطاقة مباشرةً فيتّصل التسليم.
+
+         `transform` و`opacity` وحدهما — لا خصائص تخطيط، فلا إعادة رصف.
+
+         السمة تُقصر هذا على من يحتاجه: المراسي الأخرى فوق `main` وهو تحت
+         الطبقة، فالضلع يُرى فيها — وإظهارُ الثابتة هناك يُظهر علامتين.
+
+         والقاعدة العامّة في `globals.css` تُخفي كل `[data-mark-static]` أثناء
+         التشكّل؛ وهذا نمطٌ سطريّ يعلوها، ويُمحى بالإفراغ فتعود القاعدة.
+
+         وحين تتعطّل مرحلة المراسي (`!docksUsable`) لا ضلعَ يصل أصلًا، فتستقرّ
+         العلامة فورًا بلا حركة — وإلّا بقيت الفجوة فاضيةً إلى الأبد. */
+      dockEls.forEach((el, i) => {
+        if (el.dataset.markHandoff === undefined) return;
+        const u = docksUsable ? ease(clamp((tDock[i] - DOCK_ARRIVAL) / (1 - DOCK_ARRIVAL))) : 1;
+        el.style.visibility = "visible";
+        el.style.opacity = String(u);
+        el.style.transform =
+          `translate3d(0,${(mix(-ARRIVAL_RISE, 0, u)).toFixed(2)}px,0)` +
+          ` scale(${mix(ARRIVAL_SCALE, 1, u).toFixed(4)})`;
       });
 
       /* ⚠️ **`t2` من موضع مرساة الاستقرار على الشاشة — لا من قاع الصفحة.**
@@ -285,6 +348,15 @@ export function MarkMorph() {
       frame = 0;
       host.textContent = "";
       shards = [];
+      /* أنماط التسليم السطريّة تُمحى: بلا التشكّل تتكفّل القاعدة العامّة
+         بإظهار الثوابت، وبقاءُ `visible` سطريًّا يمنعها لو أُعيد التشكّل. */
+      document
+        .querySelectorAll<HTMLElement>("[data-mark-handoff]")
+        .forEach((el) => {
+          el.style.visibility = "";
+          el.style.opacity = "";
+          el.style.transform = "";
+        });
       delete (window as unknown as { __MARK_BOXES?: readonly MarkBox[] })
         .__MARK_BOXES;
       host.style.visibility = "";
