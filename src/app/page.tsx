@@ -306,13 +306,25 @@ export default function HomePage() {
                            ⚠️ وأحدَ عشرَ من النسخ الداكنة **مُعاد تلوينها** لا
                            رسميّة — القرار وحدوده موثَّقان في `about.ts` عند
                            تعريف `logoDark`. */
+                        /* ⚠️ **السقف 260px لا 200.** الارتفاع مثبَّت والعرض
+                           تابعٌ له (`w-auto`)، فسقفٌ يقصّ العرضَ يُبقي الارتفاع
+                           فيهبط الشعار المرسوم داخل صندوقه بـ`object-contain`:
+                           **هيئة الزكاة** نسبتها 4.48 فتحتاج 251px عند 56px،
+                           وكانت تُقصّ إلى 200 فتُرسم بارتفاع **44.7px** بين
+                           ثلاثةٍ وعشرين شعارًا بـ56px — شاذٌّ واحدٌ يُرى.
+                           و`Next` كان يحذّر في كل تحميل: «width or height
+                           modified, but not the other».
+
+                           و260 مشتقٌّ لا مُقدَّر: أعرضُ شعارٍ بعدها «مداريم»
+                           عند 196px، فالسقف لا يمسّ أحدًا سواها ويبقى حائلًا
+                           لو وصل شعارٌ أعرض. */
                         <>
                           <Image
                             src={partner.logo}
                             alt={`شعار ${partner.name}`}
                             width={200}
                             height={64}
-                            className={`h-12 w-auto max-w-[200px] object-contain sm:h-14${
+                            className={`h-12 w-auto max-w-[260px] object-contain sm:h-14${
                               partner.logoDark ? " dark:hidden" : ""
                             }`}
                           />
@@ -322,7 +334,7 @@ export default function HomePage() {
                               alt={`شعار ${partner.name}`}
                               width={200}
                               height={64}
-                              className="hidden h-12 w-auto max-w-[200px] object-contain dark:block sm:h-14"
+                              className="hidden h-12 w-auto max-w-[260px] object-contain dark:block sm:h-14"
                             />
                           ) : null}
                         </>
