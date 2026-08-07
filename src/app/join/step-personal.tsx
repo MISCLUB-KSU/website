@@ -3,15 +3,25 @@
 import { useState } from "react";
 
 import { RadioGroup, SelectField, TextField } from "@/components/ui/field";
-import { ACADEMIC_LEVELS, MAJOR_OTHER, MAJORS } from "@/lib/registration";
+import {
+  ACADEMIC_LEVELS,
+  HOME_UNIVERSITY,
+  MAJOR_OTHER,
+  MAJORS,
+  UNIVERSITIES,
+  UNIVERSITY_OTHER,
+} from "@/lib/registration";
 import { StepPanel } from "./step-panel";
 
 /**
  * الخطوة الأولى — البيانات الشخصية.
  *
- * التخصص قائمةٌ ببرامج بكالوريوس كلية إدارة الأعمال، و«تخصص آخر» يفتح حقلًا
- * نصّيًا لمن يدرس خارجها. تعليمات الكتابة **فوق** الحقل لا تحته: الطالب يقرأ
- * الشرط قبل أن يكتب، لا بعد أن يُرفض ما كتبه.
+ * الجامعة والتخصص قائمتان لهما خيار «أخرى» يفتح حقلًا نصّيًا: القائمة تضبط
+ * الشائع، والحقل يستوعب ما خرج عنه بلا أن تطول القائمة بلا نهاية. تعليمات
+ * الكتابة **فوق** الحقل لا تحته: الطالب يقرأ الشرط قبل أن يكتب، لا بعد أن
+ * يُرفض ما كتبه.
+ *
+ * الجامعة قبل المستوى والتخصص — الأعمّ يُسأل قبل الأخصّ.
  */
 
 type StepPersonalProps = {
@@ -32,6 +42,12 @@ export function StepPersonal({
      `Server Action`، والقائمة المتحكَّم بها لا تستعيد اختيارها بعده —
      تُفرَّغ في الصفحة بينما تظنّ الحالة أنها ممتلئة. */
   const [major, setMajor] = useState(v.major ?? "");
+  const [university, setUniversity] = useState(v.university ?? "");
+
+  /* الرقم الجامعي تسع خانات في جامعة الملك سعود وحدها — والإرشاد يتبع
+     القاعدة الفعلية، فمثالٌ بتسع خانات أمام طالبِ جامعةٍ أخرى يجعله يظنّ
+     رقمه خطأً وهو صحيح. */
+  const isHome = university === HOME_UNIVERSITY;
 
   return (
     <StepPanel
@@ -51,6 +67,45 @@ export function StepPersonal({
         autoComplete="name"
       />
 
+      {/* قبل الرقم الجامعي لا بعده: طولُ الرقم يتبع الجامعة، فلو سُئل عنها
+          بعده لكتب رقمه على إرشادٍ لا يخصّه ثم رُدَّ عليه. */}
+      <SelectField
+        key={`university-${v.university ?? ""}`}
+        id="university"
+        label="الجامعة"
+        required
+        placeholder="اختر جامعتك"
+        options={UNIVERSITIES.map((u) => ({ value: u, label: u }))}
+        defaultValue={v.university}
+        onChange={(event) => setUniversity(event.target.value)}
+        error={e.university}
+      />
+
+      {university === UNIVERSITY_OTHER && (
+        <div className="flex flex-col gap-s3">
+          {/* التعليمات فوق الحقل — شرطٌ يُقرأ قبل الكتابة لا بعد الرفض */}
+          <div className="border-s-2 border-accent bg-bg-sunken px-s4 py-s3">
+            <p className="text-[0.84rem] leading-relaxed text-fg-muted">
+              اكتب اسم الجامعة{" "}
+              <strong className="font-semibold text-fg">كاملًا ورسميًا</strong>{" "}
+              و<strong className="font-semibold text-fg">بالعربية</strong>.
+              <br />
+              مثال: «جامعة الملك عبدالعزيز» — لا «الملك عبدالعزيز» ولا{" "}
+              <span dir="ltr">KAU</span>.
+            </p>
+          </div>
+
+          <TextField
+            id="universityOther"
+            label="اسم الجامعة"
+            required
+            defaultValue={v.universityOther}
+            error={e.universityOther}
+            placeholder="جامعة الملك عبدالعزيز"
+          />
+        </div>
+      )}
+
       <div className="grid gap-s5 sm:grid-cols-2">
         <TextField
           id="studentId"
@@ -58,9 +113,10 @@ export function StepPersonal({
           required
           defaultValue={v.studentId}
           error={e.studentId}
-          hint="تسع خانات."
-          /* المثال يطابق الشرط حرفيًا — تسع خانات لا عشر */
-          placeholder="441234567"
+          hint={isHome ? "تسع خانات." : "كما هو مسجّل في جامعتك — أرقام فقط."}
+          /* المثال يطابق الشرط حرفيًا — تسع خانات لا عشر. ويُحذف عند غير
+             جامعة الملك سعود: لا شرط طولٍ هناك، ومثالٌ بطولٍ بعينه يوهم بشرط. */
+          placeholder={isHome ? "441234567" : undefined}
           inputMode="numeric"
           dir="ltr"
           className="text-start"
@@ -139,7 +195,7 @@ export function StepPersonal({
         defaultValue={v.major}
         onChange={(event) => setMajor(event.target.value)}
         error={e.major}
-        hint="برامج بكالوريوس كلية إدارة الأعمال — ومن يدرس خارجها يختار «تخصص آخر»."
+        hint="برامج بكالوريوس كلية إدارة الأعمال بجامعة الملك سعود — ومن يدرس غيرها يختار «تخصص آخر»."
       />
 
       {major === MAJOR_OTHER && (

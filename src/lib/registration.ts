@@ -41,6 +41,66 @@ export const ACADEMIC_LEVELS = [
   "السنة الخامسة فأكثر",
 ] as const;
 
+/** يُختار حين لا تكون الجامعة في القائمة — فتُكتب يدويًا */
+export const UNIVERSITY_OTHER = "جامعة أخرى";
+
+/**
+ * جامعة النادي.
+ *
+ * تُذكر باسمها لا بموضعها في القائمة: قواعدُ حقولٍ أخرى معلّقة بها — طول
+ * الرقم الجامعي، وقائمة التخصصات — فتغييرُ ترتيب القائمة يجب ألّا يغيّرها.
+ */
+export const HOME_UNIVERSITY = "جامعة الملك سعود";
+
+/**
+ * الجامعات المعتمدة في القائمة.
+ *
+ * الترتيب كما اعتمدته إدارة النادي لا أبجديًّا: جامعة الملك سعود أولًا —
+ * النادي فيها وأغلب المتقدّمين منها — ثم الحكومية ثم الأهلية.
+ *
+ * الأسماء **رسميّة كما تكتبها الجامعة عن نفسها**، لا كما تُتداول. تحديدًا:
+ * «جامعة الفيصل» و«جامعة دار العلوم» بلا لفظ «الأهلية» — وهو وصفٌ لنوعها
+ * لا جزءٌ من اسمها. الطالب يبحث عن اسم جامعته كما يعرفه من وثائقه، واسمٌ
+ * مزيدٌ عليه يجعله يظنّ جامعته غير مذكورة فيختار «جامعة أخرى» بلا داعٍ.
+ *
+ * ⚠️ القائمة أوسع من جامعة واحدة، وقائمة التخصصات ما زالت برامج كلية إدارة
+ * الأعمال بجامعة الملك سعود — فمن يختار جامعةً أخرى يمرّ عبر «تخصص آخر».
+ */
+export const UNIVERSITIES = [
+  HOME_UNIVERSITY,
+  "جامعة الإمام محمد بن سعود الإسلامية",
+  "جامعة الأميرة نورة بنت عبدالرحمن",
+  "جامعة الملك سعود بن عبدالعزيز للعلوم الصحية",
+  "جامعة الأمير سطام بن عبدالعزيز",
+  "جامعة الأمير سلطان",
+  "جامعة الفيصل",
+  "جامعة اليمامة",
+  "جامعة دار العلوم",
+  "جامعة المعرفة",
+  "الجامعة العربية المفتوحة",
+  UNIVERSITY_OTHER,
+] as const;
+
+/* ── الرقم الجامعي ────────────────────────────────────────────────────── */
+
+/**
+ * طول الرقم الجامعي في جامعة الملك سعود — تسع خانات، ويُفرض عليها وحدها.
+ *
+ * فرضُه على الجميع كان يرفض رقمًا صحيحًا عند كل جامعةٍ تعتمد طولًا غيره —
+ * وهو رفضٌ لا يستطيع الطالب تجاوزه: الرقم ليس اختيارًا يُعاد كتابته.
+ */
+export const KSU_STUDENT_ID_LENGTH = 9;
+
+/**
+ * الحدّان اللذان يُقبل بينهما رقمُ بقيّة الجامعات.
+ *
+ * واسعان عمدًا: أطوال الأرقام تختلف بين الجامعات ولا قائمة موثوقة بها،
+ * وحدٌّ ضيّقٌ مبنيٌّ على تخمين يعيد العطلَ الذي نصلحه. وظيفتهما صدّ خطأ
+ * الكتابة (خانة واحدة، أو رقم جوال ملصوق) لا فرضُ تنسيق — والفرزُ بشريّ.
+ */
+export const STUDENT_ID_MIN = 4;
+export const STUDENT_ID_MAX = 12;
+
 /** يُختار حين لا يكون التخصص من برامج الكلية — فيُكتب يدويًا */
 export const MAJOR_OTHER = "تخصص آخر";
 
@@ -170,7 +230,9 @@ const personalShape = {
     .min(5, "الاسم قصير — اكتبه ثلاثيًا")
     .max(80, "الاسم طويل — اكتبه ثلاثيًا بلا ألقاب"),
 
-  /* تسع خانات — والمثال المعروض في الحقل يطابق هذا الشرط حرفيًا */
+  /* الطول يتبع الجامعة، ويُحكم عليه في `refinePersonal` — وهنا الحدّان
+     الواسعان وحدهما. ما دون `STUDENT_ID_MIN` أو فوق `STUDENT_ID_MAX` خطأ
+     كتابةٍ لا اختلافُ تنسيق، ولا جامعة تعتمده. */
   studentId: z
     .string()
     .transform(normalizeDigits)
@@ -180,7 +242,8 @@ const personalShape = {
         /* الفراغ أولًا: بدونه يرى الطالبُ رسالةَ «أرقام فقط» على حقل لم يكتب فيه شيئًا */
         .min(1, "اكتب رقمك الجامعي")
         .regex(DIGITS, "الرقم الجامعي أرقام فقط، بلا مسافات أو شرطات")
-        .length(9, "الرقم الجامعي تسع خانات"),
+        .min(STUDENT_ID_MIN, "الرقم الجامعي أقصر من أي رقم جامعي حقيقي")
+        .max(STUDENT_ID_MAX, "الرقم الجامعي أطول من أي رقم جامعي حقيقي"),
     ),
 
   /* عشر خانات تبدأ بـ 1 للمواطن أو 2 للمقيم — نفس قاعدة أبشر */
@@ -215,6 +278,18 @@ const personalShape = {
     .toLowerCase()
     .min(1, "اكتب بريدك الإلكتروني")
     .email("صيغة البريد غير صحيحة — مثال: name@ksu.edu.sa"),
+
+  university: z.enum(UNIVERSITIES, {
+    errorMap: () => ({ message: "اختر جامعتك" }),
+  }),
+
+  /* لا تُطلب إلا مع «جامعة أخرى» — الشرط في `refinePersonal` أدناه */
+  universityOther: z
+    .string()
+    .trim()
+    .max(60, "اسم الجامعة طويل — اكتبه كما هو رسميًا")
+    .optional()
+    .or(z.literal("")),
 
   level: z.enum(ACADEMIC_LEVELS, {
     errorMap: () => ({ message: "اختر مستواك الدراسي" }),
@@ -268,22 +343,71 @@ const finalShape = {
 
 /* ── الشروط المركّبة ──────────────────────────────────────────────────── */
 
-type PersonalValues = { major?: string; majorOther?: string };
+type PersonalValues = {
+  studentId?: string;
+  university?: string;
+  universityOther?: string;
+  major?: string;
+  majorOther?: string;
+};
 
-function refinePersonal(v: PersonalValues, ctx: z.RefinementCtx): void {
-  if (v.major !== MAJOR_OTHER) return;
-
-  const other = (v.majorOther ?? "").trim();
+/**
+ * شرط حقلٍ نصّي يفتحه خيار «أخرى».
+ *
+ * القاعدة واحدة للجامعة والتخصص فتُكتب مرّة: الحقل لا يُطلب إلا حين يُختار
+ * «أخرى»، وحينها لا بدّ أن يكون مكتوبًا كاملًا وبالعربية. والرسائل تُمرَّر
+ * من الخارج لأن كلًّا منهما يقول للطالب **كيف يُصلَح حقله هو** لا قاعدةً عامة.
+ */
+function requireOther(
+  ctx: z.RefinementCtx,
+  path: string,
+  value: string | undefined,
+  messages: { empty: string; short: string; latin: string },
+): void {
+  const other = (value ?? "").trim();
   const message = !other
-    ? "اكتب اسم تخصصك كاملًا بالعربية كما هو في اسم القسم"
+    ? messages.empty
     : other.length < 4
-      ? "اكتب اسم التخصص كاملًا لا مختصرًا"
+      ? messages.short
       : !ARABIC_ONLY.test(other)
-        ? "اكتب اسم التخصص بالعربية — بلا حروف لاتينية ولا أرقام"
+        ? messages.latin
         : undefined;
 
   if (message) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["majorOther"], message });
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path], message });
+  }
+}
+
+function refinePersonal(v: PersonalValues, ctx: z.RefinementCtx): void {
+  /* التسع خانات قاعدةُ جامعة الملك سعود وحدها.
+     `v.studentId` هنا مطبَّعٌ ومفحوصٌ أصلًا — لا يصل الشرطُ إلا بعد نجاح
+     مخطّط الحقل، فيكفي قياس طوله. */
+  if (
+    v.university === HOME_UNIVERSITY &&
+    v.studentId &&
+    v.studentId.length !== KSU_STUDENT_ID_LENGTH
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["studentId"],
+      message: "الرقم الجامعي في جامعة الملك سعود تسع خانات",
+    });
+  }
+
+  if (v.university === UNIVERSITY_OTHER) {
+    requireOther(ctx, "universityOther", v.universityOther, {
+      empty: "اكتب اسم جامعتك كاملًا بالعربية",
+      short: "اكتب اسم الجامعة كاملًا لا مختصرًا",
+      latin: "اكتب اسم الجامعة بالعربية — بلا حروف لاتينية ولا أرقام",
+    });
+  }
+
+  if (v.major === MAJOR_OTHER) {
+    requireOther(ctx, "majorOther", v.majorOther, {
+      empty: "اكتب اسم تخصصك كاملًا بالعربية كما هو في اسم القسم",
+      short: "اكتب اسم التخصص كاملًا لا مختصرًا",
+      latin: "اكتب اسم التخصص بالعربية — بلا حروف لاتينية ولا أرقام",
+    });
   }
 }
 
@@ -347,6 +471,8 @@ export const STEPS = [
       "nationalId",
       "phone",
       "email",
+      "university",
+      "universityOther",
       "level",
       "major",
       "majorOther",
