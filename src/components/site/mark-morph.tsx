@@ -138,6 +138,17 @@ export function MarkMorph() {
         ? ease(clamp(1 - remaining / (window.innerHeight * 0.42)))
         : 0;
 
+      /* ⚠️ **الضلع لا يطير مرئيًّا.** مقيسًا قبل هذه البوّابة: 37.9% من
+         عنوان «من نحن؟» مغطّى على 390، و9.8% على 1280 — والفارق ليس
+         عشوائيًّا: الضلع يبقى بحجمه بينما يضيق النصّ، فيتفاقم العطل على
+         الجوّال. أمّا الساكن في مرساه فبريء (3.2%، ومصدره ملامسةُ الضلع 3
+         للنصّ الذي هو جزءٌ منه أصلًا).
+         فيُطفأ الضلع في وسط رحلته ويُضاء عند طرفيها. العتامة مسموحةٌ في
+         قيد الحركة (transform/opacity/clip-path) فلا تخالف §11. */
+      const FLAT = 0.6; // نصف عرض هضبة الإخفاء — انظر ملاحظة الضبط أدناه
+      const fade = (t: number) =>
+        clamp((Math.abs(2 * t - 1) - FLAT) / (1 - FLAT));
+
       shards.forEach((shard, i) => {
         const b = BOXES[i];
         const ax = a.left + b.x * kHero;
@@ -157,6 +168,8 @@ export function MarkMorph() {
         const h = mix(s ? mix(ah, s.height, t1i) : ah, ch, t2);
 
         shard.style.transform = `translate3d(${x}px,${y}px,0) scale(${w / b.w},${h / b.h})`;
+        /* الرحلة النشطة: نحو التذييل إن بدأ الاجتماع، وإلّا نحو المرسى. */
+        shard.style.opacity = String(fade(t2 > 0 ? t2 : t1i));
       });
     };
 
@@ -170,7 +183,7 @@ export function MarkMorph() {
         const d = document.createElement("div");
         d.dataset.markShard = String(i);
         d.style.cssText =
-          `position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;` +
+          `position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform,opacity;` +
           `width:${b.w}px;height:${b.h}px`;
         d.innerHTML =
           `<svg viewBox="${b.x} ${b.y} ${b.w} ${b.h}" fill="currentColor" focusable="false"` +
