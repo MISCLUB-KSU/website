@@ -122,6 +122,17 @@ export type PartnerBadge = {
   name: string;
   /** مسار داخل `public/partners/` — يبقى فارغًا حتى يصل الأصل */
   logo?: string;
+  /**
+   * نسخةٌ فاتحة تُعرض في الوضع الداكن وحدها.
+   *
+   * أكثر شعارات الشركاء داكنةٌ على شفّاف: تعمل على الأرضية الثلجية وتبهت
+   * على الأرضية المحايدة `#101010`. والحلّ نسخةٌ رسميّةٌ فاتحة من الجهة
+   * نفسها — **لا فلترٌ ولا عكسُ ألوان**، فتلك إعادةُ تلوينٍ لعلامةٍ تجارية
+   * تمنعها قاعدة هذا الملف.
+   *
+   * ومتى غابت، يبقى الشعار الواحد في الوضعين — أصدقُ من نسخةٍ مصنوعة.
+   */
+  logoDark?: string;
 };
 
 export const ALL_PARTNERS: readonly PartnerBadge[] = [
@@ -135,7 +146,8 @@ export const ALL_PARTNERS: readonly PartnerBadge[] = [
   { name: "باق", logo: "/partners/baag.png" },
   { name: "جاهز", logo: "/partners/jahez.svg" },
   { name: "T2", logo: "/partners/t2.png" },
-  { name: "علم", logo: "/partners/elm.png" },
+  // النسخة البيضاء `elmlogoWhite.svg` من `elm.sa` — `fill="white"` نقيّة.
+  { name: "علم", logo: "/partners/elm.png", logoDark: "/partners/elm-white.svg" },
   // «سبر» = `trysbr.com` — أكّده حسام (٧ أغسطس). الشعار الأفقي في موقعهم
   // أبيضُ بالكامل (`#fbfbfb`) فيختفي نهارًا، ولا يُعاد تلوين علامة تجارية.
   // فأُخذت أيقونتهم الرسمية `trysbr.com/icon.png` (500px): بلاطةٌ معتمة
@@ -153,7 +165,9 @@ export const ALL_PARTNERS: readonly PartnerBadge[] = [
   { name: "أكاديمية طويق", logo: "/partners/tuwaiq.webp" },
   // «عزم السعودية» — من أيقونة `azm.com` الرسمية (512px)، إذ يُرسم شعار
   // الترويسة في الموقع inline فلا يوجد كملفّ مستقلّ.
-  { name: "عزم", logo: "/partners/azm.png" },
+  // النسخة البيضاء من `azm.com/suadia-azm.png` (تذييل موقعهم): 19.03:1 ليلًا
+  // مقابل 1.47:1 للنسخة الداكنة — الزوج يغطّي الوضعين.
+  { name: "عزم", logo: "/partners/azm.png", logoDark: "/partners/azm-white.png" },
   { name: "EY", logo: "/partners/ey.svg" },
   { name: "سابك", logo: "/partners/sabic.svg" },
   // ⚠️ أُخذ أولًا من `cntxt.tech` ثم صُحّح إلى `cntxt.com` — النطاق الرسمي
