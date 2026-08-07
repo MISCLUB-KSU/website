@@ -134,7 +134,15 @@ export const ALL_PARTNERS: readonly PartnerBadge[] = [
   { name: "جاهز", logo: "/partners/jahez.svg" },
   { name: "T2", logo: "/partners/t2.png" },
   { name: "علم", logo: "/partners/elm.png" },
-  { name: "سبر" },
+  // «سبر» = `trysbr.com` — أكّده حسام (٧ أغسطس). الشعار الأفقي في موقعهم
+  // أبيضُ بالكامل (`#fbfbfb`) فيختفي نهارًا، ولا يُعاد تلوين علامة تجارية.
+  // فأُخذت أيقونتهم الرسمية `trysbr.com/icon.png` (500px): بلاطةٌ معتمة
+  // 100% بخلفيةٍ سوداء، فتُقرأ في الوضعين معًا.
+  // ⚠️ ولم يُؤخذ `assets/clients/Logo.png` رغم أنه داكنٌ وجاهز: نسبته
+  // 2.947 ولا تطابق نسبة شعارهم المؤكَّد (1.335)، وموضعه في مجلّد
+  // `clients/` — فالأرجح أنه شعار عميلٍ لهم لا شعارهم. وضعُه كان
+  // سيُعلن شراكةً مع جهةٍ خاطئة باسم النادي.
+  { name: "سبر", logo: "/partners/sbr.png" },
   // ⚠️ يحتاج تأكيدك: أُخذ من `rvc.com.sa` — شركة وادي الرياض، الذراع
   // الاستثمارية لجامعة الملك سعود. الاحتمال عالٍ لأن النادي في الجامعة
   // نفسها، لكنه استنتاجٌ لا نصّ.
@@ -161,9 +169,12 @@ export const ALL_PARTNERS: readonly PartnerBadge[] = [
   { name: "لين", logo: "/partners/lean.svg" },
   { name: "PWC", logo: "/partners/pwc.svg" },
   { name: "مداريم", logo: "/partners/madareem.png" },
-  // Mozn: شعارها الرسمي أبيض بالكامل فيختفي على الأرضية النهارية، ولا
-  // يُعاد تلوين علامةٍ تجارية. يبقى الاسم حتى تصل نسخةٌ داكنة.
-  { name: "Mozn" },
+  // Mozn = `mozn.ai` — أكّده حسام (٧ أغسطس)، وهي «مزن» في `PARTNERS` أعلاه.
+  // شعارها الأفقي `mozn.svg` أبيضُ مع لمسةٍ سماوية (`#03E7E7`) فيختفي نصفه
+  // نهارًا. فأُخذت أيقونة الويب الرسمية من نطاقهم (256px): بلاطةٌ معتمة
+  // 100% بخلفيةٍ كحليّة داكنة، تُقرأ في الوضعين — نفس منهج «عزم» و«Neotek»
+  // أعلاه حين يكون شعار الترويسة غير متاحٍ كملفٍّ مستقلّ.
+  { name: "Mozn", logo: "/partners/mozn.png" },
   { name: "STC", logo: "/partners/stc.svg" },
   { name: "Thiqah", logo: "/partners/thiqah.png" },
   { name: "MRSOOL", logo: "/partners/mrsool.png" },
