@@ -62,7 +62,11 @@ export default function HomePage() {
         <section
           id="about"
           aria-labelledby="about-heading"
-          className="mx-auto w-full max-w-4xl px-s4 py-s8 sm:px-s7"
+          /* ⚠️ `above-mark` تلزم: بدونها تُرسم الأضلاع الطائرة **فوق** نصّ
+             القسم، وهي علّةُ بوّابة الإطفاء التي كانت تُخفي العلامة في أكثر
+             من ثلث الصفحة. الأقسام كلها فوق الطبقة الآن، فبقيت مرئيّةً
+             طوال الرحلة والنصّ فوقها. */
+          className="above-mark mx-auto w-full max-w-4xl px-s4 py-s8 sm:px-s7"
         >
           <h2
             id="about-heading"
@@ -145,7 +149,7 @@ export default function HomePage() {
         <section
           id="pillars"
           aria-labelledby="pillars-heading"
-          className="mx-auto w-full max-w-6xl px-s4 pb-s8 sm:px-s7"
+          className="above-mark mx-auto w-full max-w-6xl px-s4 pb-s8 sm:px-s7"
         >
           <div className="mb-s7 flex items-center gap-s3">
             {/* مرسى الضلع 4 — نسبة 1.1469، توأم الضلع 5 في رأس «شركاء النجاح»
@@ -244,7 +248,7 @@ export default function HomePage() {
         <section
           id="partners"
           aria-labelledby="partners-heading"
-          className="w-full py-s8"
+          className="above-mark w-full py-s8"
         >
           <div className="mx-auto mb-s7 w-full max-w-6xl px-s4 sm:px-s7">
             <div className="flex items-center gap-s3">
