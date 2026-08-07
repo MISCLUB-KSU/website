@@ -168,7 +168,10 @@ export const ALL_PARTNERS: readonly PartnerBadge[] = [
   // النسخة البيضاء من `azm.com/suadia-azm.png` (تذييل موقعهم): 19.03:1 ليلًا
   // مقابل 1.47:1 للنسخة الداكنة — الزوج يغطّي الوضعين.
   { name: "عزم", logo: "/partners/azm.png", logoDark: "/partners/azm-white.png" },
-  { name: "EY", logo: "/partners/ey.svg" },
+  // النسخة السالبة مستخرجةٌ من SVG ترويسة `ey.com` — أبيض + الشعاع الأصفر
+  // `#ffe600`، وهي التي يستعملها EY على خلفيّاتهم الداكنة. أُخذت العلامة
+  // وحدها دون سطر الشعار النصّي لأنه لا يُقرأ عند ارتفاع 48px.
+  { name: "EY", logo: "/partners/ey.svg", logoDark: "/partners/ey-white.svg" },
   { name: "سابك", logo: "/partners/sabic.svg" },
   // ⚠️ أُخذ أولًا من `cntxt.tech` ثم صُحّح إلى `cntxt.com` — النطاق الرسمي
   // الذي أكّده حسام. النطاقان قد يعودان لجهتين مختلفتين تمامًا.
@@ -183,6 +186,8 @@ export const ALL_PARTNERS: readonly PartnerBadge[] = [
   // ⚠️ يحتاج تأكيدك: أُخذ من `lean.sa` — Lean Business Services. الاسم
   // «لين» تشترك فيه شركاتٌ عدّة، فإن لم تكن هي فاحذف `logo` وحده.
   { name: "لين", logo: "/partners/lean.svg" },
+  // الشعار الكامل (1000×759) من ويكيميديا كومنز، ملكيّة عامّة — كان قبله
+  // أيقونةٌ مربّعة 100×100 تُقرأ صغيرةً بين الشعارات الأفقيّة.
   { name: "PWC", logo: "/partners/pwc.svg" },
   { name: "مداريم", logo: "/partners/madareem.png" },
   // Mozn = `mozn.ai` — أكّده حسام (٧ أغسطس)، وهي «مزن» في `PARTNERS` أعلاه.

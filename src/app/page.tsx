@@ -276,18 +276,29 @@ export default function HomePage() {
                   {PARTNER_ROWS[row].map((partner) => (
                     <li key={partner.name} className="shrink-0">
                       {partner.logo ? (
-                        /* ⚠️ **الشريط يستعمل النسخة الداكنة دائمًا، لا
-                           `logoDark`.** اللوح تحته ثلجيٌّ في الوضعين، فالتبديل
-                           بحسب الثيم يضع نسخةً بيضاء على لوحٍ أبيض: مقيسًا
-                           1.05:1 — اختفاءٌ تامّ. و`logoDark` يبقى في البيانات
-                           لسطحٍ داكنٍ حقيقيّ إن وُجد يومًا. */
-                        <Image
-                          src={partner.logo}
-                          alt={`شعار ${partner.name}`}
-                          width={200}
-                          height={64}
-                          className="h-12 w-auto max-w-[200px] object-contain sm:h-14"
-                        />
+                        /* اللوح داكن، فالنسخة الفاتحة (`logoDark`) هي التي
+                           تُعرض حين تتوفّر. ومتى غابت بقيت الواحدة — لا فلتر
+                           ولا عكس ألوان، فذلك إعادةُ تلوينٍ لعلامةٍ تجارية. */
+                        <>
+                          <Image
+                            src={partner.logo}
+                            alt={`شعار ${partner.name}`}
+                            width={200}
+                            height={64}
+                            className={`h-12 w-auto max-w-[200px] object-contain sm:h-14${
+                              partner.logoDark ? " dark:hidden" : ""
+                            }`}
+                          />
+                          {partner.logoDark ? (
+                            <Image
+                              src={partner.logoDark}
+                              alt={`شعار ${partner.name}`}
+                              width={200}
+                              height={64}
+                              className="hidden h-12 w-auto max-w-[200px] object-contain dark:block sm:h-14"
+                            />
+                          ) : null}
+                        </>
                       ) : (
                         <span
                           dir="rtl"

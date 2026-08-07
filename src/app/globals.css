@@ -157,18 +157,18 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #101010;
-    --bg-raised: #1c1c1c;
-    --bg-sunken: #080808;
+    --bg: #16181d;
+    --bg-raised: #212530;
+    --bg-sunken: #101218;
     --bg-invert: var(--color-snow);
     --fg: var(--color-snow);
-    --fg-muted: #9a9a9a;
+    --fg-muted: #9aa0ab;
     --fg-invert: var(--color-charcoal);
     --accent: var(--color-sky);
     --accent-hover: #a4c5e3;
     --accent-fg: var(--color-charcoal);
-    --border: #3a3a3a;
-    --border-strong: #6f6f6f;
+    --border: #3c424f;
+    --border-strong: #727a88;
     --ring: var(--color-sky);
     /* تنقلب العلامة مع الأرضية — وهي القاعدة التي أرساها `.home-ink` أدناه
        (`--mark: var(--color-snow)`) حين يصير السياق حبرًا. تُعمَّم هنا. */
@@ -183,18 +183,18 @@
 
 /* الاختيار اليدوي يتغلّب على تفضيل النظام في الاتجاهين */
 :root[data-theme="dark"] {
-  --bg: #101010;
-  --bg-raised: #1c1c1c;
-  --bg-sunken: #080808;
+  --bg: #16181d;
+  --bg-raised: #212530;
+  --bg-sunken: #101218;
   --bg-invert: var(--color-snow);
   --fg: var(--color-snow);
-  --fg-muted: #9a9a9a;
+  --fg-muted: #9aa0ab;
   --fg-invert: var(--color-charcoal);
   --accent: var(--color-sky);
   --accent-hover: #a4c5e3;
   --accent-fg: var(--color-charcoal);
-  --border: #3a3a3a;
-  --border-strong: #6f6f6f;
+  --border: #3c424f;
+  --border-strong: #727a88;
   --ring: var(--color-sky);
   --mark: var(--snow);
   --mark-quiet: var(--sky);
@@ -583,11 +583,13 @@ h3 {
 .partners-rail {
   display: flex;
   width: max-content;
-  animation: partners-drift 72s linear infinite;
+  animation: partners-drift 40s linear infinite;
 }
 
-/* التوقّف عند المرور أو التركيز: مهلةٌ لقراءة اسمٍ يمرّ */
-.partners-viewport:hover .partners-rail,
+/* ⚠️ **لا توقّف عند مرور الفأرة** — بطلب حسام. كان الشريط يقف عند
+   `:hover` فيبدو معطَّلًا لمن يمرّ بالمؤشّر عابرًا.
+   لكن `:focus-within` يبقى: من يتنقّل بلوحة المفاتيح يحتاج الشريط ساكنًا
+   ليقرأ ما وصل إليه، وإلّا هرب العنصر المركَّز من تحت عينه. */
 .partners-viewport:focus-within .partners-rail {
   animation-play-state: paused;
 }
@@ -617,17 +619,9 @@ h3 {
   animation-name: partners-drift-reverse;
 }
 
-/* لوحُ الشعارات **ثلجيٌّ في الوضعين**، لا يتبع الأرضية.
-
-   السبب مقيس: شعارات الشركاء أكثرها داكنٌ على شفّاف، صُمّمت لأرضياتٍ فاتحة.
-   وعلى الأرضية المحايدة `#101010` تبهت. وجُرّب `--surface-raised` (#1c1c1c)
-   فأعطى فرقًا 1.12:1 عن الأرضية — لا يُظهر شيئًا. فاللوح الثلجيّ هو الحلّ
-   الوحيد الذي يُظهرها **بلا إعادة تلوين أي علامة تجارية**.
-
-   ونهارًا يبقى ثلجيًّا أيضًا: على أرضية `--surface` الثلجية يكاد لا يُرى،
-   فيقرأ القسمان لوحًا واحدًا في الوضعين لا شريطًا يظهر ليلًا ويختفي نهارًا. */
+/* لوحُ الشعارات — داكنٌ يتبع الأرضية صعودًا بدرجة. */
 .partners-panel {
-  background: var(--snow);
+  background: var(--surface-raised);
 }
 
 @media (prefers-reduced-motion: reduce) {
