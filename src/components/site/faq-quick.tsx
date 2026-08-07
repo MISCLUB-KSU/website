@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { Mark } from "@/components/site/mark";
 import type { FaqItem } from "@/content/faq";
 import { isolateLatin } from "@/lib/bidi";
 
@@ -62,6 +63,31 @@ export function FaqQuick({ items }: Props) {
       className="above-mark w-full bg-bg-sunken py-s9"
     >
       <div className="mx-auto w-full max-w-4xl px-s4 sm:px-s7">
+        {/* ═══ مرسى اجتماع العلامة ═══
+            هنا تجتمع أضلاع الشعار الستّة بعد رحلتها على الأقسام. كان
+            الاجتماع في التذييل، ونُقل إلى هنا بطلبٍ صريح (حسام، ٧ أغسطس
+            ٢٠٢٦): «اللوقو ما يتشكّل عند الأسئلة الشائعة، أبيه يكون عندها،
+            واللي تحت بالفوتر شِله».
+
+            ⚠️ **بلا حشوٍ خاصٍّ بها.** `getBoundingClientRect` يشمل الحشو
+            دائمًا، بينما الشعار الساكن بداخلها يملأ صندوق المحتوى وحده —
+            فحشوٌ هنا يكبّر `kRest` عن حجم الشعار المرسوم فعليًّا وينحرف
+            الانطباق. الحشو على الغلاف الخارجي لا عليها.
+
+            ⚠️ `data-mark-static` على الغلاف لا على `Mark` — فهو لا ينشر
+            الخصائص إلى `<svg>`. */}
+        <div aria-hidden className="mx-auto mb-s7 w-full max-w-xl">
+          <div
+            data-mark-anchor="rest"
+            className="w-full"
+            style={{ aspectRatio: "2701 / 1016" }}
+          >
+            <div data-mark-static="" className="h-full w-full">
+              <Mark decorative className="h-full w-full text-mark-quiet" />
+            </div>
+          </div>
+        </div>
+
         <h2
           id="faq-heading"
           className="text-balance text-center font-display text-3xl font-bold text-fg sm:text-4xl"

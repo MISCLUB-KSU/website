@@ -11,7 +11,7 @@ import { MARK_BOXES, type MarkBox } from "@/lib/mark-boxes";
  * ستّة أضلاع الشعار تنتقل بين ثلاث حالات:
  *   أ) مجتمعةً شعارًا في الواجهة   — `[data-mark-anchor="hero"]`
  *   ب) متفرّقةً على صفوف المشاريع  — `[data-mark-slot]` × ٦
- *   ج) مجتمعةً شعارًا في التذييل   — `[data-mark-anchor="foot"]`
+ *   ج) مجتمعةً شعارًا عند الأسئلة  — `[data-mark-anchor="rest"]`
  *
  * ⚠️ **زخرفةٌ خالصة.** الطبقة `aria-hidden`، والعلامات الثابتة في التخطيط
  * هي الأصل: لو لم يعمل هذا المكوّن إطلاقًا — بلا JS، أو تقليل حركة، أو لقطة
@@ -27,7 +27,7 @@ import { MARK_BOXES, type MarkBox } from "@/lib/mark-boxes";
  * أزاح كل شيء بعرض الشاشة في أول بناء — لأنها تعني «اليمين» في RTL.
  *
  * ⚠️ **صفحةٌ ناقصة إحدى المرساتين تُخفي الطبقة كاملةً، لا ترسم عطلًا.**
- * `[data-mark-anchor="hero"]` و`[data-mark-anchor="foot"]` كلاهما لازم؛
+ * `[data-mark-anchor="hero"]` و`[data-mark-anchor="rest"]` كلاهما لازم؛
  * بلا أحدهما تُخفى الطبقة (`visibility:hidden`) وتُزال `mark-morphing` عن
  * `<html>` فتبقى العلامات الثابتة ظاهرة — بدل ترك الأضلاع الستّة مبنيّة
  * بلا `transform`، فترتسم بأبعادها الخام (حتى 812×1016px) في زاوية الشاشة.
@@ -61,7 +61,11 @@ export function MarkMorph() {
     const place = () => {
       frame = 0;
       const hero = document.querySelector<HTMLElement>('[data-mark-anchor="hero"]');
-      const foot = document.querySelector<HTMLElement>('[data-mark-anchor="foot"]');
+      /* ⚠️ **`rest` لا `foot`.** كان الاجتماع في التذييل، ونُقل إلى قسم
+         «الأسئلة الشائعة» بطلبٍ صريح (حسام، ٧ أغسطس ٢٠٢٦) وحُذف شعار
+         التذييل. والاسم `rest` (مستقرّ الرحلة) لا `faq` عمدًا: الموضع قد
+         ينتقل ثانيةً، والمرساة تصف **دورها** لا القسم الذي تسكنه اليوم. */
+      const rest = document.querySelector<HTMLElement>('[data-mark-anchor="rest"]');
       /* المراسي مفهرسةٌ برقم الضلع لا بترتيب DOM: التوزيع في الوثيقة §٤
          يجري بالنسبة (ثلاثة أضلاعٍ متطابقة النسبة لبطاقات الركائز) لا
          بترتيب التمرير، فقراءةٌ بالترتيب تُسند الضلع الخطأ للهدف الخطأ. */
@@ -84,7 +88,7 @@ export function MarkMorph() {
          مرتبطٌ بنتيجة كل استدعاء (لا مرّةً عند البناء) فيتعافى تلقائيًا في
          اللحظة التي تكتمل فيها المرساتان، ويُخفي الطبقة من جديد لو غابت
          إحداهما لاحقًا. */
-      if (!hero || !foot) {
+      if (!hero || !rest) {
         host.style.visibility = "hidden";
         document.documentElement.classList.remove("mark-morphing");
         return;
@@ -93,9 +97,9 @@ export function MarkMorph() {
       document.documentElement.classList.add("mark-morphing");
 
       const a = hero.getBoundingClientRect();
-      const f = foot.getBoundingClientRect();
+      const f = rest.getBoundingClientRect();
       const kHero = a.width / VIEWBOX_W;
-      const kFoot = f.width / VIEWBOX_W;
+      const kRest = f.width / VIEWBOX_W;
 
       /* ⚠️ مرحلة الصفوف تعمل عند ستّة صفوف بالضبط لا غير. الأعداد تتغيّر كل
          ترم، وتطابقٌ نصفيّ يُقرأ عطلًا — فتُعطَّل المرحلة كلّها وتذهب العلامة
@@ -114,28 +118,26 @@ export function MarkMorph() {
           : 0;
       });
 
-      /* ⚠️ **`t2` من المسافة المتبقّية حتى قاع الصفحة، لا من موضع المرساة.**
-         الصيغة القديمة (`innerHeight - f.top`) تشترط أن ترتفع حافّة مرساة
-         التذييل العلوية إلى نحو `innerHeight × 0.58` لتتشبّع — وارتفاع
-         تلك المرساة مقفولٌ بنسبة الشعار (2701:1016)، فعلى عرضٍ ضيّق يكون
-         التذييل نفسه قصيرًا فلا يبلغ قاع الصفحة تلك النقطة إطلاقًا:
-         t2 تتوقّف عند ~0.5 والعلامة لا تكتمل أبدًا (مقيسٌ: vsFoot 385.6
-         عند 768×1024، و1793.6 عند 320×568 — بينما 1280×800 وحدها تصل 0،
-         لأن تذييلها أطول من `innerHeight×0.42` هناك بمحض الصدفة).
+      /* ⚠️ **`t2` من موضع مرساة الاستقرار على الشاشة — لا من قاع الصفحة.**
+         كانت الصيغة تقود التقدّم بما تبقّى من التمرير حتى نهاية المستند،
+         لأن الاجتماع كان في **التذييل**: مرساةٌ في آخر المستند تكتمل عند
+         القاع بالضبط، وهو المرجع الوحيد الذي كان يصحّ هناك.
 
-         العلاج: يقود التقدّمَ ما تبقّى من التمرير الفعلي حتى `maxScroll`
-         (نهاية المستند)، لا موضعَ المرساة على الشاشة. حين `remaining=0`
-         فـ`t2=ease(1)=1` **دائمًا**، مهما كان عرض الفتحة أو طول التذييل —
-         الاجتماع يكتمل عند القاع بالضبط في كل مرّة. طول المضمار
-         (`innerHeight × 0.42`) بقي كما كان: نفس الإحساس بالسرعة، تغيّر
-         المرجع فقط لا مدّة الانتقال. */
-      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-      const remaining = maxScroll - window.scrollY;
+         وقد انتقل الاجتماع إلى قسم «الأسئلة الشائعة» — وبينه وبين القاع
+         تذييلٌ كامل. فالصيغة القديمة تعني ألّا تكتمل العلامة إلا وقد صار
+         القسم كلّه خلف الشاشة: تجتمع حيث لا يراها أحد.
+
+         فالمرجع الآن موضعُ المرساة نفسها، **بالصيغة التي ترسو بها الأضلاع
+         على مراسيها** (`tDock`) حرفًا بحرف — فيتّحد إحساس المرحلتين. وعلّةُ
+         الصيغة القديمة (ألّا ترتفع مرساةُ التذييل كفايةً على شاشةٍ ضيّقة)
+         لا تنطبق هنا: تحت القسم تذييلٌ طويل، فتبلغ المرساة نصف الشاشة
+         الأعلى دائمًا. وهذا مقيسٌ لا مُقدَّر — انظر تقرير الفحص. */
+      const restRect = rest.getBoundingClientRect();
       /* لا يبدأ الاجتماع حتى يرسو **آخر** ضلع — وإلا انطلق المتقدّمون نحو
-         التذييل بينما لم يبلغ المتأخّرون مراسيهم، فتُقرأ الحركة تشتّتًا. */
+         المستقرّ بينما لم يبلغ المتأخّرون مراسيهم، فتُقرأ الحركة تشتّتًا. */
       const allDocked = !docksUsable || tDock.every((t) => t >= 1);
       const t2 = allDocked
-        ? ease(clamp(1 - remaining / (window.innerHeight * 0.42)))
+        ? ease(clamp((window.innerHeight - restRect.top) / (window.innerHeight * 0.5)))
         : 0;
 
       /* ⚠️ **الضلع لا يطير مرئيًّا.** مقيسًا قبل هذه البوّابة: 37.9% من
@@ -155,10 +157,10 @@ export function MarkMorph() {
         const ay = a.top + b.y * kHero;
         const aw = b.w * kHero;
         const ah = b.h * kHero;
-        const cx = f.left + b.x * kFoot;
-        const cy = f.top + b.y * kFoot;
-        const cw = b.w * kFoot;
-        const ch = b.h * kFoot;
+        const cx = f.left + b.x * kRest;
+        const cy = f.top + b.y * kRest;
+        const cw = b.w * kRest;
+        const ch = b.h * kRest;
         const s = docksUsable ? docks.get(i) : undefined;
         const t1i = tDock[i];
 
@@ -168,7 +170,7 @@ export function MarkMorph() {
         const h = mix(s ? mix(ah, s.height, t1i) : ah, ch, t2);
 
         shard.style.transform = `translate3d(${x}px,${y}px,0) scale(${w / b.w},${h / b.h})`;
-        /* الرحلة النشطة: نحو التذييل إن بدأ الاجتماع، وإلّا نحو المرسى. */
+        /* الرحلة النشطة: نحو المستقرّ إن بدأ الاجتماع، وإلّا نحو المرسى. */
         shard.style.opacity = String(fade(t2 > 0 ? t2 : t1i));
       });
     };
