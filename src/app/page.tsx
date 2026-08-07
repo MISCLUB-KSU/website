@@ -131,7 +131,7 @@ export default function HomePage() {
           className="mx-auto w-full max-w-6xl px-s4 pb-s8 sm:px-s7"
         >
           <div className="mb-s7 flex items-center gap-s3">
-            {/* مرسى الضلع 4 — نسبة 1.1469، توأم الضلع 5 في رأس «شركاؤنا»
+            {/* مرسى الضلع 4 — نسبة 1.1469، توأم الضلع 5 في رأس «شركاء النجاح»
                 فيقرأ الرأسان عائلةً واحدة. الغلاف مستقيمٌ، والميلان في
                 الداخل. العرض 18.4px = 16 × 1.1469. */}
             <span
@@ -246,7 +246,7 @@ export default function HomePage() {
                 id="partners-heading"
                 className="font-display text-sm font-semibold tracking-[0.15em] text-fg-muted"
               >
-                شركاؤنا
+                شركاء النجاح
               </h2>
             </div>
           </div>
