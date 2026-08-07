@@ -9,6 +9,14 @@ import { ABOUT_INTRO, ALL_PARTNERS, FOUNDED_YEAR, PILLARS } from "@/content/abou
 import { isolateLatin } from "@/lib/bidi";
 import { OPEN_PROJECTS } from "@/content/projects";
 
+/* شطرُ الشركاء صفّين: نصفٌ لكلٍّ فلا يتكرّر شعارٌ بين الصفّين. الشطر عند
+   المنتصف بالأعلى (`ceil`) فيأخذ الصفّ الأوّل الزائدَ حين يكون العدد فرديًّا. */
+const PARTNER_HALF = Math.ceil(ALL_PARTNERS.length / 2);
+const PARTNER_ROWS = [
+  ALL_PARTNERS.slice(0, PARTNER_HALF),
+  ALL_PARTNERS.slice(PARTNER_HALF),
+] as const;
+
 /**
  * الصفحة الرئيسية — تُبنى قسمًا قسمًا.
  *
@@ -251,42 +259,35 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="partners-viewport w-full" dir="ltr">
-            <div className="partners-rail">
-              {[false, true].map((isClone) => (
+          {/* صفّان متعاكسان على لوحٍ أفتح من الأرضية. القائمة تُشطر نصفين
+              فلا يتكرّر شعارٌ بين الصفّين، وكلُّ صفٍّ يُستنسخ مرّةً ليدور بلا
+              فجوة. الصفّ الثاني يحمل `data-reverse` فيجري عكسه. */}
+          <div className="partners-panel flex w-full flex-col gap-s5 py-s6">
+            {[0, 1].map((row) => (
+              <div key={row} className="partners-viewport w-full" dir="ltr">
+                <div className="partners-rail" data-reverse={row === 1 ? "" : undefined}>
+                  {[false, true].map((isClone) => (
                 <ul
                   key={String(isClone)}
                   data-clone={isClone ? "" : undefined}
                   aria-hidden={isClone || undefined}
                   className="flex w-max shrink-0 items-center gap-s6 px-s3 sm:gap-s7"
                 >
-                  {ALL_PARTNERS.map((partner) => (
+                  {PARTNER_ROWS[row].map((partner) => (
                     <li key={partner.name} className="shrink-0">
                       {partner.logo ? (
-                        /* نسختان حين تتوفّر نسخةٌ فاتحةٌ رسميّة: الداكنة
-                           للنهار والفاتحة لليل. ومتى غابت `logoDark` بقيت
-                           الواحدة في الوضعين — لا فلتر ولا عكس ألوان، فذلك
-                           إعادةُ تلوينٍ لعلامةٍ تجارية. */
-                        <>
-                          <Image
-                            src={partner.logo}
-                            alt={`شعار ${partner.name}`}
-                            width={200}
-                            height={64}
-                            className={`h-12 w-auto max-w-[200px] object-contain sm:h-14${
-                              partner.logoDark ? " dark:hidden" : ""
-                            }`}
-                          />
-                          {partner.logoDark ? (
-                            <Image
-                              src={partner.logoDark}
-                              alt={`شعار ${partner.name}`}
-                              width={200}
-                              height={64}
-                              className="hidden h-12 w-auto max-w-[200px] object-contain dark:block sm:h-14"
-                            />
-                          ) : null}
-                        </>
+                        /* ⚠️ **الشريط يستعمل النسخة الداكنة دائمًا، لا
+                           `logoDark`.** اللوح تحته ثلجيٌّ في الوضعين، فالتبديل
+                           بحسب الثيم يضع نسخةً بيضاء على لوحٍ أبيض: مقيسًا
+                           1.05:1 — اختفاءٌ تامّ. و`logoDark` يبقى في البيانات
+                           لسطحٍ داكنٍ حقيقيّ إن وُجد يومًا. */
+                        <Image
+                          src={partner.logo}
+                          alt={`شعار ${partner.name}`}
+                          width={200}
+                          height={64}
+                          className="h-12 w-auto max-w-[200px] object-contain sm:h-14"
+                        />
                       ) : (
                         <span
                           dir="rtl"
@@ -297,9 +298,11 @@ export default function HomePage() {
                       )}
                     </li>
                   ))}
-                </ul>
-              ))}
-            </div>
+                    </ul>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       </main>
