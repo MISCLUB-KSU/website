@@ -263,13 +263,23 @@ export default function HomePage() {
                   {ALL_PARTNERS.map((partner) => (
                     <li key={partner.name} className="shrink-0">
                       {partner.logo ? (
-                        <Image
-                          src={partner.logo}
-                          alt={`شعار ${partner.name}`}
-                          width={200}
-                          height={64}
-                          className="h-12 w-auto max-w-[200px] object-contain sm:h-14"
-                        />
+                        /* ⚠️ **لوحٌ فاتح تحت كل شعارٍ في الليل وحده.** شعارات
+                           الشركاء خليطٌ لا يُوحَّد: بعضها بخلفيةٍ بيضاء مخبوزة،
+                           وبعضها داكنٌ على شفّاف، وبعضها ملوّن. على أرضيةٍ شبه
+                           سوداء صار اثنان منها تحت العتبة (عزم 2.32:1 · طويق
+                           2.24:1) والبقيّة تُقرأ فوضى. واللوح يحلّها بلا
+                           إعادة تلوين أي علامة تجارية — وهو الحلّ المعياريّ
+                           لجدران الشعارات. نهارًا لا لوح: الأرضية الثلجية
+                           تكفي، والشعارات مضبوطةٌ عليها أصلًا. */
+                        <span className="flex items-center justify-center dark:bg-snow dark:px-s4 dark:py-s3">
+                          <Image
+                            src={partner.logo}
+                            alt={`شعار ${partner.name}`}
+                            width={200}
+                            height={64}
+                            className="h-12 w-auto max-w-[200px] object-contain sm:h-14"
+                          />
+                        </span>
                       ) : (
                         <span
                           dir="rtl"
