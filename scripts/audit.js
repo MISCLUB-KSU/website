@@ -217,10 +217,24 @@
         window.requestAnimationFrame = real;
       }
     }
+    /* ⚠️ **ضلعٌ شفّافٌ لا يغطّي شيئًا.** الفحص كان يختبر الهندسة وحدها
+       (`isPointInFill`) فيَعُدّ ضلعًا عتامتُه صفر مغطّيًا — وهذا قياسُ وهم:
+       مقيسٌ على 390 عند y=1239 أن الضلع 3 «يغطّي 37.9%» وعتامته صفرٌ
+       بالضبط. والضلع نصف الشفّاف يغطّي فعلًا فيبقى محسوبًا: العتبة 0.05
+       تستثني المعدوم وحده، لا الخافت.
+       تُقرأ العتامة من العنصر الحاوي `[data-mark-shard]` لا من المتوازي
+       نفسه — هناك تُكتب في `mark-morph.tsx`. */
+    var OPAQUE_MIN = 0.05;
+    function visible(p) {
+      var host = p.closest ? p.closest('[data-mark-shard]') : null;
+      if (!host) return true;
+      return parseFloat(window.getComputedStyle(host).opacity) >= OPAQUE_MIN;
+    }
     function inAny(cx, cy) {
       for (var k = 0; k < polys.length; k++) {
         var p = polys[k], ctm = p.getScreenCTM();
         if (!ctm) continue;
+        if (!visible(p)) continue;
         var pt = (p.ownerSVGElement || svgs[0]).createSVGPoint();
         pt.x = cx; pt.y = cy;
         var l = pt.matrixTransform(ctm.inverse());
