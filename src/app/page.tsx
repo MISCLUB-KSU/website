@@ -1,11 +1,14 @@
 import Image from "next/image";
 
+import { Alumni } from "@/components/site/alumni";
+import { FaqQuick } from "@/components/site/faq-quick";
 import { Hero } from "@/components/site/hero";
 import { MarkMorph } from "@/components/site/mark-morph";
 import { PillarMark, type PillarMarkShape } from "@/components/site/pillar-mark";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { ABOUT_INTRO, ALL_PARTNERS, FOUNDED_YEAR, PILLARS } from "@/content/about";
+import { FAQ } from "@/content/faq";
 import { isolateLatin } from "@/lib/bidi";
 import { OPEN_PROJECTS } from "@/content/projects";
 
@@ -69,7 +72,13 @@ export default function HomePage() {
           </h2>
 
           {/* البيان الافتتاحي — الجملة الأبرز، بخط العرض ومقاسٍ كبير */}
-          <p className="mt-s7 max-w-3xl font-display text-2xl font-medium leading-relaxed text-fg sm:text-[2rem] sm:leading-[1.5]">
+          {/* ⚠️ B1: كان `sm:text-[2rem]` (32px) وهو خارج سلّم Tailwind —
+              أُسقط إلى أقرب درجةٍ **دونه** `text-3xl` (30px) كما تنصّ القاعدة.
+              و`leading-relaxed` باقيةٌ عمدًا: ارتفاعات الأسطر في السلّم
+              معايَرةٌ للحرف اللاتيني، والعربيّة بنقاطها وتشكيلها تحتاج فسحةً
+              أوسع — وقاعدة المهارة نفسها تقدّم قرار المستخدم على القاعدة.
+              و`text-pretty` تمنع كلمةً يتيمةً في آخر الفقرة (B1). */}
+          <p className="mt-s7 max-w-3xl text-pretty font-display text-2xl font-medium leading-relaxed text-fg sm:text-3xl">
             {ABOUT_INTRO.lede}
           </p>
 
@@ -300,9 +309,13 @@ export default function HomePage() {
                           ) : null}
                         </>
                       ) : (
+                        /* ⚠️ B4: كان `border-s-2 border-accent` — حدٌّ من جهةٍ
+                           واحدة، وهو ممنوع: «الحدود تدور حول الشكل كلّه أو لا
+                           تكون». صار حدًّا محيطًا بلون العلامة، وسقط ظلّ
+                           `inset` لأنه كان يؤدّي دور الحدّ الثاني فيزدوجان. */
                         <span
                           dir="rtl"
-                          className="flex h-12 items-center whitespace-nowrap border-s-2 border-accent bg-bg-raised px-s5 font-display text-base font-bold text-fg shadow-[inset_0_0_0_1px_var(--border)] sm:h-14 sm:text-lg"
+                          className="flex h-12 items-center whitespace-nowrap border-2 border-accent bg-bg-raised px-s5 font-display text-base font-bold text-fg sm:h-14 sm:text-lg"
                         >
                           {isolateLatin(partner.name)}
                         </span>
@@ -316,6 +329,15 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+
+        {/* بعد الشركاء — «إجابات سريعة». لغته البصرية من مرجعٍ اختاره حسام
+            (نادي رؤية 2030)، وهي **قطيعةٌ مقصودة** مع ميلان الهوية: حوافّ
+            مدوّرة وعنوانٌ موسّطٌ ملوّن. انظر رأس المكوّن. */}
+        <FaqQuick items={FAQ} />
+
+        {/* بعد الأسئلة — ويحذف نفسه ما دامت `ALUMNI` فارغة، فلا أثر له
+            حتى تصل الأسماء بقرارٍ من الرئاسة وموافقة كل شخص. */}
+        <Alumni />
       </main>
 
       {/* ⚠️ كانت هنا `<div className="relative z-10">` — بقيّةٌ «من أيام

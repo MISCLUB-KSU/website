@@ -30,14 +30,29 @@ export function ScrollLift({ className, children }: ScrollLiftProps) {
   useEffect(() => {
     const read = () => setLifted(window.scrollY > LIFT_AFTER);
 
-    window.addEventListener("scroll", read, { passive: true });
+    /* ⚠️ **مخنوقٌ بـ`requestAnimationFrame`.** كان `read` يُستدعى مباشرةً على
+       كل حدث تمرير، وأحداث التمرير تنهمر أسرع من إطار الرسم — فتتكدّس
+       استدعاءات `setState` وتُجبر المتصفّح على حسابٍ متكرّر. الحارس `frame`
+       يجعل القراءة **مرّةً واحدة لكل إطار** مهما انهمرت الأحداث.
+       والقاعدة من مهارة التصميم (B7): لا مستمعَ تمريرٍ غيرَ مخنوق. */
+    let frame = 0;
+    const schedule = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        read();
+      });
+    };
+
+    window.addEventListener("scroll", schedule, { passive: true });
     /* إطارٌ واحد بعد التركيب: المتصفح يستعيد موضع التمرير المحفوظ بعد
        الرسم الأول، فالقراءة الفورية تُرجع صفرًا على صفحة مفتوحة في وسطها. */
-    const frame = requestAnimationFrame(read);
+    const first = requestAnimationFrame(read);
 
     return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", read);
+      cancelAnimationFrame(first);
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
     };
   }, []);
 

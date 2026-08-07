@@ -87,7 +87,7 @@ export function SiteHeader() {
 
           <Link
             href={PRIMARY_ACTION.href}
-            className="rake rake-sm rake-interactive inline-flex min-h-11 shrink-0 items-center bg-accent px-s4 text-sm font-semibold text-accent-fg transition-colors hover:bg-accent-hover sm:px-s5"
+            className="rake rake-sm rake-interactive inline-flex min-h-11 shrink-0 items-center bg-accent px-s4 text-sm font-semibold text-accent-fg transition-[background-color,transform,clip-path] hover:bg-accent-hover active:scale-[0.98] motion-reduce:active:scale-100 sm:px-s5"
           >
             {PRIMARY_ACTION.label}
           </Link>
