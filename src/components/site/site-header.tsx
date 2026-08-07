@@ -48,13 +48,24 @@ export function SiteHeader() {
           بالصفر، والفراغ فوقه يمرّ منه المحتوى فيُقرأ التعويم. */}
       <header className="sticky top-0 z-50 px-s4 pt-s4">
         <ScrollLift className="mis-bar mx-auto flex max-w-6xl items-center gap-x-s4 px-s4 py-s2 backdrop-blur-lg backdrop-saturate-150 sm:px-s5">
-          <Link
-            href="/"
-            className="inline-flex min-h-11 shrink-0 items-center"
-            aria-label="نادي نظم المعلومات الإدارية — الصفحة الرئيسية"
-          >
-            <Mark className="h-6 w-auto text-deep dark:text-snow" />
-          </Link>
+          {/* ⚠️ **الطرفان `flex-1 basis-0` — وهو ما يضع الأقسام في منتصف
+              الشريط حقًّا.** الشعار 64px والطرف المقابل (مبدّل + زرّ) 219px،
+              فحاويةٌ واحدة نامية بينهما تُوسّط الأقسامَ في **الفراغ** لا في
+              الشريط: مقيسًا كان الانحراف 201px نحو الشعار، و`justify-center`
+              وحدها تُبقي 59px. وبمسارين متساويين يصير المنتصف منتصفًا مهما
+              اختلف عرض الطرفين — ولو طال نصّ الزرّ يومًا بقي الضبط.
+
+              وهي مساراتُ `flex` لا مواضع مطلقة: عند الضيق تتقارب ولا تتراكب،
+              فلا يمرّ رابطٌ فوق زرّ. */}
+          <div className="flex flex-1 basis-0 items-center">
+            <Link
+              href="/"
+              className="inline-flex min-h-11 shrink-0 items-center"
+              aria-label="نادي نظم المعلومات الإدارية — الصفحة الرئيسية"
+            >
+              <Mark className="h-6 w-auto text-deep dark:text-snow" />
+            </Link>
+          </div>
 
           {/* الشاشة العريضة: الأقسام الستة على سطر واحد.
               العتبة `lg` لا `sm`: الشريط يحتاج 800px ليضع الستة على سطر —
@@ -62,35 +73,45 @@ export function SiteHeader() {
               `sm` كان يلتفّ إلى سطرين فيصير 120px بدل 76px، فيقبح ويكسر حساب
               الواجهة الأولى التي تطرح `--header-h` من ارتفاع الشاشة.
               وبين 640 و1023 تظهر القائمة المطويّة — وهي عنصر أصيل كامل. */}
-          <nav className="hidden flex-1 lg:block" aria-label="أقسام الموقع">
+          {/* الإزاحة `s7` (48px) نحو الشعار: المنتصف الحسابيّ ليس المنتصف
+              المرئيّ هنا — الطرف المقابل يحمل زرًّا مصمتًا بلونٍ صريح، وكتلته
+              اللونية تجذب العين إليه فتبدو الأقسام مائلةً نحوه وهي في المنتصف
+              تمامًا. فتُزاح بمقدار رمزٍ قائم لا برقمٍ مخترع. */}
+          <nav
+            className="hidden shrink-0 lg:block lg:translate-x-s7"
+            aria-label="أقسام الموقع"
+          >
             <NavLinks className="flex flex-wrap items-center gap-x-s5" />
           </nav>
 
-          {/* الجوال: قائمة مطويّة — عنصر أصيل، بلا جافاسكربت وبلا حالة مخفيّة */}
-          <MobileMenu
-            label="القائمة"
-            className="relative ms-auto lg:hidden"
-            summaryClassName="inline-flex min-h-11 cursor-pointer list-none items-center gap-s2 text-sm font-medium text-fg [&::-webkit-details-marker]:hidden"
-          >
-            <nav
-              className="absolute end-0 top-full z-10 mt-s2 min-w-44 border border-line bg-bg-raised px-s4 py-s2"
-              aria-label="أقسام الموقع"
+          {/* الطرف المقابل: المبدّل قبل الزرّ، وموضعهما محجوز في حساب عرض
+              الشريط أعلاه. و`justify-end` هي ما يدفعهما إلى الحافّة — كانت
+              `ms-auto` على القائمة المطويّة تفعل ذلك، ولم تعد تلزم بعد أن صار
+              المسار نفسه ينتهي عند الطرف. */}
+          <div className="flex flex-1 basis-0 items-center justify-end gap-x-s4">
+            {/* الجوال: قائمة مطويّة — عنصر أصيل، بلا جافاسكربت وبلا حالة مخفيّة */}
+            <MobileMenu
+              label="القائمة"
+              className="relative lg:hidden"
+              summaryClassName="inline-flex min-h-11 cursor-pointer list-none items-center gap-s2 text-sm font-medium text-fg [&::-webkit-details-marker]:hidden"
             >
-              <NavLinks as="list" className="flex flex-col" />
-            </nav>
-          </MobileMenu>
+              <nav
+                className="absolute end-0 top-full z-10 mt-s2 min-w-44 border border-line bg-bg-raised px-s4 py-s2"
+                aria-label="أقسام الموقع"
+              >
+                <NavLinks as="list" className="flex flex-col" />
+              </nav>
+            </MobileMenu>
 
-          {/* المبدّل قبل الزرّ — موضعه محجوز في حساب عرض الشريط أعلاه (٢٢٩px
-              للعلامة والمبدّل والزرّ). على الجوال يدفعه `ms-auto` القائمةِ
-              فيبقى الثلاثة متجاورين في الطرف. */}
-          <ThemeToggle />
+            <ThemeToggle />
 
-          <Link
-            href={PRIMARY_ACTION.href}
-            className="rake rake-sm rake-interactive inline-flex min-h-11 shrink-0 items-center bg-accent px-s4 text-sm font-semibold text-accent-fg transition-[background-color,transform,clip-path] hover:bg-accent-hover active:scale-[0.98] motion-reduce:active:scale-100 sm:px-s5"
-          >
-            {PRIMARY_ACTION.label}
-          </Link>
+            <Link
+              href={PRIMARY_ACTION.href}
+              className="rake rake-sm rake-interactive inline-flex min-h-11 shrink-0 items-center bg-accent px-s4 text-sm font-semibold text-accent-fg transition-[background-color,transform,clip-path] hover:bg-accent-hover active:scale-[0.98] motion-reduce:active:scale-100 sm:px-s5"
+            >
+              {PRIMARY_ACTION.label}
+            </Link>
+          </div>
         </ScrollLift>
       </header>
     </>
