@@ -1,0 +1,101 @@
+/* ==========================================================================
+   لوحة الإدارة — عمقٌ وطبقات، بهوية النادي.
+
+   جُرِّب هنا شكلٌ زجاجيّ بتدرّجاتٍ بنفسجية نقلًا عن مرجعين (٨ أغسطس ٢٠٢٦)
+   ثم **رجع حسام عنه** إلى هذا الاتجاه. فما بقي من المرجعين هو **الصنعة**
+   لا الشكل: بطاقاتٌ لها عمق، وأرضيةٌ ملوّنة لا بيضاء مسطّحة، وحلقةٌ مئوية،
+   وكثافةٌ بصرية أعلى. أمّا الزوايا الدائرية والبنفسجيّ والزجاج فذهبت.
+
+   ── ما يحكم هذا الملفّ ──────────────────────────────────────────────────
+   · **حوافُّ حادّة.** لا زاويةَ دائرية واحدة — قاعدة الهوية.
+   · **خمسة ألوان لا سادس**، والمشتقّات مزجٌ بينها. ورموزُ الحالة الثلاثة
+     (`success`/`warning`/`danger`) قائمةٌ في النظام أصلًا لأدوارٍ دلالية.
+   · **الميلان توقيعٌ لا خلفية** — على أطراف الأعمدة وعلامات الإيضاح.
+   · العمق من **الطبقة واللون** لا من هالةٍ سوداء: ظلٌّ ضيّقٌ نازلٌ ملوّنٌ
+     بلون الحبر، وحدٌّ من لون السطح نفسه.
+
+   ونطاقه `/admin` وحدها — لا يُستورَد في صفحةٍ عامّة.
+   ========================================================================== */
+
+.admin-shell {
+  position: relative;
+  min-height: 100svh;
+  isolation: isolate;
+}
+
+/* ── الأرضية: لونٌ لا بياض ──────────────────────────────────────────────
+   لوحةٌ على أرضيةٍ بيضاء مسطّحة تُقرأ مسوّدة. فهنا سطحٌ غائرٌ من رموز
+   النظام، وفوقه هالتان خافتتان بالأزرق الرسميّ تعطيان عمقًا بلا لونٍ دخيل. */
+.admin-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(
+      1100px 720px at 84% 6%,
+      color-mix(in oklab, var(--sky) 82%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      900px 640px at 10% 82%,
+      color-mix(in oklab, var(--primary) 34%, transparent),
+      transparent 56%
+    ),
+    color-mix(in oklab, var(--sky) 18%, var(--snow));
+}
+
+/* حبيبةٌ دقيقة تكسر التسطيح وتمنع النطاقات في التدرّج — تُحَسّ ولا تُرى،
+   وخلف المحتوى لا فوقه. */
+.admin-shell::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── اللوح ──────────────────────────────────────────────────────────────
+   ⚠️ **الحدّ من لون السطح نفسه، والظلّ ضيّقٌ نازلٌ ملوّنٌ بالحبر** — لا
+   هالةٌ سوداء تشعّ من كل جهة، فتلك أشهر علامةٍ على عمقٍ مزيّف. */
+.panel {
+  position: relative;
+  background: var(--bg-raised);
+  border: 1px solid var(--line-quiet);
+  box-shadow:
+    0 1px 0 0 rgb(255 255 255 / 0.9) inset,
+    0 8px 18px -14px color-mix(in oklab, var(--deep) 60%, transparent);
+}
+
+/* لوحُ الحبر — للرقم البارز وحده، فالتباين يصنع الرأس */
+.panel-ink {
+  position: relative;
+  background: var(--ink-surface);
+  color: var(--snow);
+  border: 1px solid color-mix(in oklab, var(--snow) 16%, transparent);
+  box-shadow: 0 10px 22px -16px color-mix(in oklab, var(--deep) 85%, transparent);
+}
+
+/* ── الميلان: التوقيع ──────────────────────────────────────────────────
+   العلامة متوازي أضلاعٍ بزاوية الشعار — لا مربّعٌ ولا دائرة. */
+.slant-mark {
+  clip-path: polygon(26% 0, 100% 0, 74% 100%, 0 100%);
+}
+
+/* شارة الحالة — حوافُّ حادّة، ولونٌ خافتٌ خلف نصٍّ صريح.
+   ⚠️ لا كبسولةٌ دائرية: القاعدة تمنعها، والاسم مكتوبٌ فاللون ثانويّ. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.16rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.6;
+  border: 1px solid transparent;
+}
+
+.ring-track {
+  stroke: color-mix(in oklab, var(--line) 85%, transparent);
+}
