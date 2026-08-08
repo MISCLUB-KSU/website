@@ -8,6 +8,7 @@ import {
   type RegistrationInput,
   type RegistrationState,
 } from "@/lib/registration";
+import { CV_BUCKET, createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * استقبال طلب العضوية.
@@ -170,26 +171,84 @@ type Attachments = {
 };
 
 /**
- * الحفظ الفعلي.
+ * الحفظ الفعلي — قاعدة البيانات أوّلًا ثم المرفق.
  *
- * مؤقتًا: تسجيل على الخادم فقط، ريثما تُربط قاعدة البيانات.
- * لا يُكتب شيء في مكان دائم بعد — ولا يُرفع المرفق إلى أي تخزين.
+ * **الترتيب مقصود.** لو رُفع المرفق أوّلًا ثم فشل الإدراج، بقي ملفٌّ يتيمٌ
+ * في المستودع بلا صفٍّ يشير إليه — لا يُعرف صاحبه ولا يُحذف. والعكس أهون:
+ * صفٌّ بلا مرفق يبقى طلبًا صالحًا يُقرأ ويُراجَع، والسيرة **اختيارية**
+ * أصلًا في `registration.ts`.
  *
- * ⚠️ قبل فتح التقديم: يجب ربط قاعدة البيانات و`Supabase Storage` للمرفق.
- * بدونهما يرى الطالب «وصل طلبك» ولا يصل شيء — وهذا خلاف صوت النادي.
+ * ⚠️ **وفشل المرفق لا يُسقط الطلب.** يُسجَّل في سجلّ الخادم ويمضي: أن يصل
+ * الطلب بلا سيرةٍ خيرٌ من أن يُردّ الطالب بخطأ بعد أن ملأ ثلاث خطوات —
+ * والسيرة تُطلب منه لاحقًا. أما فشل الإدراج فيُرمى، لأن «وصل طلبك» على
+ * لا شيء خداعٌ صريح.
  */
 async function saveApplication(
   data: RegistrationInput,
   attachments: Attachments,
 ): Promise<void> {
-  if (!process.env.SUPABASE_URL) {
-    console.info("[registration] لم تُربط قاعدة البيانات بعد", {
-      studentId: data.studentId,
-      choices: [data.choice1, data.choice2, data.choice3],
-      answerCount: Object.keys(attachments.answers).length,
-      hasCv: attachments.cv instanceof File && attachments.cv.size > 0,
+  const supabase = createAdminClient();
+
+  const { data: row, error } = await supabase
+    .from("applications")
+    .insert({
+      full_name: data.fullName,
+      student_id: data.studentId,
+      national_id: data.nationalId,
+      phone: data.phone,
+      email: data.email,
+      university: data.university,
+      university_other: data.universityOther || null,
+      level: data.level,
+      major: data.major,
+      major_other: data.majorOther || null,
+      choice1: data.choice1,
+      choice2: data.choice2,
+      choice3: data.choice3,
+      why: data.why,
+      heard_from: data.heardFrom,
+      answers: attachments.answers,
+      portfolio: data.portfolio || null,
+      linkedin: data.linkedin || null,
+    })
+    .select("id")
+    .single();
+
+  if (error || !row) {
+    console.error("[registration] فشل إدراج الطلب", error);
+    throw new Error("تعذّر حفظ الطلب");
+  }
+
+  const cv = attachments.cv;
+  if (!(cv instanceof File) || cv.size === 0) return;
+
+  /* اسم الملفّ من معرّف الصفّ لا من اسم الطالب: اسمٌ عربيٌّ أو فيه شرطة
+     مائلة يكسر المسار، ومعرّفُ الصفّ يربط الملفّ بصاحبه بلا لبس. */
+  const extension = cv.name.split(".").pop()?.toLowerCase() ?? "bin";
+  const path = `${row.id}.${extension}`;
+
+  const upload = await supabase.storage
+    .from(CV_BUCKET)
+    .upload(path, cv, { contentType: cv.type, upsert: true });
+
+  if (upload.error) {
+    console.error("[registration] وصل الطلب ولم تُرفع السيرة", {
+      id: row.id,
+      error: upload.error.message,
     });
     return;
   }
-  throw new Error("لم يُنفَّذ حفظ الطلبات في قاعدة البيانات بعد");
+
+  const link = await supabase
+    .from("applications")
+    .update({ cv_path: path })
+    .eq("id", row.id);
+
+  if (link.error) {
+    console.error("[registration] رُفعت السيرة ولم يُربط مسارها", {
+      id: row.id,
+      path,
+      error: link.error.message,
+    });
+  }
 }
