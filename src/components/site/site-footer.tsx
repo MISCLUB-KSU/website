@@ -82,7 +82,10 @@ export function SiteFooter() {
             </ul>
 
             {/* العلامات وحدها هنا — الاسم مكتوب في `aria-label` لا بجانبها،
-                فالمساحة ضيّقة والحساب واحد على الثلاث. */}
+                فالمساحة ضيّقة.
+                ⚠️ والمعرّف من `link.handle` لا من `SOCIAL_HANDLE`: لينكدإن
+                معرّفه `misclub` لا `@mis_club_ksu`، والاسم العامّ كان ينطقه
+                قارئ الشاشة خطأً. */}
             <ul className="mt-s1 flex gap-x-s4">
               {SOCIAL_LINKS.map((link) => (
                 <li key={link.href}>
@@ -90,7 +93,7 @@ export function SiteFooter() {
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={`${link.label} — ${SOCIAL_HANDLE} (يفتح في موقع خارجي)`}
+                    aria-label={`${link.label} — ${link.handle} (يفتح في موقع خارجي)`}
                     className="inline-flex size-11 items-center justify-center text-on-ink-dim transition-colors hover:text-snow"
                   >
                     <SocialMark platform={link.platform} className="size-5" />

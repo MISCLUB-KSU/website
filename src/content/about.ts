@@ -390,21 +390,41 @@ export const SPONSORSHIP_TIERS = [
 ] as const;
 
 /**
- * حسابات النادي — حساب واحد على المنصات الثلاث.
+ * حسابات النادي.
+ *
  * `platform` يربط الحساب بعلامته في `social-mark.tsx` — العلامة تُختار
  * بالمعرّف لا بمطابقة الرابط نصًّا، فتغيير الرابط لا يُسقط العلامة صامتًا.
+ *
+ * ⚠️ **حُذف إنستقرام (٨ أغسطس ٢٠٢٦): لا حساب للنادي عليه** — أكّده حسام.
+ * وكان الرابط `instagram.com/mis_club_ksu` معروضًا في التذييل وصفحة
+ * «تواصل معنا»، فيقود الزائر إلى حسابٍ لا يملكه النادي أو إلى لا شيء.
+ *
+ * ⚠️ **والمعرّف لم يعد واحدًا.** إكس وتيك توك يشتركان في `@mis_club_ksu`،
+ * ولينكدإن صفحةُ جهةٍ معرّفها `misclub` ولا يستعمل صيغة `@` أصلًا. فلكلّ
+ * رابطٍ `handle` خاصٌّ به: `aria-label` في التذييل يقرؤه، ولو بقي الاسم
+ * العامّ لنطق قارئ الشاشة معرّفًا خاطئًا على لينكدإن.
+ *
+ * و`SOCIAL_HANDLE` باقٍ لأنه المعرّف المشترك الذي يُكتب نصًّا في صفحة
+ * «تواصل معنا» وفي وصف الصفحة — لا لأنه يعمّ الثلاثة.
  */
 export const SOCIAL_HANDLE = "@mis_club_ksu";
 export const SOCIAL_LINKS = [
   {
-    platform: "instagram",
-    label: "إنستقرام",
-    href: "https://instagram.com/mis_club_ksu",
+    platform: "linkedin",
+    label: "لينكدإن",
+    handle: "misclub",
+    href: "https://www.linkedin.com/company/misclub/",
   },
-  { platform: "x", label: "إكس", href: "https://x.com/mis_club_ksu" },
+  {
+    platform: "x",
+    label: "إكس",
+    handle: SOCIAL_HANDLE,
+    href: "https://x.com/mis_club_ksu",
+  },
   {
     platform: "tiktok",
     label: "تيك توك",
+    handle: SOCIAL_HANDLE,
     href: "https://tiktok.com/@mis_club_ksu",
   },
 ] as const;

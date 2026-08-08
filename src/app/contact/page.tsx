@@ -58,11 +58,15 @@ export default function ContactPage() {
               <h2 className="mt-s7 font-display text-xl font-semibold text-fg">
                 الحسابات
               </h2>
+              {/* ⚠️ كان مكتوبًا «حساب واحد على المنصات الثلاث» — وصار غيرَ
+                  صحيح: لينكدإن صفحةُ جهةٍ معرّفها `misclub`. والجملة تُقال
+                  كما هي لا كما كانت. */}
               <p className="mt-s2 text-sm text-fg-muted">
-                حساب واحد على المنصات الثلاث:{" "}
+                على إكس وتيك توك:{" "}
                 <span dir="ltr" className="font-medium text-fg">
                   {SOCIAL_HANDLE}
                 </span>
+                ، وصفحة النادي على لينكدإن.
               </p>
               {/* العلامة بلا صندوق خلفها، وبجانبها اسم المنصة مكتوبًا —
                   فمن لا يعرف العلامة يقرأ الاسم، ولا يُترك للتخمين. */}
