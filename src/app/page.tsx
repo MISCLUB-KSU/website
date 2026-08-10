@@ -151,21 +151,26 @@ export default function HomePage() {
           aria-labelledby="pillars-heading"
           className="above-mark mx-auto w-full max-w-6xl px-s4 pb-s8 sm:px-s7"
         >
-          <div className="mb-s7 flex items-center gap-s3">
+          {/* ⚠️ **في وسط الشاشة والعلامة ملازمة.** كان الرأس على الحافّة
+              فيُقرأ حاشيةً؛ وطلب حسام توسيطه وإبرازه. والعلامة داخل نفس
+              صفّ `flex` فتتوسّط معه — وهي **مرسى الضلع الرابع** في رحلة
+              الشعار، فموضعها يُقرأ وقت التشغيل لا يُثبَّت. */}
+          <div className="mb-s7 flex items-center justify-center gap-s3">
             {/* مرسى الضلع 4 — نسبة 1.1469، توأم الضلع 5 في رأس «شركاء النجاح»
                 فيقرأ الرأسان عائلةً واحدة. الغلاف مستقيمٌ، والميلان في
-                الداخل. العرض 18.4px = 16 × 1.1469. */}
+                الداخل. العرض 22.9px = 20 × 1.1469 — كبرت مع النصّ لتبقى
+                النسبة نفسها. */}
             <span
               aria-hidden
               data-mark-dock="4"
               data-mark-static=""
-              className="inline-block h-4 w-[18.4px] shrink-0"
+              className="inline-block h-5 w-[22.9px] shrink-0"
             >
               <span className="mis-slant block h-full w-full bg-accent" />
             </span>
             <h2
               id="pillars-heading"
-              className="font-display text-sm font-semibold tracking-[0.15em] text-fg-muted"
+              className="font-display text-fg text-lg font-bold tracking-[0.14em] sm:text-xl"
             >
               ما نقوم عليه
             </h2>
@@ -263,7 +268,8 @@ export default function HomePage() {
           className="above-mark w-full py-s8"
         >
           <div className="mx-auto mb-s7 w-full max-w-6xl px-s4 sm:px-s7">
-            <div className="flex items-center gap-s3">
+            {/* توسيطٌ كتوأمه «ما نقوم عليه» — الرأسان عائلةٌ واحدة */}
+            <div className="flex items-center justify-center gap-s3">
               {/* مرسى الضلع 5 — نسبة 1.1469، توأم الضلع 4 في رأس «ما نقوم
                   عليه». الغلاف مستقيمٌ، والميلان في الداخل. العرض 18.4px =
                   16 × 1.1469. */}
@@ -271,13 +277,13 @@ export default function HomePage() {
                 aria-hidden
                 data-mark-dock="5"
                 data-mark-static=""
-                className="inline-block h-4 w-[18.4px] shrink-0"
+                className="inline-block h-5 w-[22.9px] shrink-0"
               >
                 <span className="mis-slant block h-full w-full bg-accent" />
               </span>
               <h2
                 id="partners-heading"
-                className="font-display text-sm font-semibold tracking-[0.15em] text-fg-muted"
+                className="font-display text-fg text-lg font-bold tracking-[0.14em] sm:text-xl"
               >
                 شركاء النجاح
               </h2>
@@ -360,14 +366,15 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* بعد الشركاء — «إجابات سريعة». لغته البصرية من مرجعٍ اختاره حسام
-            (نادي رؤية 2030)، وهي **قطيعةٌ مقصودة** مع ميلان الهوية: حوافّ
-            مدوّرة وعنوانٌ موسّطٌ ملوّن. انظر رأس المكوّن. */}
+        {/* «مبدعون مرّوا من هنا» — بين الشركاء والأسئلة الشائعة بطلب حسام.
+            لا يُرسم ما دامت قائمة `ALUMNI` فارغة، فلا عنوانَ بلا محتوى. */}
+        <Alumni />
+
+        {/* «إجابات سريعة». لغته البصرية من مرجعٍ اختاره حسام (نادي رؤية
+            2030)، وهي **قطيعةٌ مقصودة** مع ميلان الهوية: حوافّ مدوّرة
+            وعنوانٌ موسّطٌ ملوّن. انظر رأس المكوّن. */}
         <FaqQuick items={FAQ} />
 
-        {/* بعد الأسئلة — ويحذف نفسه ما دامت `ALUMNI` فارغة، فلا أثر له
-            حتى تصل الأسماء بقرارٍ من الرئاسة وموافقة كل شخص. */}
-        <Alumni />
       </main>
 
       {/* ⚠️ كانت هنا `<div className="relative z-10">` — بقيّةٌ «من أيام

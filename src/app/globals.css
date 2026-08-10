@@ -691,3 +691,125 @@ html.mark-morphing [data-mark-static] {
 .js-step:not([data-active]) {
   display: none;
 }
+
+
+/* ==========================================================================
+   شريط «مبدعون مرّوا من هنا»
+
+   ⚠️ **منقولٌ عن قسم «آراء الطلاب» في `hosamstudyhub.com` بطلب حسام**
+   («خل المبدعون نفسها بالضبط»): جدارٌ ضبابيّ خلفَ شريطٍ حادّ، صفّان
+   بسرعتين لا تقبل إحداهما القسمة على الأخرى، وتلاشٍ على الحافّتين.
+
+   والبنية هي هي (`rv-stage` · `rv-wall` · `rv-marquee` · `rv-track`)
+   بأسماءٍ مسبوقة بـ`alu-` كي لا تصطدم بأصناف هذا الموقع، وبرموزه لا برموز
+   ذاك — الحركة مستعارة، لا الألوان.
+   ========================================================================== */
+
+.alu-stage {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(30px, 5vw, 64px);
+}
+
+/* الجدار: البطاقات نفسها مرسومةً أكبر ثم مدفوعةً خلف الشريط. وهو زخرفٌ
+   خالص — `aria-hidden` و`pointer-events:none` — وكلُّ اسمٍ فيه مقروءٌ
+   أصلًا في الشريط فوقه. ونصفُ قطر الضباب هو ما يحدّد فائضَ الرسم: عند 9px
+   يكشف أي هامشٍ أقلَّ من ~20px زواياه. */
+.alu-wall {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(14px, 2vw, 26px);
+  margin: -60px -80px;
+  padding: 0 40px;
+  filter: blur(9px);
+  opacity: 0.5;
+  /* قناعان مركّبان: تدرّجٌ واحد يُلاشي محورًا واحدًا لا محورين */
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 22%, #000 78%, transparent 100%);
+  mask-image:
+    linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 22%, #000 78%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+[data-theme="dark"] .alu-wall {
+  opacity: 0.3;
+}
+
+.alu-wall-row {
+  display: flex;
+  gap: clamp(14px, 2vw, 26px);
+  flex: none;
+}
+.alu-wall-row:nth-child(1) { transform: translateX(-4%); }
+.alu-wall-row:nth-child(2) { transform: translateX(7%); }
+.alu-wall-row:nth-child(3) { transform: translateX(-9%); }
+
+/* إزاحاتٌ متفاوتة فيُقرأ جدارًا متناثرًا لا شبكةً خلف زجاجٍ مصنفر */
+.alu-wall-card {
+  flex: none;
+  width: clamp(210px, 20vw, 280px);
+  height: 132px;
+  overflow: hidden;
+  box-shadow: none;
+}
+.alu-wall-card:nth-child(5n + 1) { transform: translateY(-16px); height: 118px; }
+.alu-wall-card:nth-child(5n + 2) { transform: translateY(12px); height: 146px; }
+.alu-wall-card:nth-child(5n + 3) { transform: translateY(-7px); width: clamp(230px, 22vw, 300px); }
+.alu-wall-card:nth-child(5n + 4) { transform: translateY(20px); height: 112px; }
+.alu-wall-card:nth-child(5n + 5) { transform: translateY(-13px); height: 140px; }
+
+.alu-marquee {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  padding-block: 12px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 64px, #000 calc(100% - 64px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 64px, #000 calc(100% - 64px), transparent 100%);
+}
+
+.alu-track {
+  display: flex;
+  align-items: stretch;
+  gap: 18px;
+  width: max-content;
+  animation: alu-run var(--alu-dur, 43s) linear infinite;
+}
+.alu-track--fast { --alu-dur: 43s; }
+.alu-track--slow { --alu-dur: 55s; }
+
+/* ⚠️ السرعتان **لا تقبل إحداهما القسمة على الأخرى**: لو تساوتا لانزلق
+   الصفّان ككتلةٍ واحدة وضاع معنى شطرهما صفّين. */
+/* ⚠️ **لليسار** — الأصل في `hosamstudyhub` يجري لليمين، وطلب حسام هذا
+   الاتجاه لهذا القسم صراحةً. والإزاحة ٥٠٪ لا أقلّ: المسار نسختان، فحين
+   يزيح نصفَ عرضه تحلّ الثانية محلّ الأولى تمامًا فلا تُرى قفزة. */
+@keyframes alu-run { to { transform: translateX(-50%); } }
+@keyframes alu-run-ltr {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+[dir="ltr"] .alu-track { animation-name: alu-run-ltr; }
+
+/* لا يقف بمرور الفأرة — المؤشّر يعبر الشريط في طريقه لأسفل الصفحة، وشريطٌ
+   يتجمّد كلّما عبره يُقرأ معطوبًا. لكن `:focus-within` يوقفه: البطاقة
+   تحمل رابط لينكدإن، فمن يتنقّل بلوح المفاتيح لا تهرب منه. */
+.alu-marquee:focus-within .alu-track {
+  animation-play-state: paused;
+}
+
+/* ⚠️ **والحركة تُوقَف كليًّا لمن طلب ذلك، ويُعاد له المحور تمريرًا** — فلا
+   يبقى نصفُ البطاقات خارج متناوله. */
+@media (prefers-reduced-motion: reduce) {
+  .alu-track { animation: none !important; }
+  .alu-marquee { overflow-x: auto; }
+}
