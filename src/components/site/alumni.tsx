@@ -1,123 +1,164 @@
-import Link from "next/link";
-
-import { ALUMNI } from "@/content/people";
+import { ALUMNI, type Alumnus } from "@/content/alumni";
 import { isolateLatin } from "@/lib/bidi";
 
 /**
- * خريجونا — من مرّ بالنادي وتخرّج.
+ * «مبدعون مرّوا من هنا» — بين «شركاء النجاح» و«الأسئلة الشائعة».
  *
- * ⚠️ **يحذف نفسه ما دامت `ALUMNI` فارغة.** القائمة فارغةٌ **عمدًا**: نشر
- * أسماء الأشخاص يحتاج قرارًا من الرئاسة **وموافقة كل شخص** — انظر رأس
- * `content/people.ts`. فلا عنوانَ معلّقٌ على فراغ، ولا اسمٌ «مؤقّت».
+ * ⚠️ **العرض منقولٌ عن قسم «آراء الطلاب» في `hosamstudyhub.com`** بطلب
+ * حسام: «خل المبدعون نفسها بالضبط». وهو جدارٌ ضبابيّ من البطاقات نفسها
+ * خلف شريطٍ حادّ، وصفّان يجريان بسرعتين لا تقبل إحداهما القسمة على
+ * الأخرى، وتلاشٍ على الحافّتين بدل أن ينتهي الشريط على خطّ.
  *
- * **«خريجونا» لا «خريجينا»:** جمع مذكّر سالم (`خريجون`) مضافٌ إلى `نا`،
- * والعنوان القائم بذاته مرفوع. و«خريجينا» تصحّ منصوبةً أو مجرورةً داخل
- * جملة — «نفخر بخريجينا» — لا عنوانًا وحده.
+ * والبنية والحركة مستعارتان؛ أمّا الألوان والحوافّ فمن هذا الموقع.
  *
- * ── ما الذي «يليق بهم» ─────────────────────────────────────────────────
- *
- * ١) **الاسم هو البطل، لا الشركة.** الترتيب: دفعتُه فوق صغيرةً، ثم اسمه
- *    كبيرًا، ثم موقعه اليوم. عكسُه (الشركة أوّلًا) يجعل الخرّيج شاهدًا على
- *    جهةٍ أخرى لا صاحبَ القسم.
- * ٢) **كلمتُه بصوته** إن وُجدت — سطرٌ واحد يكتبه هو، لا وصفٌ يُكتب عنه.
- *    وهي ما يفرّق قسمًا يليق بهم عن رقيمة أسماء.
- * ٣) **بلا علامات اقتباسٍ ضخمة ولا صورةٍ دائرية**: «بطاقة الشهادة» بعلامة
- *    اقتباسٍ في رأسها وصورةٍ دائرية تحتها قالبٌ جاهزٌ يُعرف من نظرة،
- *    ويحوّل الخرّيج إلى شهادةِ عميلٍ على منتج. والصورة إذنٌ ثانٍ غير إذن
- *    الاسم.
- * ٤) **بلا ترتيبٍ يُقرأ تفضيلًا**: بلا أرقام ولا «الأبرز» — ترتيب الورود
- *    في `ALUMNI` وحده، وهو ترتيبُ إدخالٍ لا ترتيبُ قيمة.
- *
- * ── اللغة البصرية ──────────────────────────────────────────────────────
- *
- * بطاقاتٌ مدوّرة (`rounded-3xl`) بحدٍّ خافت على سطح الصفحة — لغةُ قسم الأسئلة فوقه
- * نفسها، فيُقرأ القسمان عائلةً واحدة. وعلى **سطح الصفحة** لا لوحٍ غائر:
- * الأسئلة فوقه على لوحٍ غائر، ولوحان متلاصقان يصيران شريطًا واحدًا.
- *
- * ⚠️ الألوان **رموزُ أسطح** تنقلب مع المظهر — لا رقمَ مثبَّتٌ بيد.
+ * ── ما يُحفظ من قواعد هذا المستودع ──────────────────────────────────────
+ * · **المحتوى ظاهرٌ افتراضيًّا**: البطاقات مرسومةٌ كاملةً، والحركة تحويلٌ
+ *   فوق موجود. ولو لم تعمل الحركة بقي الشريط مقروءًا ويُمرَّر يدويًّا.
+ * · **لا شيء يُرسم ما دامت القائمة فارغة** — لا عنوانَ بلا محتوى.
+ * · **النسخة المكرّرة `aria-hidden`**: الشريط يُضاعَف ليدور بلا فجوة،
+ *   ولولا الإخفاء لقرأ قارئُ الشاشة كل اسمٍ مرّتين.
  */
+
+/* ⚠️ الصفّان يقتسمان القائمة **قسمةً لا تداخل فيها**: لو حمل كلٌّ منهما
+   القائمة كاملةً لعاد الاسم نفسه في الصفّ الآخر بعد قليل — وجدارٌ وظيفته
+   أن يبدو كثيرًا، تكرارُ الوجه فيه يجعله يبدو أقلّ. */
+function halves(list: readonly Alumnus[]) {
+  const mid = Math.ceil(list.length / 2);
+  return [list.slice(0, mid), list.slice(mid)] as const;
+}
 
 export function Alumni() {
   if (ALUMNI.length === 0) return null;
 
+  const [top, bottom] = halves(ALUMNI);
+  /* المضاعفة هي ما يجعل الدوران بلا قفزة: الحركة تزيح ٥٠٪ فتحلّ النسخة
+     الثانية محلّ الأولى تمامًا. */
+  const doubled = (row: readonly Alumnus[]) => [...row, ...row];
+
   return (
-    /* `above-mark` تلزم: القسم على مسار أضلاع الشعار الطائرة إلى التذييل،
-       فبدونها تُرسم فوق النصّ. */
     <section
       id="alumni"
       aria-labelledby="alumni-heading"
-      className="above-mark w-full py-s9"
+      className="above-mark w-full py-s8"
     >
       <div className="mx-auto w-full max-w-6xl px-s4 sm:px-s7">
-        <h2
-          id="alumni-heading"
-          className="text-balance text-center font-display text-3xl font-bold text-fg sm:text-4xl"
-        >
-          خريجونا
-        </h2>
-        <p className="mx-auto mt-s4 max-w-measure text-center text-base text-fg-muted sm:text-lg">
-          مرّوا بالنادي، وهذا أين هم اليوم.
+        <div className="mb-s5 flex items-center justify-center gap-s3">
+          <span aria-hidden className="inline-block h-5 w-[22.9px] shrink-0">
+            <span className="mis-slant block h-full w-full bg-accent" />
+          </span>
+          <h2
+            id="alumni-heading"
+            className="font-display text-fg text-lg font-bold tracking-[0.14em] sm:text-xl"
+          >
+            مبدعون مرّوا من هنا
+          </h2>
+        </div>
+
+        <p className="text-fg-muted mx-auto max-w-[54ch] text-center leading-relaxed">
+          طلبةُ التخصّص الذين سلّط عليهم النادي الضوء في «MIS Spotlight» — وأين
+          هم اليوم.
         </p>
+      </div>
 
-        {/* الشبكة الأمّ تعرّف ثلاثة صفوف (الترويسة · الكلمة · الرابط)،
-            وترثها البطاقة بـ`subgrid` — فتتحاذى الأسماء والكلمات والروابط
-            عبر البطاقات مهما اختلفت أطوالها. بلا هذا تبدأ كلمةُ كلِّ خرّيج
-            على ارتفاعٍ مختلف وتتراوح الشبكة. */}
-        <ul className="mt-s7 grid gap-s5 md:grid-cols-2 md:grid-rows-[auto_1fr_auto] lg:grid-cols-3">
-          {ALUMNI.map((person) => (
-            <li
-              key={person.name}
-              className="grid content-start gap-s4 rounded-3xl border border-border-quiet bg-bg-raised p-s6 md:row-span-3 md:grid-rows-subgrid"
-            >
-              <div>
-                {person.cohort ? (
-                  /* ⚠️ `isolateLatin`: الدفعة رقمٌ لاتيني («دفعة 2024») وسط
-                     نصٍّ عربي — بلا عزلٍ ينقلب ترتيبه. */
-                  <p className="font-display text-xs font-semibold tracking-[0.12em] text-fg-muted">
-                    {isolateLatin(person.cohort)}
-                  </p>
-                ) : null}
-                <p className="mt-s2 font-display text-xl font-bold text-fg">
-                  {isolateLatin(person.name)}
-                </p>
-                <p className="mt-s1 text-sm text-fg-muted sm:text-base">
-                  {isolateLatin(person.role)}
-                </p>
-              </div>
-
-              {/* كلمتُه بصوته — بلا علامة اقتباسٍ مرسومة: الزخرفة تُقرأ
-                  «شهادة عميل».
-                  ⚠️ B4: كان `border-s-2 border-accent` — حدٌّ من جهةٍ واحدة
-                  وهو ممنوع، فحلّ محلّه **سطحٌ غائر بلا حدٍّ أصلًا** («الحدود
-                  تدور حول الشكل كلّه أو لا تكون»). واستدارته `rounded-2xl`
-                  (16px) من سلّم Tailwind؛ وصيغةُ التداخل لا تنطبق لأن الفجوة
-                  عن البطاقة `p-s6` = 32px وليست دون الـ32. */}
-              {person.quote ? (
-                <p className="rounded-2xl bg-bg-sunken p-s4 text-pretty text-sm leading-relaxed text-fg sm:text-base">
-                  {isolateLatin(person.quote)}
-                </p>
-              ) : (
-                /* تُحجز الخانة ولا تُطوى: بطاقةٌ بلا كلمةٍ تقصر عن أخواتها
-                   فينكسر انتظام الشبكة. */
-                <span aria-hidden />
-              )}
-
-              {person.linkedin ? (
-                <Link
-                  href={person.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-11 items-center self-start text-sm font-semibold text-accent transition-[color,transform] hover:text-accent-hover active:scale-[0.98] motion-reduce:active:scale-100"
-                >
-                  لينكدإن
-                </Link>
-              ) : (
-                <span aria-hidden />
-              )}
-            </li>
+      {/* الشريط يمتدّ من حافّةٍ إلى حافّة والعنوان يبقى في الحاوية: شريطٌ
+          يقف عند الهامش يُقرأ أداةً أُلقيت في الصفحة، وجُلُّ معنى الشريط
+          أنه آتٍ من مكانٍ وذاهبٌ إلى مكان. */}
+      <div className="alu-stage mt-s6">
+        <div className="alu-wall" aria-hidden>
+          {[0, 1, 2].map((row) => (
+            <div className="alu-wall-row" key={row}>
+              {Array.from({ length: 5 }, (_, col) => (
+                <Card
+                  key={col}
+                  person={ALUMNI[(row * 5 + col) % ALUMNI.length]}
+                  wall
+                />
+              ))}
+            </div>
           ))}
-        </ul>
+        </div>
+
+        <div className="alu-marquee">
+          <div className="alu-track alu-track--fast">
+            {doubled(top).map((person, i) => (
+              <Card
+                key={`t-${person.name}-${i}`}
+                person={person}
+                muted={i >= top.length}
+              />
+            ))}
+          </div>
+          <div className="alu-track alu-track--slow">
+            {doubled(bottom).map((person, i) => (
+              <Card
+                key={`b-${person.name}-${i}`}
+                person={person}
+                muted={i >= bottom.length}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </section>
+  );
+}
+
+/* ── البطاقة ─────────────────────────────────────────────────────────────
+   الصورة أوّلًا ثم الاسم ثم ما هو عليه اليوم، ودورُه في النادي أسفلَ خطٍّ
+   فاصل — فالانتقال هو ما يقنع لا الاسم وحده. */
+function Card({
+  person,
+  wall,
+  muted,
+}: {
+  person: Alumnus;
+  wall?: boolean;
+  muted?: boolean;
+}) {
+  return (
+    <article
+      aria-hidden={wall || muted || undefined}
+      className={`bg-bg-raised border-line flex flex-col justify-center border p-s5 ${
+        wall ? "alu-wall-card" : "w-[clamp(17rem,25vw,21rem)] shrink-0"
+      }`}
+    >
+      <div className="flex items-center gap-x-s4">
+        {/* ⚠️ الصورة **اختيارية ولا بديلَ مخترعًا لها**: من لا صفحةَ له في
+            الكتيّب لا صورةَ له، والفراغ أصدق من حرفين في دائرةٍ متدرّجة. */}
+        {person.photo && (
+          <img
+            src={person.photo}
+            alt=""
+            width={56}
+            height={56}
+            loading="lazy"
+            className="size-14 shrink-0 rounded-full object-cover"
+          />
+        )}
+        <div className="min-w-0">
+          <p className="text-fg truncate text-[1rem] font-bold">
+            {isolateLatin(person.name)}
+          </p>
+          {/* ⚠️ **لا `truncate` على المسمّى**: «رئيس المجلس الطلابي لنظم
+              المعلومات الإدارية» يُبتر إلى «…الطلابي لن» فيفقد معناه.
+              يلتفّ سطرين، والبطاقات تتمدّد لأطولها بـ`items-stretch`. */}
+          <p className="text-accent text-[0.86rem] leading-snug font-semibold">
+            {isolateLatin(person.roleNow)}
+          </p>
+          <p className="text-fg-muted text-[0.8rem] leading-snug">
+            {isolateLatin(person.org)}
+          </p>
+        </div>
+      </div>
+
+      {person.roleThen && (
+        <p className="border-line text-fg-muted mt-s4 border-t pt-s3 text-[0.8rem]">
+          <span aria-hidden className="text-accent">
+            ←{" "}
+          </span>
+          {isolateLatin(person.roleThen)}
+        </p>
+      )}
+    </article>
   );
 }
