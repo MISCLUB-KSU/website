@@ -29,6 +29,8 @@ export type Preference = {
   group: string;
   description: string;
   questions?: readonly CustomQuestion[];
+  /** تقبل رابطَ تقديمٍ مباشر — انظر `directLink` في `projects.ts` */
+  directLink?: boolean;
 };
 
 /** عناوين المجموعات — تُستعمل في القائمة وفي ترتيب العرض */
@@ -92,8 +94,30 @@ export const PROJECT_PREFERENCES: readonly Preference[] = PROJECTS.map(
     group: project.isExternal ? GROUP_INITIATIVES : GROUP_PROJECTS,
     description: project.summary,
     questions: project.questions,
+    directLink: project.directLink,
   }),
 );
+
+/* ── الروابط المباشرة ───────────────────────────────────────────────────
+   ⚠️ **الأجزاء تُطابَق بجهةٍ معرَّفة، لا تُركَّب منها قيمة.** لو بُنيت القيمة
+   من المسار (`` `${kind}:${rest}` ``) لصار كلُّ ما يكتبه الزائر في العنوان
+   قيمةَ رغبةٍ تدخل القاعدة. وهنا العكس: نبحث عن جهةٍ قيمتُها تطابق، ونشترط
+   أن تكون رايتُها مرفوعة — فما لا يُطابق لا يمرّ. */
+export function findDirectTarget(
+  segments: readonly string[],
+): Preference | undefined {
+  if (segments.length < 2) return undefined;
+  const [kind, ...rest] = segments;
+  if (kind !== "project" && kind !== "committee") return undefined;
+  const value = `${kind}:${rest.join("/")}`;
+  const found = PREFERENCES.find((p) => p.value === value);
+  return found?.directLink ? found : undefined;
+}
+
+/** مسارُ الرابط المباشر لجهة — عكسُ `findDirectTarget` */
+export function directPath(preference: Preference): string {
+  return `/join/${preference.value.replace(":", "/")}`;
+}
 
 export const PREFERENCES: readonly Preference[] = [
   ...COMMITTEE_PREFERENCES,

@@ -51,15 +51,6 @@ export type Committee = {
 
 export const COMMITTEES: readonly Committee[] = [
   {
-    slug: "projects",
-    name: "لجنة المشاريع",
-    mark: "ascending",
-    description:
-      "تحتضن مشاريع النادي وبرامجه الكبرى، وتتابع فرقها من التصوّر إلى التنفيذ.",
-    reportsToPresidency: true,
-    units: [],
-  },
-  {
     slug: "public-relations",
     name: "لجنة العلاقات العامة والشراكات",
     mark: "descending",

@@ -4,7 +4,13 @@ import {
   findPreference,
   isCommitteeValue,
 } from "@/content/preferences";
-import { ANSWER_MAX, answerName } from "@/content/questions";
+import {
+  ANSWER_MAX,
+  ANSWER_SEP,
+  answerName,
+  isVisible,
+  optionValues,
+} from "@/content/questions";
 
 /**
  * قواعد التحقق من طلب العضوية.
@@ -308,10 +314,21 @@ const personalShape = {
     .or(z.literal("")),
 };
 
+/**
+ * وضعُ التقديم.
+ *
+ * `open` النموذج المفتوح بثلاث رغبات · `direct` رابطٌ مباشر لجهةٍ واحدة.
+ *
+ * ⚠️ **هذا حقلُ نموذجٍ يرسله المتصفّح، فهو غير موثوق.** ما يمنع أحدًا من
+ * إرسال `mode=direct` ورغبةٍ واحدة إلى النموذج العامّ إلّا فحصٌ ثانٍ على
+ * الخادم: أن تكون الجهة **رايتُها مرفوعة** في `findDirectTarget`. المخطّط
+ * هنا يضبط الشكل؛ والإذن يُفحص في `actions.ts`.
+ */
 const preferencesShape = {
+  mode: z.enum(["open", "direct"]).default("open"),
   choice1: choiceField("رغبتك الأولى"),
-  choice2: choiceField("رغبتك الثانية"),
-  choice3: choiceField("رغبتك الثالثة"),
+  choice2: choiceField("رغبتك الثانية").or(z.literal("")),
+  choice3: choiceField("رغبتك الثالثة").or(z.literal("")),
 };
 
 const finalShape = {
@@ -411,13 +428,40 @@ function refinePersonal(v: PersonalValues, ctx: z.RefinementCtx): void {
   }
 }
 
-type PreferenceValues = { choice1?: string; choice2?: string; choice3?: string };
+type PreferenceValues = {
+  mode?: "open" | "direct";
+  choice1?: string;
+  choice2?: string;
+  choice3?: string;
+};
 
 function refinePreferences(v: PreferenceValues, ctx: z.RefinementCtx): void {
+  /* ── الرابط المباشر: جهةٌ واحدة لا ثلاث ────────────────────────────────
+     ⚠️ **الرغبتان الثانية والثالثة تُتركان فارغتين لا تُكرَّران.** والفراغ
+     مقصود: `demand()` في اللوحة يتخطّى القيمة الفارغة، فلا يُحسب المتقدّم
+     ثلاث مرّات. وشرطُ «إحدى رغباتك لجنة» لا يُطبَّق هنا — لا مفاضلةَ أصلًا. */
+  if (v.mode === "direct") {
+    if (v.choice2 || v.choice3) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["choice1"],
+        message: "هذا رابطٌ لجهةٍ واحدة — لا تُرسل رغباتٍ إضافية",
+      });
+    }
+    return;
+  }
+
   const chosen = [v.choice1, v.choice2, v.choice3];
 
   chosen.forEach((value, index) => {
-    if (!value) return;
+    if (!value) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [`choice${index + 1}`],
+        message: "اختر رغبتك",
+      });
+      return;
+    }
     if (chosen.slice(0, index).includes(value)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -509,7 +553,7 @@ export function stepOfField(name: string): number {
  */
 export function validateAnswers(
   choices: readonly string[],
-  read: (name: string) => string,
+  readAll: (name: string) => readonly string[],
 ): { answers: Record<string, string>; errors: Record<string, string> } {
   const answers: Record<string, string> = {};
   const errors: Record<string, string> = {};
@@ -518,9 +562,30 @@ export function validateAnswers(
     const preference = findPreference(choice);
     if (!preference?.questions) continue;
 
+    /* إجاباتُ هذا الخيار وحده — التفرّع يشير داخله لا عبر الخيارات */
+    const answerOf = (questionId: string) =>
+      answers[answerName(choice, questionId)] ?? "";
+
     for (const question of preference.questions) {
       const name = answerName(choice, question.id);
-      const value = read(name).trim();
+
+      /* ⚠️ **السؤال المخفيّ لا يُطلب ولا تُحفظ إجابته.** والترتيب مهمّ:
+         `isVisible` يقرأ من `answers` التي مُلئت في هذي الحلقة نفسها،
+         فالسؤال الحاكم لا بدّ أن يسبق المشروطَ به في المصفوفة. */
+      if (!isVisible(question, answerOf)) continue;
+
+      const values =
+        question.type === "multi-select"
+          ? readAll(name).map((v) => v.trim()).filter(Boolean)
+          : [readAll(name)[0]?.trim() ?? ""].filter(Boolean);
+
+      /* نصُّ «أخرى» يُضمّ كما كتبه الطالب — لا مسبوقًا بوسم الحقل */
+      if (question.allowOther) {
+        const other = (readAll(`${name}__other`)[0] ?? "").trim();
+        if (other) values.push(other);
+      }
+
+      const value = values.join(ANSWER_SEP);
       answers[name] = value;
 
       if (!value) {
@@ -531,11 +596,20 @@ export function validateAnswers(
         errors[name] = `اختصر إلى ${ANSWER_MAX} حرف`;
         continue;
       }
+
+      /* ⚠️ **الخيارات تُفحص على الخادم.** القائمة في المتصفّح راحةٌ للطالب،
+         ومن يرسل قيمةً من خارجها يُردّ — وإلّا دخلت القاعدة قيمةٌ لا يعرفها
+         النظام فتظهر للقائد نصًّا غفلًا. ونصُّ «أخرى» مستثنًى فهو حرٌّ. */
       if (
-        question.type === "select" &&
-        !(question.options ?? []).includes(value)
+        question.type === "select" ||
+        question.type === "multi-select" ||
+        question.type === "choice-cards"
       ) {
-        errors[name] = "اختر إجابة من القائمة";
+        const allowed = new Set(optionValues(question.options));
+        const stray = values.filter(
+          (v) => !allowed.has(v) && !(question.allowOther && values.at(-1) === v),
+        );
+        if (stray.length > 0) errors[name] = "اختر إجابة من القائمة";
       }
     }
   }

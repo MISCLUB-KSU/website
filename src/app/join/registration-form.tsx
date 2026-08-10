@@ -30,20 +30,39 @@ import { Stepper } from "./stepper";
 
 const LAST_STEP = STEPS.length - 1;
 
+/* ⚠️ في الوضع المقفل تُطوى خطوةُ الرغبات، فيصير آخرُ خطوةٍ رقمها ٢ كما هو
+   لكن الخطوة ١ لا تُعرض ولا تُتحقَّق — والانتقال يقفز فوقها. */
+const PREFERENCES_STEP = 1;
+
 type RegistrationFormProps = {
   /** رغبة أولى مُهيَّأة من صفحة اللجنة — مُتحقَّق منها في الصفحة قبل تمريرها */
   initialChoice?: string;
+  /**
+   * جهةٌ **مقفلة** من رابطٍ مباشر — لا تُختار ولا تُبدَّل.
+   *
+   * ⚠️ القفلُ هنا راحةٌ للطالب لا حاجزُ أمان: `mode` و`choice1` حقلا نموذجٍ
+   * يقدر أي أحدٍ تغييرهما. الفحص الحاسم على الخادم في `actions.ts` — أن
+   * تكون الجهة رايتُها مرفوعة في `findDirectTarget`.
+   */
+  lockedTo?: string;
+  lockedLabel?: string;
 };
 
-export function RegistrationForm({ initialChoice }: RegistrationFormProps) {
+export function RegistrationForm({
+  initialChoice,
+  lockedTo,
+  lockedLabel,
+}: RegistrationFormProps) {
   const [state, formAction, pending] = useActionState<
     RegistrationState,
     FormData
   >(
     submitRegistration,
-    initialChoice
-      ? { ...emptyState, values: { choice1: initialChoice } }
-      : emptyState,
+    lockedTo
+      ? { ...emptyState, values: { choice1: lockedTo } }
+      : initialChoice
+        ? { ...emptyState, values: { choice1: initialChoice } }
+        : emptyState,
   );
 
   const formRef = useRef<HTMLFormElement>(null);
@@ -116,12 +135,25 @@ export function RegistrationForm({ initialChoice }: RegistrationFormProps) {
   }
 
   function goNext() {
-    if (validateStep(step)) setStep((current) => Math.min(current + 1, LAST_STEP));
+    if (!validateStep(step)) return;
+    setStep((current) => {
+      const next = current + 1;
+      return Math.min(
+        lockedTo && next === PREFERENCES_STEP ? next + 1 : next,
+        LAST_STEP,
+      );
+    });
   }
 
   function goBack() {
     setClientErrors({});
-    setStep((current) => Math.max(current - 1, 0));
+    setStep((current) => {
+      const previous = current - 1;
+      return Math.max(
+        lockedTo && previous === PREFERENCES_STEP ? previous - 1 : previous,
+        0,
+      );
+    });
   }
 
   function chooseAt(slot: number, value: string) {
@@ -172,9 +204,18 @@ export function RegistrationForm({ initialChoice }: RegistrationFormProps) {
         noValidate
         className="flex flex-col gap-s6"
       >
-        <div className="js-only">
-          <Stepper current={step} onGoTo={setStep} />
-        </div>
+        {!lockedTo && (
+          <div className="js-only">
+            <Stepper current={step} onGoTo={setStep} />
+          </div>
+        )}
+
+        {lockedTo && (
+          <p className="border-s-2 border-accent bg-bg-sunken px-s4 py-s3 text-[0.9rem]">
+            تقدّم على{" "}
+            <strong className="font-semibold">{lockedLabel ?? lockedTo}</strong>
+          </p>
+        )}
 
         {state.message && (
           <div
@@ -198,14 +239,28 @@ export function RegistrationForm({ initialChoice }: RegistrationFormProps) {
 
         <StepPersonal index={0} current={step} values={v} errors={errors} />
 
-        <StepPreferences
-          index={1}
-          current={step}
-          choices={choices}
-          onChange={chooseAt}
-          values={v}
-          errors={errors}
-        />
+        {lockedTo ? (
+          /* ⚠️ **حقلٌ خفيّ لا خطوةٌ معطّلة.** الحقل المعطّل `disabled` لا
+             يُرسل أصلًا في `FormData`، فتصل الرغبة فارغةً إلى الخادم. */
+          <>
+            <input type="hidden" name="mode" value="direct" />
+            <input type="hidden" name="choice1" value={lockedTo} />
+            <input type="hidden" name="choice2" value="" />
+            <input type="hidden" name="choice3" value="" />
+          </>
+        ) : (
+          <>
+            <input type="hidden" name="mode" value="open" />
+            <StepPreferences
+              index={1}
+              current={step}
+              choices={choices}
+              onChange={chooseAt}
+              values={v}
+              errors={errors}
+            />
+          </>
+        )}
 
         <StepQuestions
           index={2}

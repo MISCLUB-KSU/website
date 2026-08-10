@@ -8,6 +8,7 @@ import {
   type RegistrationInput,
   type RegistrationState,
 } from "@/lib/registration";
+import { findDirectTarget } from "@/content/preferences";
 import { CV_BUCKET, createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -79,7 +80,14 @@ export async function submitRegistration(
     return { ...emptyState, ok: true, message: "وصل طلبك." };
   }
 
+  /* ⚠️ **الوضع يُمرَّر إلى المخطّط لا يُحسب بجانبه.** أول بناءٍ حسبه في
+     متغيّرٍ محلّيّ ولم يضعه في `safeParse`، فرآه المخطّط `open` افتراضًا
+     وطالب برغبتين ثانية وثالثة لا وجود لهما في الرابط المباشر — خطآن
+     على حقلين لا يُرسمان أصلًا، فلا يرى الطالب لهما أثرًا في الصفحة. */
+  const mode = text(formData, "mode") === "direct" ? "direct" : "open";
+
   const parsed = registrationSchema.safeParse({
+    mode,
     fullName: text(formData, "fullName"),
     studentId: text(formData, "studentId"),
     nationalId: text(formData, "nationalId"),
@@ -113,13 +121,29 @@ export async function submitRegistration(
      لو انتظرت قبول المخطّط كاملًا لظهرت أخطاؤها في جولة ثانية، فيصلح
      الطالب حقولًا ثم يُفاجأ بأسئلة لم تكن ظاهرة له.
      الرغبة غير المعروفة تتخطّاها `validateAnswers` بلا أسئلة. */
+  /* ⚠️ **إذنُ الرابط المباشر يُفحص هنا لا في المتصفّح.**
+     `mode` حقلُ نموذجٍ يرسله العميل، فأي أحدٍ يستطيع إرسال `mode=direct`
+     برغبةٍ واحدة إلى النموذج العامّ ويتخطّى شرط «إحدى رغباتك لجنة». والفحصُ
+     الحاسم أن تكون الجهةُ **رايتُها مرفوعة** في `findDirectTarget` — وهي
+     بياناتُ خادمٍ لا يمسّها العميل. */
+  if (mode === "direct") {
+    const target = findDirectTarget(
+      text(formData, "choice1").replace(":", "/").split("/"),
+    );
+    if (!target) {
+      errors.choice1 = "هذا الرابط لا يشير إلى جهةٍ تقبل التقديم المباشر";
+    }
+  }
+
   const answers = validateAnswers(
     [
       text(formData, "choice1"),
       text(formData, "choice2"),
       text(formData, "choice3"),
     ],
-    (name) => text(formData, name),
+    /* ⚠️ **`getAll` لا `get`.** الاختيار المتعدّد يرسل قيمةً لكل مربّعٍ
+       مؤشَّر بالاسم نفسه، و`get` يعيد الأولى فتضيع البقيّة صامتةً. */
+    (name) => formData.getAll(name).map((v) => (typeof v === "string" ? v : "")),
   );
   Object.assign(errors, answers.errors);
 
@@ -143,8 +167,24 @@ export async function submitRegistration(
     await saveApplication(parsed.data, {
       answers: answers.answers,
       cv: formData.get("cv"),
+      mode,
     });
-  } catch {
+  } catch (error) {
+    /* ⚠️ **التكرار ليس عطلًا بل جوابٌ للطالب.** الفهرسان الشرطيّان في
+       القاعدة يمنعان طلبين لنفس الهوية في النموذج المفتوح، وطلبين لنفس
+       الهوية والجهة في الرابط المباشر. ولولا التقاطُه هنا لقرأ الطالب
+       «تعذّر الإرسال… حاول مرة أخرى» فأعاد المحاولة أبدًا. */
+    if (isDuplicate(error)) {
+      return {
+        ok: false,
+        errors: {},
+        values,
+        message:
+          mode === "direct"
+            ? "سبق أن قدّمت على هذه الجهة برقم الهوية نفسه."
+            : "سبق أن وصلنا طلبك برقم الهوية نفسه. راسلنا إن أردت تعديله.",
+      };
+    }
     /* لا نكشف تفاصيل العطل للطالب، ونطمئنه أن ما كتبه لم يضع */
     return {
       ok: false,
@@ -163,11 +203,22 @@ export async function submitRegistration(
   };
 }
 
+/** رمزُ خرق التفرّد في `Postgres` — يصل عبر `PostgrestError.code` */
+function isDuplicate(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: string }).code === "23505"
+  );
+}
+
 type Attachments = {
   /** إجابات أسئلة القادة — المفتاح `q__<الرغبة>__<معرّف السؤال>` */
   answers: Record<string, string>;
   /** المرفق كما وصل — `File` أو `null` إن لم يرفع الطالب شيئًا */
   cv: FormDataEntryValue | null;
+  /** `open` نموذجٌ بثلاث رغبات · `direct` رابطٌ لجهةٍ واحدة */
+  mode: "open" | "direct";
 };
 
 /**
@@ -210,12 +261,17 @@ async function saveApplication(
       answers: attachments.answers,
       portfolio: data.portfolio || null,
       linkedin: data.linkedin || null,
+      source: attachments.mode,
     })
     .select("id")
     .single();
 
   if (error || !row) {
     console.error("[registration] فشل إدراج الطلب", error);
+    /* ⚠️ **خرقُ التفرّد يُمرَّر بجسمه لا مغلَّفًا.** تغليفُه في `Error` عامّ
+       يمحو `code` فيضيع الفرق بين «سبق أن قدّمت» و«عطلٌ في الخادم»، ويقرأ
+       الطالبُ «حاول مرة أخرى» فيعيد المحاولة أبدًا بلا نتيجة. */
+    if (error?.code === "23505") throw error;
     throw new Error("تعذّر حفظ الطلب");
   }
 
