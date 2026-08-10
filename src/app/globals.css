@@ -111,6 +111,15 @@
   --color-border: var(--line);
   --color-border-quiet: var(--line-quiet);
   --color-border-strong: var(--line-control);
+  /* ⚠️ **الاسمان لدورٍ واحد — عمدًا.** الجسر سمّاها `border-*` والمكوّنات
+     كتبت `border-line` باسم الرمز نفسه، فسقط الصنفُ **صامتًا** ورُسم الحدُّ
+     بلون النصّ (`currentColor`) — وهو حدٌّ يُرى فيُظنّ سليمًا. قِيس فوُجد
+     في **٣٢ موضعًا** في صفحة الانضمام وحدها: حدودٌ ثلجيّةٌ ليلًا وفحميّةٌ
+     نهارًا حيث يجب لونُ الخطوط الهادئ. والتسجيلُ هنا أصلحها جميعًا بلا
+     لمس مكوّنٍ واحد. */
+  --color-line: var(--line);
+  --color-line-quiet: var(--line-quiet);
+  --color-line-control: var(--line-control);
   --color-ring: var(--focus);
 
   /* المقاسات وارتفاعات السطور */
@@ -302,7 +311,9 @@ main {
       var(--rake-shade) 100%
     );
   background-repeat: repeat, no-repeat;
-  background-size: 200px 200px, auto;
+  background-size:
+    200px 200px,
+    auto;
   background-blend-mode: soft-light, normal;
 }
 
@@ -396,7 +407,9 @@ h3 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rake-interactive { transition: none; }
+  .rake-interactive {
+    transition: none;
+  }
 }
 
 /* حلقة التركيز (القاعدة العامة أعلى الملف، سطر ٣٥٤) تُرسم على الصندوق
@@ -698,7 +711,6 @@ html.mark-morphing [data-mark-static] {
   display: none;
 }
 
-
 /* ==========================================================================
    شريط «مبدعون مرّوا من هنا»
 
@@ -736,11 +748,35 @@ html.mark-morphing [data-mark-static] {
   opacity: 0.5;
   /* قناعان مركّبان: تدرّجٌ واحد يُلاشي محورًا واحدًا لا محورين */
   -webkit-mask-image:
-    linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%),
-    linear-gradient(to bottom, transparent 0, #000 22%, #000 78%, transparent 100%);
+    linear-gradient(
+      to right,
+      transparent 0,
+      #000 12%,
+      #000 88%,
+      transparent 100%
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 22%,
+      #000 78%,
+      transparent 100%
+    );
   mask-image:
-    linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%),
-    linear-gradient(to bottom, transparent 0, #000 22%, #000 78%, transparent 100%);
+    linear-gradient(
+      to right,
+      transparent 0,
+      #000 12%,
+      #000 88%,
+      transparent 100%
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 22%,
+      #000 78%,
+      transparent 100%
+    );
   -webkit-mask-composite: source-in;
   mask-composite: intersect;
 }
@@ -754,9 +790,15 @@ html.mark-morphing [data-mark-static] {
   gap: clamp(14px, 2vw, 26px);
   flex: none;
 }
-.alu-wall-row:nth-child(1) { transform: translateX(-4%); }
-.alu-wall-row:nth-child(2) { transform: translateX(7%); }
-.alu-wall-row:nth-child(3) { transform: translateX(-9%); }
+.alu-wall-row:nth-child(1) {
+  transform: translateX(-4%);
+}
+.alu-wall-row:nth-child(2) {
+  transform: translateX(7%);
+}
+.alu-wall-row:nth-child(3) {
+  transform: translateX(-9%);
+}
 
 /* إزاحاتٌ متفاوتة فيُقرأ جدارًا متناثرًا لا شبكةً خلف زجاجٍ مصنفر */
 .alu-wall-card {
@@ -766,11 +808,26 @@ html.mark-morphing [data-mark-static] {
   overflow: hidden;
   box-shadow: none;
 }
-.alu-wall-card:nth-child(5n + 1) { transform: translateY(-16px); height: 118px; }
-.alu-wall-card:nth-child(5n + 2) { transform: translateY(12px); height: 146px; }
-.alu-wall-card:nth-child(5n + 3) { transform: translateY(-7px); width: clamp(230px, 22vw, 300px); }
-.alu-wall-card:nth-child(5n + 4) { transform: translateY(20px); height: 112px; }
-.alu-wall-card:nth-child(5n + 5) { transform: translateY(-13px); height: 140px; }
+.alu-wall-card:nth-child(5n + 1) {
+  transform: translateY(-16px);
+  height: 118px;
+}
+.alu-wall-card:nth-child(5n + 2) {
+  transform: translateY(12px);
+  height: 146px;
+}
+.alu-wall-card:nth-child(5n + 3) {
+  transform: translateY(-7px);
+  width: clamp(230px, 22vw, 300px);
+}
+.alu-wall-card:nth-child(5n + 4) {
+  transform: translateY(20px);
+  height: 112px;
+}
+.alu-wall-card:nth-child(5n + 5) {
+  transform: translateY(-13px);
+  height: 140px;
+}
 
 .alu-marquee {
   position: relative;
@@ -780,8 +837,20 @@ html.mark-morphing [data-mark-static] {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 64px, #000 calc(100% - 64px), transparent 100%);
-  mask-image: linear-gradient(to right, transparent 0, #000 64px, #000 calc(100% - 64px), transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 64px,
+    #000 calc(100% - 64px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 64px,
+    #000 calc(100% - 64px),
+    transparent 100%
+  );
 }
 
 .alu-track {
@@ -791,20 +860,34 @@ html.mark-morphing [data-mark-static] {
   width: max-content;
   animation: alu-run var(--alu-dur, 43s) linear infinite;
 }
-.alu-track--fast { --alu-dur: 43s; }
-.alu-track--slow { --alu-dur: 55s; }
+.alu-track--fast {
+  --alu-dur: 43s;
+}
+.alu-track--slow {
+  --alu-dur: 55s;
+}
 
 /* ⚠️ السرعتان **لا تقبل إحداهما القسمة على الأخرى**: لو تساوتا لانزلق
    الصفّان ككتلةٍ واحدة وضاع معنى شطرهما صفّين. */
 /* ⚠️ **لليسار** — الأصل في `hosamstudyhub` يجري لليمين، وطلب حسام هذا
    الاتجاه لهذا القسم صراحةً. والإزاحة ٥٠٪ لا أقلّ: المسار نسختان، فحين
    يزيح نصفَ عرضه تحلّ الثانية محلّ الأولى تمامًا فلا تُرى قفزة. */
-@keyframes alu-run { to { transform: translateX(-50%); } }
-@keyframes alu-run-ltr {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+@keyframes alu-run {
+  to {
+    transform: translateX(-50%);
+  }
 }
-[dir="ltr"] .alu-track { animation-name: alu-run-ltr; }
+@keyframes alu-run-ltr {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+[dir="ltr"] .alu-track {
+  animation-name: alu-run-ltr;
+}
 
 /* لا يقف بمرور الفأرة — المؤشّر يعبر الشريط في طريقه لأسفل الصفحة، وشريطٌ
    يتجمّد كلّما عبره يُقرأ معطوبًا. لكن `:focus-within` يوقفه: البطاقة
@@ -816,6 +899,10 @@ html.mark-morphing [data-mark-static] {
 /* ⚠️ **والحركة تُوقَف كليًّا لمن طلب ذلك، ويُعاد له المحور تمريرًا** — فلا
    يبقى نصفُ البطاقات خارج متناوله. */
 @media (prefers-reduced-motion: reduce) {
-  .alu-track { animation: none !important; }
-  .alu-marquee { overflow-x: auto; }
+  .alu-track {
+    animation: none !important;
+  }
+  .alu-marquee {
+    overflow-x: auto;
+  }
 }

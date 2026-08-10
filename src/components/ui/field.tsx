@@ -1,4 +1,8 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useEffect, useRef, useState, type ReactNode } from "react";
+
+import { SelectMenu } from "./select-menu";
 
 /**
  * حقول النموذج — مطابقة لمكتبة المكوّنات.
@@ -41,15 +45,24 @@ const INVALID = "border-danger hover:border-danger focus:border-danger";
 
 type LabelProps = {
   htmlFor: string;
+  /** يلزم حين يشير إليه ضابطٌ آخر بـ`aria-labelledby` — كقائمتنا المنسدلة */
+  id?: string;
   children: ReactNode;
   required?: boolean;
   optional?: boolean;
 };
 
-export function Label({ htmlFor, children, required, optional }: LabelProps) {
+export function Label({
+  htmlFor,
+  id,
+  children,
+  required,
+  optional,
+}: LabelProps) {
   return (
     <label
       htmlFor={htmlFor}
+      id={id}
       className="text-ink-label mb-1.5 block text-sm font-semibold"
     >
       {children}
@@ -191,18 +204,46 @@ export function SelectField({
   ...rest
 }: SelectFieldProps) {
   const hintId = `${id}-hint`;
+  const labelId = `${id}-label`;
+  const nativeRef = useRef<HTMLSelectElement>(null);
+
+  /* ⚠️ **بعد التحميل لا قبله.** لو رُسمت قائمتُنا على الخادم لظهرت لمن
+     عطّل الجافاسكربت زرًّا لا يفتح شيئًا — والنموذج كلُّه مبنيٌّ على أن
+     يعمل بدونه. فالأصليّة هي المرسومة أوّلًا، وتُستبدل حين يثبت أن
+     الجافاسكربت يعمل فعلًا. */
+  const [enhanced, setEnhanced] = useState(false);
+  useEffect(() => setEnhanced(true), []);
+
+  /* القيمة تُقرأ من الأصليّة نفسها لا من حالةٍ موازية: الحقل قد يكون
+     مضبوطًا من أبيه (أسئلة القادة) أو غيرَ مضبوط (الجامعة والتخصّص)،
+     والأصليّةُ صادقةٌ في الحالين. */
+  const [value, setValue] = useState("");
+  useEffect(() => {
+    setValue(nativeRef.current?.value ?? "");
+  }, [rest.value, rest.defaultValue, enhanced]);
+
+  const menuGroups = groups ?? [{ label: "", options: options ?? [] }];
+
   return (
     <div>
-      <Label htmlFor={id} required={required}>
+      <Label htmlFor={id} id={labelId} required={required}>
         {label}
       </Label>
       <div className="relative">
         <select
+          ref={nativeRef}
           id={id}
           name={id}
           aria-invalid={error ? true : undefined}
           aria-describedby={error || hint ? hintId : undefined}
-          className={`${BASE} cursor-pointer appearance-none ps-11 ${error ? INVALID : ""} ${className}`}
+          /* مخفيّةٌ عن العين وعن قارئ الشاشة حين تحلّ قائمتُنا محلّها —
+             ولا تُنزع: المخفيُّ يُرسَل مع النموذج، والمعطَّل لا يُرسَل. */
+          {...(enhanced ? { "aria-hidden": true, tabIndex: -1 } : {})}
+          className={
+            enhanced
+              ? "pointer-events-none absolute inset-0 h-full w-full opacity-0"
+              : `${BASE} cursor-pointer appearance-none ps-11 ${error ? INVALID : ""} ${className}`
+          }
           {...rest}
         >
           <option value="">{placeholder}</option>
@@ -222,22 +263,37 @@ export function SelectField({
                 </option>
               ))}
         </select>
-        {/* السهم في نهاية الحقل — أي يساره في الاتجاه من اليمين لليسار */}
-        <svg
-          viewBox="0 0 20 20"
-          width="14"
-          height="14"
-          fill="none"
-          aria-hidden="true"
-          className="text-fg-muted pointer-events-none absolute start-4 top-1/2 -translate-y-1/2"
-        >
-          <path
-            d="M4 7l6 6 6-6"
-            stroke="currentColor"
-            strokeWidth="1.75"
-            strokeLinecap="square"
+
+        {enhanced ? (
+          <SelectMenu
+            nativeRef={nativeRef}
+            placeholder={placeholder}
+            groups={menuGroups}
+            value={value}
+            onPick={setValue}
+            invalid={!!error}
+            disabled={rest.disabled}
+            labelId={labelId}
           />
-        </svg>
+        ) : (
+          /* السهم في نهاية الحقل — أي يساره في الاتجاه من اليمين لليسار.
+             لا يُرسم مع قائمتنا: لها سهمُها الذي يدور عند الفتح. */
+          <svg
+            viewBox="0 0 20 20"
+            width="14"
+            height="14"
+            fill="none"
+            aria-hidden="true"
+            className="text-fg-muted pointer-events-none absolute start-4 top-1/2 -translate-y-1/2"
+          >
+            <path
+              d="M4 7l6 6 6-6"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="square"
+            />
+          </svg>
+        )}
       </div>
       <Hint id={hintId} error={error}>
         {hint}
