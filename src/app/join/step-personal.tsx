@@ -62,7 +62,9 @@ export function StepPersonal({
         required
         defaultValue={v.fullName}
         error={e.fullName}
-        hint="كما هو مسجّل في النظام الأكاديمي."
+        /* بلا سطر إرشاد — قرار حسام. والمعنى لم يضع: النائبُ داخل الحقل
+           يُري الشكل الثلاثيّ، ورسالةُ الخطأ تقول «كما هو في النظام
+           الأكاديمي» لمن كتب غير ذلك. */
         placeholder="الاسم الأول · اسم الأب · اسم العائلة"
         autoComplete="name"
       />
