@@ -142,6 +142,35 @@ export const HEARD_FROM = [
 
 /* ── المرفقات ─────────────────────────────────────────────────────────── */
 
+/**
+ * سؤال الخبرة السابقة — **سؤالُ النادي كلِّه، يُسأل مرّةً واحدة.**
+ *
+ * ⚠️ **لا يوضع في `questions` الخاصّة بجهة.** تلك تُعرض مع **كل رغبةٍ** من
+ * الثلاث ليقرأ كلُّ قائدٍ جوابًا كُتب لوحدته هو — فوضعُه هناك يُري الطالبَ
+ * السؤالَ نفسه ثلاث مرّات. وهذا سؤالٌ واحدٌ عن الشخص لا عن رغبته.
+ *
+ * والقيمتان عربيّتان ليقرأهما الطالب كما هما، وتُحوَّلان `boolean` عند
+ * الحفظ: الفرزُ في اللوحة يحتاج عمودًا يُفرز عليه لا نصًّا يُقارن حرفًا بحرف.
+ */
+export const CLUB_EXPERIENCE_YES = "نعم";
+export const CLUB_EXPERIENCE_NO = "لا";
+export const CLUB_EXPERIENCE = [
+  CLUB_EXPERIENCE_YES,
+  CLUB_EXPERIENCE_NO,
+] as const;
+
+/** حدُّ التفاصيل — جهةٌ ودورٌ ومدّة، لا سيرةٌ ذاتية ثانية */
+export const CLUB_EXPERIENCE_MAX = 400;
+
+/**
+ * أقلُّ ما يُقبل تفصيلًا.
+ *
+ * «ايه» و«نعم» جوابان يمرّان من `min(1)` ولا يقولان شيئًا للجنة الفرز —
+ * وهي تريد **الجهة والدور**. والعشرة حدٌّ يسع «نادي القانون، عضو تنظيم»
+ * ويردّ كلمةَ تأكيدٍ وحدها.
+ */
+export const CLUB_EXPERIENCE_MIN = 10;
+
 /** خمسة ميجابايت — سيرة ذاتية أو معرض أعمال لا يتجاوزها إلا بصور غير مضغوطة */
 export const CV_MAX_BYTES = 5 * 1024 * 1024;
 
@@ -343,6 +372,20 @@ const finalShape = {
     errorMap: () => ({ message: "اختر كيف سمعت عن النادي" }),
   }),
 
+  clubExperience: z.enum(CLUB_EXPERIENCE, {
+    errorMap: () => ({
+      message: "أخبرنا: هل سبق أن شاركت في عمل طلابيّ أو تطوّعيّ؟",
+    }),
+  }),
+
+  /* الحقلُ نفسه لا يُطلب هنا — يطلبه `refineFinal` ممّن قال «نعم» وحده،
+     ومن قال «لا» لا يراه أصلًا فلا يُرفض على حقلٍ لم يُعرض له. */
+  clubExperienceDetails: z
+    .string()
+    .trim()
+    .max(CLUB_EXPERIENCE_MAX, `اختصر إلى ${CLUB_EXPERIENCE_MAX} حرف`)
+    .default(""),
+
   portfolio: optionalUrl(
     "الرابط غير صحيح — تأكّد أنه يبدأ بـ https:// ويفتح لدى غيرك",
   ),
@@ -428,6 +471,31 @@ function refinePersonal(v: PersonalValues, ctx: z.RefinementCtx): void {
   }
 }
 
+type FinalValues = {
+  clubExperience?: string;
+  clubExperienceDetails?: string;
+};
+
+/**
+ * تفاصيلُ الخبرة تُطلب ممّن قال «نعم» وحده.
+ *
+ * ⚠️ **ومن قال «لا» لا يُطالَب بشيءٍ ولا يُخصم عليه.** السؤال يكشف خبرةً إن
+ * وُجدت، ولا يجعلها شرطًا للقبول: أكثرُ من يقدّم علينا طالبُ سنةٍ أولى، وأيُّ
+ * صيغةٍ تُشعره أن «لا» نقصٌ تدفعه إلى «نعم» مبالَغٍ فيها — فيفسد الحقل الذي
+ * أُنشئ للفرز.
+ */
+function refineFinal(v: FinalValues, ctx: z.RefinementCtx): void {
+  if (v.clubExperience !== CLUB_EXPERIENCE_YES) return;
+
+  if ((v.clubExperienceDetails ?? "").trim().length < CLUB_EXPERIENCE_MIN) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["clubExperienceDetails"],
+      message: "اذكر الجهة ودورك فيها — سطرٌ واحد يكفي",
+    });
+  }
+}
+
 type PreferenceValues = {
   mode?: "open" | "direct";
   choice1?: string;
@@ -492,7 +560,7 @@ function refinePreferences(v: PreferenceValues, ctx: z.RefinementCtx): void {
 export const STEP_SCHEMAS: readonly z.ZodTypeAny[] = [
   z.object(personalShape).superRefine(refinePersonal),
   z.object(preferencesShape).superRefine(refinePreferences),
-  z.object(finalShape),
+  z.object(finalShape).superRefine(refineFinal),
 ] as const;
 
 export const registrationSchema = z
@@ -500,6 +568,7 @@ export const registrationSchema = z
   .superRefine((v, ctx) => {
     refinePersonal(v, ctx);
     refinePreferences(v, ctx);
+    refineFinal(v, ctx);
   });
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;
@@ -525,7 +594,16 @@ export const STEPS = [
   { title: "اللجان والمشاريع", fields: ["choice1", "choice2", "choice3"] },
   {
     title: "الأسئلة والمرفقات",
-    fields: ["why", "heardFrom", "cv", "portfolio", "linkedin", "agree"],
+    fields: [
+      "why",
+      "clubExperience",
+      "clubExperienceDetails",
+      "heardFrom",
+      "cv",
+      "portfolio",
+      "linkedin",
+      "agree",
+    ],
   },
 ] as const;
 

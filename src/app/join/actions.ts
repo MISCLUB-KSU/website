@@ -1,6 +1,7 @@
 "use server";
 
 import {
+  CLUB_EXPERIENCE_YES,
   emptyState,
   registrationSchema,
   validateAnswers,
@@ -258,6 +259,14 @@ async function saveApplication(
       choice3: data.choice3,
       why: data.why,
       heard_from: data.heardFrom,
+      /* ⚠️ **بوليان في القاعدة ونصٌّ في النموذج.** اللوحة تفرز على العمود،
+         ومقارنةُ نصٍّ عربيّ حرفًا بحرف تكسر بمسافةٍ زائدة أو همزةٍ مختلفة.
+         والتفاصيل `null` لمن قال «لا» — لا سلسلةً فارغة تُقرأ إجابةً خاوية. */
+      has_club_experience: data.clubExperience === CLUB_EXPERIENCE_YES,
+      club_experience:
+        data.clubExperience === CLUB_EXPERIENCE_YES
+          ? data.clubExperienceDetails
+          : null,
       answers: attachments.answers,
       portfolio: data.portfolio || null,
       linkedin: data.linkedin || null,

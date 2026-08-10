@@ -29,6 +29,9 @@ export type Row = {
   major_other: string | null;
   why: string;
   heard_from: string;
+  /** خبرةٌ سابقة في عملٍ طلابيّ أو تطوّعيّ — والتفاصيل `null` لمن لا خبرة له */
+  has_club_experience: boolean;
+  club_experience: string | null;
   answers: Record<string, string>;
   portfolio: string | null;
   linkedin: string | null;

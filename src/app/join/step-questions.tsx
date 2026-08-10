@@ -20,7 +20,13 @@ import {
   type CustomQuestion,
 } from "@/content/questions";
 import { isolateLatin } from "@/lib/bidi";
-import { CV_ACCEPT, HEARD_FROM } from "@/lib/registration";
+import {
+  CLUB_EXPERIENCE,
+  CLUB_EXPERIENCE_MAX,
+  CLUB_EXPERIENCE_YES,
+  CV_ACCEPT,
+  HEARD_FROM,
+} from "@/lib/registration";
 import { StepPanel } from "./step-panel";
 
 /**
@@ -326,6 +332,89 @@ type StepQuestionsProps = {
   errors: Record<string, string>;
 };
 
+/**
+ * سؤال الخبرة السابقة — عامٌّ لكل متقدّم مهما كانت رغباته.
+ *
+ * ⚠️ **أزرارٌ لا قائمةٌ منسدلة.** خياران اثنان، والقائمة تخفيهما خلف نقرةٍ
+ * وتزيد خطوةً على جوّالٍ بلا فائدة. وهي `radio` حقيقية تعمل بلا جافاسكربت،
+ * والتفاصيل وحدها هي التي تحتاج الحالة.
+ */
+function ClubExperience({
+  values: v,
+  errors: e,
+}: {
+  values: Record<string, string>;
+  errors: Record<string, string>;
+}) {
+  const [answer, setAnswer] = useState(v.clubExperience ?? "");
+
+  return (
+    <>
+      <fieldset className="flex flex-col gap-s2">
+        <legend className="mb-1 text-sm font-semibold text-fg">
+          سبق أن شاركت في نادٍ أو لجنة أو عمل تطوّعي؟
+          <span className="font-bold text-danger" aria-hidden>
+            {" "}
+            *
+          </span>
+        </legend>
+
+        {/* ⚠️ الطمأنة قبل الخيار لا بعده: من يقرأ السؤال ثم «نعم/لا» مباشرةً
+            يقرأ «لا» نقصًا، فيبالغ في «نعم» ويفسد الحقل الذي أُنشئ للفرز. */}
+        <p className="text-[0.82rem] text-fg-muted">
+          أي عمل طلابي أو تطوّعي: نادٍ في الجامعة، لجنة، مبادرة، فريق مدرسي.
+          وإن لم يسبق لك — لا يضرّك، وأكثر من ينضمّ إلينا يبدأ من هنا.
+        </p>
+
+        <div className="grid gap-s2 sm:grid-cols-2">
+          {CLUB_EXPERIENCE.map((option) => {
+            const on = answer === option;
+            return (
+              <label
+                key={option}
+                className={`flex min-h-11 cursor-pointer items-center gap-x-s3 border px-s3 text-[0.88rem] transition-colors ${
+                  on ? "border-accent bg-accent/10" : "border-line hover:bg-bg-sunken"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="clubExperience"
+                  value={option}
+                  checked={on}
+                  onChange={() => setAnswer(option)}
+                  className="size-4 shrink-0 accent-accent"
+                />
+                {option}
+              </label>
+            );
+          })}
+        </div>
+
+        {e.clubExperience && (
+          <p role="alert" className="text-[0.84rem] text-danger">
+            {e.clubExperience}
+          </p>
+        )}
+      </fieldset>
+
+      {/* المخفيّ لا يُرسم أصلًا — كما في أسئلة القادة. ولأنه غير مرسوم فهو
+          غير مُرسَل، و`refineFinal` لا يطلبه إلا ممّن قال «نعم». */}
+      {answer === CLUB_EXPERIENCE_YES && (
+        <TextArea
+          id="clubExperienceDetails"
+          label="أي جهة؟ وما كان دورك فيها؟"
+          required
+          defaultValue={v.clubExperienceDetails}
+          error={e.clubExperienceDetails}
+          hint="سطرٌ واحد يكفي: اسم الجهة، ودورك، والمدّة إن ذكرتها."
+          placeholder="مثال: نادي ريادة الأعمال — عضو لجنة التنظيم، فصلين."
+          maxLength={CLUB_EXPERIENCE_MAX}
+        />
+      )}
+    </>
+  );
+}
+
 export function StepQuestions({
   index,
   current,
@@ -350,6 +439,8 @@ export function StepQuestions({
         placeholder="اكتب بإيجاز…"
         maxLength={600}
       />
+
+      <ClubExperience values={v} errors={e} />
 
       <SelectField
         key={`heardFrom-${v.heardFrom ?? ""}`}

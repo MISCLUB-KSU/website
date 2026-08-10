@@ -580,6 +580,22 @@ function Dossier({
               <p className="text-[0.9rem] leading-relaxed">{row.why || "—"}</p>
             </Block>
 
+            {/* ⚠️ **خارج مقياس الاكتمال عمدًا.** «لا خبرة» ليست نقصًا في
+                الطلب بل صفةٌ في المتقدّم — وخصمُ نقاطٍ عليها يجعل المقياس
+                يفاضل بين الأشخاص لا بين الطلبات، ويعاقب طالب السنة الأولى
+                على أنه طالبُ سنةٍ أولى. */}
+            <Block title="خبرة سابقة">
+              {row.has_club_experience ? (
+                <p className="text-[0.9rem] leading-relaxed">
+                  {row.club_experience || "—"}
+                </p>
+              ) : (
+                <p className="text-[0.9rem] text-fg-muted">
+                  لا خبرة سابقة — هذي أوّل تجربة له.
+                </p>
+              )}
+            </Block>
+
             {asked.length > 0 && (
               <Block title="أسئلة القادة">
                 <ul className="flex flex-col gap-s3">
