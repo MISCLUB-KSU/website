@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans_Arabic, Noto_Kufi_Arabic } from "next/font/google";
 import Script from "next/script";
+import { SITE_URL } from "@/lib/site";
 
 import { MotionProvider } from "@/components/motion";
 import { THEME_INIT_SCRIPT } from "@/components/site/theme-toggle";
@@ -27,7 +28,7 @@ const kufi = Noto_Kufi_Arabic({
   display: "swap",
 });
 
-const SITE_URL = "https://misclubksu.com";
+
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
