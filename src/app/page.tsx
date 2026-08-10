@@ -4,10 +4,18 @@ import { Alumni } from "@/components/site/alumni";
 import { FaqQuick } from "@/components/site/faq-quick";
 import { Hero } from "@/components/site/hero";
 import { MarkMorph } from "@/components/site/mark-morph";
-import { PillarMark, type PillarMarkShape } from "@/components/site/pillar-mark";
+import {
+  PillarMark,
+  type PillarMarkShape,
+} from "@/components/site/pillar-mark";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
-import { ABOUT_INTRO, ALL_PARTNERS, FOUNDED_YEAR, PILLARS } from "@/content/about";
+import {
+  ABOUT_INTRO,
+  ALL_PARTNERS,
+  FOUNDED_YEAR,
+  PILLARS,
+} from "@/content/about";
 import { FAQ } from "@/content/faq";
 import { isolateLatin } from "@/lib/bidi";
 import { OPEN_PROJECTS } from "@/content/projects";
@@ -190,7 +198,13 @@ export default function HomePage() {
                 <div className="flex items-start justify-between gap-s4">
                   <span
                     aria-hidden
-                    className="font-display text-6xl font-bold leading-none text-accent/25 sm:text-7xl"
+                    /* ⚠️ `/50` لا `/25`: كان الرقم عند **1.54:1** نهارًا
+                       و**1.62:1** ليلًا — لطخةٌ لا رقم، وزخرفةٌ لا تُرى ليست
+                       زخرفة. و`/50` يرفعه إلى 2.52 و2.73، فيُقرأ ويبقى دون
+                       عتبة الرسوم الدالّة (3:1) — أي تابعًا للعنوان
+                       (16.87:1) لا منافسًا له. وهو `aria-hidden` فلا تُطبَّق
+                       عليه عتبةُ النصّ أصلًا. */
+                    className="font-display text-6xl font-bold leading-none text-accent/50 sm:text-7xl"
                   >
                     {`0${index + 1}`}
                   </span>
@@ -296,23 +310,26 @@ export default function HomePage() {
           <div className="partners-panel flex w-full flex-col gap-s5 py-s6">
             {[0, 1].map((row) => (
               <div key={row} className="partners-viewport w-full" dir="ltr">
-                <div className="partners-rail" data-reverse={row === 1 ? "" : undefined}>
-                  {[false, true].map((isClone) => (
-                <ul
-                  key={String(isClone)}
-                  data-clone={isClone ? "" : undefined}
-                  aria-hidden={isClone || undefined}
-                  className="flex w-max shrink-0 items-center gap-s6 px-s3 sm:gap-s7"
+                <div
+                  className="partners-rail"
+                  data-reverse={row === 1 ? "" : undefined}
                 >
-                  {PARTNER_ROWS[row].map((partner) => (
-                    <li key={partner.name} className="shrink-0">
-                      {partner.logo ? (
-                        /* لكل شريكٍ الآن نسختان: `logo` للوضع الفاتح
+                  {[false, true].map((isClone) => (
+                    <ul
+                      key={String(isClone)}
+                      data-clone={isClone ? "" : undefined}
+                      aria-hidden={isClone || undefined}
+                      className="flex w-max shrink-0 items-center gap-s6 px-s3 sm:gap-s7"
+                    >
+                      {PARTNER_ROWS[row].map((partner) => (
+                        <li key={partner.name} className="shrink-0">
+                          {partner.logo ? (
+                            /* لكل شريكٍ الآن نسختان: `logo` للوضع الفاتح
                            و`logoDark` للداكن، والتبديل بـ `dark:` لا بفلتر.
                            ⚠️ وأحدَ عشرَ من النسخ الداكنة **مُعاد تلوينها** لا
                            رسميّة — القرار وحدوده موثَّقان في `about.ts` عند
                            تعريف `logoDark`. */
-                        /* ⚠️ **السقف 260px لا 200.** الارتفاع مثبَّت والعرض
+                            /* ⚠️ **السقف 260px لا 200.** الارتفاع مثبَّت والعرض
                            تابعٌ له (`w-auto`)، فسقفٌ يقصّ العرضَ يُبقي الارتفاع
                            فيهبط الشعار المرسوم داخل صندوقه بـ`object-contain`:
                            **هيئة الزكاة** نسبتها 4.48 فتحتاج 251px عند 56px،
@@ -324,40 +341,40 @@ export default function HomePage() {
                            و260 مشتقٌّ لا مُقدَّر: أعرضُ شعارٍ بعدها «مداريم»
                            عند 196px، فالسقف لا يمسّ أحدًا سواها ويبقى حائلًا
                            لو وصل شعارٌ أعرض. */
-                        <>
-                          <Image
-                            src={partner.logo}
-                            alt={`شعار ${partner.name}`}
-                            width={200}
-                            height={64}
-                            className={`h-12 w-auto max-w-[260px] object-contain sm:h-14${
-                              partner.logoDark ? " dark:hidden" : ""
-                            }`}
-                          />
-                          {partner.logoDark ? (
-                            <Image
-                              src={partner.logoDark}
-                              alt={`شعار ${partner.name}`}
-                              width={200}
-                              height={64}
-                              className="hidden h-12 w-auto max-w-[260px] object-contain dark:block sm:h-14"
-                            />
-                          ) : null}
-                        </>
-                      ) : (
-                        /* ⚠️ B4: كان `border-s-2 border-accent` — حدٌّ من جهةٍ
+                            <>
+                              <Image
+                                src={partner.logo}
+                                alt={`شعار ${partner.name}`}
+                                width={200}
+                                height={64}
+                                className={`h-12 w-auto max-w-[260px] object-contain sm:h-14${
+                                  partner.logoDark ? " dark:hidden" : ""
+                                }`}
+                              />
+                              {partner.logoDark ? (
+                                <Image
+                                  src={partner.logoDark}
+                                  alt={`شعار ${partner.name}`}
+                                  width={200}
+                                  height={64}
+                                  className="hidden h-12 w-auto max-w-[260px] object-contain dark:block sm:h-14"
+                                />
+                              ) : null}
+                            </>
+                          ) : (
+                            /* ⚠️ B4: كان `border-s-2 border-accent` — حدٌّ من جهةٍ
                            واحدة، وهو ممنوع: «الحدود تدور حول الشكل كلّه أو لا
                            تكون». صار حدًّا محيطًا بلون العلامة، وسقط ظلّ
                            `inset` لأنه كان يؤدّي دور الحدّ الثاني فيزدوجان. */
-                        <span
-                          dir="rtl"
-                          className="flex h-12 items-center whitespace-nowrap border-2 border-accent bg-bg-raised px-s5 font-display text-base font-bold text-fg sm:h-14 sm:text-lg"
-                        >
-                          {isolateLatin(partner.name)}
-                        </span>
-                      )}
-                    </li>
-                  ))}
+                            <span
+                              dir="rtl"
+                              className="flex h-12 items-center whitespace-nowrap border-2 border-accent bg-bg-raised px-s5 font-display text-base font-bold text-fg sm:h-14 sm:text-lg"
+                            >
+                              {isolateLatin(partner.name)}
+                            </span>
+                          )}
+                        </li>
+                      ))}
                     </ul>
                   ))}
                 </div>
@@ -374,7 +391,6 @@ export default function HomePage() {
             2030)، وهي **قطيعةٌ مقصودة** مع ميلان الهوية: حوافّ مدوّرة
             وعنوانٌ موسّطٌ ملوّن. انظر رأس المكوّن. */}
         <FaqQuick items={FAQ} />
-
       </main>
 
       {/* ⚠️ كانت هنا `<div className="relative z-10">` — بقيّةٌ «من أيام
