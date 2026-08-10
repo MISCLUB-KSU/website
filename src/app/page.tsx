@@ -19,6 +19,7 @@ import {
 import { FAQ } from "@/content/faq";
 import { isolateLatin } from "@/lib/bidi";
 import { OPEN_PROJECTS } from "@/content/projects";
+import { InkWords, PillarDeck } from "@/components/site/mobile-motion";
 
 /* شطرُ الشركاء صفّين: نصفٌ لكلٍّ فلا يتكرّر شعارٌ بين الصفّين. الشطر عند
    المنتصف بالأعلى (`ceil`) فيأخذ الصفّ الأوّل الزائدَ حين يكون العدد فرديًّا. */
@@ -90,9 +91,14 @@ export default function HomePage() {
               معايَرةٌ للحرف اللاتيني، والعربيّة بنقاطها وتشكيلها تحتاج فسحةً
               أوسع — وقاعدة المهارة نفسها تقدّم قرار المستخدم على القاعدة.
               و`text-pretty` تمنع كلمةً يتيمةً في آخر الفقرة (B1). */}
-          <p className="mt-s7 max-w-3xl text-pretty font-display text-2xl font-medium leading-relaxed text-fg sm:text-3xl">
-            {ABOUT_INTRO.lede}
-          </p>
+          {/* ⚠️ على الجوّال تتحبّر الجملة كلمةً كلمة مع التمرير — القاعدة
+              مرسومةٌ دائمًا بلون النصّ الهادئ (6.76:1) فلا محتوى ينتظر
+              حركة، والحبر طبقةُ تظليلٍ فوقها. على الحاسب ومع تقليل
+              الحركة: حبرٌ كاملٌ ثابت — المظهر السابق بالضبط. */}
+          <InkWords
+            text={ABOUT_INTRO.lede}
+            className="mt-s7 max-w-3xl text-pretty font-display text-2xl font-medium leading-relaxed text-fg sm:text-3xl"
+          />
 
           {/* الفقرة التعريفية — بخط المتن، بعرضٍ مقروء لا يتجاوز المقاس.
               ⚠️ `isolateLatin` لازمة: النصّ يحوي رقم التأسيس "2013" وسط
@@ -184,12 +190,18 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <ul className="grid items-stretch gap-s5 md:grid-cols-3">
-            {PILLARS.map((pillar, index) => (
-              <li
-                key={pillar.key}
-                className="rake rake-interactive flex h-full flex-col bg-bg-raised p-s6 shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-bg-sunken"
-              >
+          {/* ⚠️ **رزمةٌ على الجوّال، شبكةٌ على الحاسب.** تحت 1024px تلتصق
+              كلُّ بطاقةٍ قرب أعلى الشاشة وتنزلق التالية فوقها، والمغادرةُ
+              تتقلّص وتميل للخلف (`rotateX` بمنظور 1200px) فتُقرأ الثلاث
+              رزمةً لها عمق. المحتوى نفسه مُصيَّرٌ على الخادم ويُمرَّر
+              للغلاف كما هو — بلا جافاسكربت: بطاقاتٌ ملتصقةٌ بلا تقلّص،
+              وكلُّ شيءٍ مقروء. ومراسي `MarkMorph` آمنة: `place()` تعيد
+              قياسها كلَّ تمريرة فتتبع بطاقاتِها أينما التصقت. */}
+          <PillarDeck
+            className="grid items-stretch gap-s5 max-lg:gap-s7 md:grid-cols-3"
+            itemClassName="rake rake-interactive flex h-full flex-col bg-bg-raised p-s6 shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-bg-sunken"
+            items={PILLARS.map((pillar, index) => (
+              <div key={pillar.key} className="flex h-full flex-col">
                 {/* رأس البطاقة: الرقم الضخم يمينًا والعلامة صغيرةً يسارًا.
                     الأرقام لاتينية بطلبٍ مباشر. سلسلة الأرقام وحدها تنساب
                     صحيحةً في سياق RTL بلا عزل: الأرقام محايدة الاتجاه
@@ -250,9 +262,9 @@ export default function HomePage() {
                 <p className="mt-s4 flex-1 leading-loose text-fg-muted">
                   {isolateLatin(pillar.body)}
                 </p>
-              </li>
+              </div>
             ))}
-          </ul>
+          />
         </section>
 
         {/* ══════════════════════════════════════════════════════════════
