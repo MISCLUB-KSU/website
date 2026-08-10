@@ -31,7 +31,10 @@ export default function AdminLoginPage() {
         </span>
       </span>
 
-      <h1 className="text-deep mb-3 text-2xl font-bold sm:text-3xl">
+      {/* ⚠️ **`text-fg` لا `text-deep`.** الأزرق العميق لونُ علامةٍ لا لونُ
+          نصّ: كان يُقرأ نهارًا مصادفةً، ولمّا صارت اللوحة داكنة سقط إلى
+          **1.32:1** — كحليٌّ على حبر. راجع `mis-club-role-token-misuse`. */}
+      <h1 className="text-fg mb-3 text-2xl font-bold sm:text-3xl">
         دخول الطاقم
       </h1>
       <p className="text-fg-muted mb-s6 leading-relaxed">

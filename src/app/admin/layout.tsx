@@ -1,9 +1,10 @@
 import Script from "next/script";
 
 import "./admin.css";
+import "./dash.css";
 
 /**
- * لوحة الإدارة — **مثبَّتةٌ على الوضع الفاتح**، وبنظامٍ زجاجيّ مستقلّ.
+ * لوحة الإدارة — **داكنةٌ افتراضًا وقابلةٌ للتبديل**، وبنظامٍ زجاجيّ مستقلّ.
  *
  * ⚠️ التثبيت ليس تفضيلًا جماليًّا: `/admin` بلا شريطٍ علويّ ولا مبدّل وضع،
  * فمن يفتحها عالقٌ على ما حُفظ في متصفّحه من الموقع العامّ بلا طريقٍ
@@ -18,7 +19,15 @@ import "./admin.css";
  * وخمسةُ ألوان وميلانٌ توقيعًا. ونطاقه هذي الشجرة وحدها.
  */
 
-const FORCE_LIGHT = `document.documentElement.dataset.theme='light'`;
+/**
+ * ⚠️ **يعمل قبل أول رسم، ولا يمسّ تفضيل الزائر.**
+ *
+ * الوضع يُقرأ من مفتاحٍ خاصّ باللوحة (`mis-admin-theme`) لا من مفتاح
+ * الموقع العامّ — فتبديلُك هنا لا يقلب الموقع الذي تقرؤه في المتصفّح نفسه.
+ * والافتراض داكن. والتأجيلُ إلى `useEffect` يرسم اللوحة فاتحةً لحظةً ثم
+ * تقفز، فالنصّ `beforeInteractive`.
+ */
+const SET_THEME = `try{var t=localStorage.getItem('mis-admin-theme');document.documentElement.dataset.theme=(t==='light'?'light':'dark')}catch(e){document.documentElement.dataset.theme='dark'}`;
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -30,7 +39,7 @@ export default function AdminLayout({
   return (
     <>
       <Script id="mis-admin-light" strategy="beforeInteractive">
-        {FORCE_LIGHT}
+        {SET_THEME}
       </Script>
       <div className="admin-shell">
         {children}

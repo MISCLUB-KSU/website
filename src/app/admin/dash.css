@@ -1,0 +1,334 @@
+/* ==========================================================================
+   لوحة الشاشة الواحدة — `bento`
+
+   ⚠️ **هذا الملفّ يخالف دليل الهوية عن عمد، بأمرٍ صريح من حسام** (٨ أغسطس
+   ٢٠٢٦): «ابعد عن الهوية مافيه مشكلة بس مو مره… الميلان ذا والحواف لا
+   تمشي عليها… أبي شي خرافي مذهل للعين، تحركات، انبعاثات».
+
+   فالمرفوع هنا: **الحوافُّ الحادّة** (صارت ناعمة) و**الميلان توقيعًا**
+   (صار حرًّا) و**منع التوهّج**. ونطاقه `/admin` وحدها — صفحةٌ خلف تسجيل
+   دخول و`noindex`، فالموقع العامّ لا يتأثّر.
+
+   وما بقي محكومًا لأنه ليس ذوقًا:
+   · المحتوى ظاهرٌ افتراضيًّا — لا رقمَ خلف حركة.
+   · `prefers-reduced-motion` مُطاع.
+   · التباين مقيسٌ في كل بطاقة.
+   ========================================================================== */
+
+.dash {
+  /* ⚠️ **`svh` لا `vh`.** على الجوّال يقيس `vh` النافذةَ بشريط المتصفّح
+     مطويًّا، فتُقصّ البطاقة السفلى خلف الشريط. و`svh` يقيس الأصغر. */
+  --dash-head: 4.25rem;
+  --d-cyan: #2fd4d9;
+  --d-ink: #0a1b33;
+  --radius: 1rem;
+}
+
+.tile {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  border: 1px solid var(--line-quiet);
+  box-shadow:
+    0 1px 0 0 rgb(255 255 255 / 0.8) inset,
+    0 10px 24px -18px color-mix(in oklab, var(--deep) 70%, transparent);
+  transition:
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tile:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 1px 0 0 rgb(255 255 255 / 0.8) inset,
+      0 18px 40px -22px color-mix(in oklab, var(--primary) 72%, transparent);
+  }
+}
+
+/* ── البطاقة الحبريّة: الانبعاث ────────────────────────────────────────
+   توهّجٌ **داخل** البطاقة لا خلفها: `overflow:hidden` يمنع تسرّبه فلا
+   يظهر كلطخةٍ تنتهي بحدٍّ قاطع. */
+.tile-ink {
+  background:
+    radial-gradient(
+      118% 150% at 84% -30%,
+      color-mix(in oklab, var(--primary) 72%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      80% 120% at 8% 115%,
+      color-mix(in oklab, var(--d-cyan) 26%, transparent),
+      transparent 58%
+    ),
+    var(--d-ink);
+  color: var(--snow);
+  border-color: color-mix(in oklab, var(--d-cyan) 26%, transparent);
+  box-shadow:
+    0 1px 0 0 color-mix(in oklab, var(--snow) 14%, transparent) inset,
+    0 18px 42px -26px color-mix(in oklab, var(--deep) 92%, transparent);
+}
+
+.tile-ink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── التبويبات ─────────────────────────────────────────────────────── */
+.seg {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line-quiet);
+}
+.seg-item {
+  border-radius: 999px;
+  padding: 0.4rem 0.95rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--fg-muted);
+  transition:
+    background 180ms ease,
+    color 180ms ease;
+}
+.seg-item:hover {
+  color: var(--fg);
+}
+.seg-item[aria-selected="true"] {
+  background: var(--deep);
+  color: var(--snow);
+  box-shadow: 0 6px 16px -10px color-mix(in oklab, var(--deep) 90%, transparent);
+}
+
+/* ── الحركة ────────────────────────────────────────────────────────────
+   كلُّها فوق عناصرَ **مرسومةٍ أصلًا** بقيمها الصحيحة في `HTML`. */
+@media (prefers-reduced-motion: no-preference) {
+  .dash-live .grow-y {
+    animation: grow-y 640ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 32ms);
+    transform-origin: bottom;
+  }
+  @keyframes grow-y {
+    from {
+      transform: scaleY(0.04);
+    }
+  }
+
+  .dash-live .grow-x {
+    animation: grow-x 700ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 60ms);
+    transform-origin: right;
+  }
+  @keyframes grow-x {
+    from {
+      transform: scaleX(0);
+    }
+  }
+
+  /* الدونات والرادار يُرسمان بالخطّ المتقطّع */
+  .dash-live .draw {
+    animation: draw 1000ms cubic-bezier(0.33, 1, 0.68, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 90ms);
+  }
+  @keyframes draw {
+    from {
+      stroke-dashoffset: var(--len, 1000);
+    }
+  }
+
+  .dash-live .fade-up {
+    animation: fade-up 520ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 50ms);
+  }
+  @keyframes fade-up {
+    from {
+      transform: translateY(8px);
+    }
+  }
+
+  /* نبضةٌ على آخر نقطة — الوحيدة الدائمة، وهي زخرفٌ صريح */
+  .pulse {
+    animation: pulse 2.4s ease-in-out infinite;
+    transform-origin: center;
+  }
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 0.25;
+      r: 4;
+    }
+    50% {
+      opacity: 0;
+      r: 11;
+    }
+  }
+}
+
+/* ==========================================================================
+   الوضع الداكن — نظائرُ الأسطح لا قلبُ ألوان
+
+   ⚠️ **قلبُ الفاتح ميكانيكيًّا لا يعمل هنا.** أسطحُ اللوحة مبنيّةٌ على
+   إبرازٍ أبيضَ داخليّ وظلٍّ نازلٍ ملوّن بالحبر — كلاهما يفترض أرضيةً
+   فاتحة. فعلى الداكن: الإبراز يصير خيطًا أبيض شفيفًا، والظلُّ يفقد أثره
+   فيحلّ محلّه **حدٌّ أوضح**، وأرضيةُ اللوحة تصير حبرًا بهالتين زرقاوين.
+
+   والتباين مقيسٌ في الوضعين — الفحصُ في وضعٍ واحد يكذب، وهذا أكثر عطلٍ
+   تكرارًا في هذا المستودع.
+   ========================================================================== */
+
+[data-theme="dark"] .admin-shell::before {
+  background:
+    radial-gradient(
+      1100px 720px at 84% 6%,
+      color-mix(in oklab, var(--primary) 42%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 640px at 10% 82%,
+      color-mix(in oklab, var(--d-cyan) 14%, transparent),
+      transparent 58%
+    ),
+    #0b0e14;
+}
+
+[data-theme="dark"] .admin-shell::after {
+  opacity: 0.08;
+}
+
+[data-theme="dark"] .tile {
+  background: color-mix(in oklab, var(--bg-raised) 88%, var(--deep));
+  border-color: color-mix(in oklab, var(--snow) 12%, transparent);
+  box-shadow:
+    0 1px 0 0 rgb(255 255 255 / 0.05) inset,
+    0 12px 30px -22px #000;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-theme="dark"] .tile:hover {
+    box-shadow:
+      0 1px 0 0 rgb(255 255 255 / 0.08) inset,
+      0 18px 44px -24px color-mix(in oklab, var(--d-cyan) 55%, transparent);
+  }
+}
+
+/* البطاقة الحبريّة على أرضيةٍ حبريّة: تُميَّز بالتوهّج والحدّ لا بالغمق */
+[data-theme="dark"] .tile-ink {
+  background:
+    radial-gradient(
+      118% 150% at 84% -30%,
+      color-mix(in oklab, var(--primary) 86%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      80% 120% at 8% 115%,
+      color-mix(in oklab, var(--d-cyan) 34%, transparent),
+      transparent 58%
+    ),
+    #071427;
+  border-color: color-mix(in oklab, var(--d-cyan) 42%, transparent);
+  box-shadow:
+    0 1px 0 0 color-mix(in oklab, var(--snow) 18%, transparent) inset,
+    0 0 42px -18px color-mix(in oklab, var(--d-cyan) 46%, transparent);
+}
+
+/* ⚠️ الرقاقة المختارة كانت `--deep` — كحليٌّ على كحليّ، يذوب في الداكن.
+   فتصير `--primary` وحدُّها سماويّ، والنصُّ ثلجٌ كما هو. */
+[data-theme="dark"] .seg-item[aria-selected="true"],
+[data-theme="dark"] .seg-item[aria-pressed="true"] {
+  background: var(--primary);
+  box-shadow: 0 0 18px -8px color-mix(in oklab, var(--d-cyan) 70%, transparent);
+}
+
+[data-theme="dark"] .seg {
+  background: color-mix(in oklab, #000 34%, transparent);
+  border-color: color-mix(in oklab, var(--snow) 10%, transparent);
+}
+
+/* لوحُ الإدارة القديم — يبقى متّسقًا لو استُعمل */
+[data-theme="dark"] .panel {
+  background: color-mix(in oklab, var(--bg-raised) 88%, var(--deep));
+  border-color: color-mix(in oklab, var(--snow) 12%, transparent);
+  box-shadow:
+    0 1px 0 0 rgb(255 255 255 / 0.05) inset,
+    0 12px 30px -22px #000;
+}
+
+[data-theme="dark"] .ring-track {
+  stroke: color-mix(in oklab, var(--snow) 12%, transparent);
+}
+
+/* ── ألوان الحالة في الوضع الداكن ──────────────────────────────────────
+   ⚠️ **الثلاثة الأصلية قيمٌ مضبوطةٌ لأرضيةٍ فاتحة، والانتقال للداكن يُبطل
+   قياسها.** شغّلنا مدقّق `dataviz` على `#10664e,#a35f07,#b62a26` فوق حبرٍ
+   داكن فسقطت أربعةُ فحوص، وأسوأ زوج (أحمر↔كهرمانيّ) عند **ΔE 4.0** لعمى
+   الأخضر — نصفُ العتبة.
+
+   وهذي البدائل **مقيسةٌ لا مذوَّقة**: على الأزواج كلّها لا المتجاورة فقط،
+   أسوأ فصلٍ **8.0** عند عمى الأخضر و**18.8** للرؤية العادية، والتباين على
+   الأرضية ≥3:1 للأربعة.
+
+   وفحصان يسقطان عمدًا: «نطاق الإضاءة» قاعدةُ تناغمٍ لمجموعةٍ مصنَّفة وألوانُ
+   الحالة تتفاوت إضاءةً بطبعها؛ و«أرضية التشبّع» على المحايد **مقصودة** —
+   «جديد» يجب أن يُقرأ هادئًا، ولذلك **كل حالةٍ تحمل اسمها نصًّا** (انظر
+   `stats.ts`).
+
+   ونطاقُها `.admin-shell` وحدها: الموقع العامّ له وضعٌ داكنٌ أيضًا وفيه
+   العلّة نفسها، لكن تغييره قرارٌ مستقلّ لا يُمرَّر في هجرة لوحة. */
+[data-theme="dark"] .admin-shell {
+  --color-success: #2ee6a8;
+  --color-warning: #ffb020;
+  --color-danger: #ff6b81;
+  /* المحايد رماديٌّ صريح لا أزرقَ فاتحًا: الأزرق الفاتح `#a4c5e3` كان
+     يطابق لهجة اللوحة السماوية عند عمى الأخضر (ΔE 1.8) فيلتبس «جديد»
+     بالإبراز. */
+  --ink-quiet: #9aa0ab;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ألوان الحالة — **مثبَّتةٌ داخل اللوحة، لا مستعارةٌ من نطاقٍ آخر**
+
+   ⚠️ كانت «جديد» تستعمل `--ink-quiet`، وهو معرَّفٌ في `.home-ink` وحدها —
+   نطاقُ الرئيسية. أي أن لونَ حالةٍ في لوحة الإدارة كان يتّكل على رمزٍ لا
+   يملكه؛ يعمل اليوم بالمصادفة، ويسقط في أول إعادة تنظيم. فالخمسة كلّها
+   تُعرَّف هنا صراحةً.
+
+   ── القياس (مدقّق `dataviz`، على **الأزواج كلّها** لا المتجاورة) ──────────
+   الفاتح: أسوأ فصلٍ لعمى الأخضر **6.4** (كان **4.0** قبل هذا التعديل)،
+   والرؤية العادية **14.8** (كانت **10.2**). فهو تحسينٌ في الاتجاهين معًا،
+   وليس ثمنًا دفعناه للحالة الخامسة: الزوجان الأسوأ (خطر↔تحذير · محايد↔نجاح)
+   كانا ساقطين قبل إضافتها.
+
+   والـ6.4 في نطاق «الأرضية» (٦–٨) وهو **مشروعٌ بشرط الترميز الثانويّ** —
+   وهو قائمٌ هنا بلا استثناء: **كل حالةٍ تحمل اسمها نصًّا في كل موضع** —
+   الشارة، والإيضاح، وأزرار القرار، وقائمة الأسماء (`sr-only`). اللونُ
+   تسريعٌ للعين لا حاملَ المعنى.
+
+   والداكن مقيسٌ مستقلًّا: فصلٌ **8.0** ورؤيةٌ عادية **18.8** وتباينٌ ≥3:1.
+   ══════════════════════════════════════════════════════════════════════════ */
+.admin-shell {
+  --st-accepted: #0a7a55;
+  --st-reviewing: #9a6b00;
+  --st-new: #7e8592;
+  --st-rejected: #b02418;
+  /* الأزرق الرسميّ — ولا يزاحم أحدًا: الزوجان الساقطان لا يمسّانه */
+  --st-referred: #3b4a9e;
+}
+
+[data-theme="dark"] .admin-shell {
+  --st-accepted: #2ee6a8;
+  --st-reviewing: #ffb020;
+  --st-new: #9aa0ab;
+  --st-rejected: #ff6b81;
+  --st-referred: #7dd3fc;
+}

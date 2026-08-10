@@ -84,9 +84,13 @@
   clip-path: polygon(26% 0, 100% 0, 74% 100%, 0 100%);
 }
 
-/* شارة الحالة — حوافُّ حادّة، ولونٌ خافتٌ خلف نصٍّ صريح.
-   ⚠️ لا كبسولةٌ دائرية: القاعدة تمنعها، والاسم مكتوبٌ فاللون ثانويّ. */
+/* شارة الحالة — لونٌ خافتٌ خلف نصٍّ صريح.
+   ⚠️ **رُفع منع الزوايا الدائرية بأمر حسام** (٨ أغسطس ٢٠٢٦: «الحواف لا
+   تمشي عليها»). ونصفُ القطر صغيرٌ لا كبسولة — الكبسولة تجعلها وسمًا
+   زخرفيًّا، والمقصود شارةُ حالةٍ تُقرأ. وما لم يتغيّر: **الاسم مكتوبٌ
+   دائمًا واللون ثانويّ.** */
 .tag {
+  border-radius: 0.4rem;
   display: inline-flex;
   align-items: center;
   padding: 0.16rem 0.55rem;
@@ -98,4 +102,155 @@
 
 .ring-track {
   stroke: color-mix(in oklab, var(--line) 85%, transparent);
+}
+
+/* ==========================================================================
+   غرفة العمليات — الطبقة «المُبهِرة»
+
+   ⚠️ **هذا خروجٌ مقصود عن انضباط الهوية، بأمرٍ صريح من حسام** (٨ أغسطس
+   ٢٠٢٦): «ودي تكسر القاعدة شوي… أبي شي خارج عن المألوف جدًا». والقاعدة
+   المكسورة تحديدًا هي «الميلان توقيعٌ لا خلفية» و«الهدوء قبل الإبهار».
+
+   وما يجعل الكسر مقبولًا أنّ نطاقه `/admin` وحدها: صفحةٌ داخلية خلف
+   تسجيل دخول، `robots: noindex`، لا يراها زائر. فهوية الموقع العامّ
+   سليمةٌ كما هي، والميلان يبقى توقيعًا هناك.
+
+   وما **لا** يُكسَر لأنه ليس ذوقًا:
+   · المحتوى ظاهرٌ افتراضيًّا — لا رقمَ ولا نصّ يُخفى خلف حركةٍ قد لا تعمل.
+   · `prefers-reduced-motion` مُطاع — كل حركةٍ هنا داخل `no-preference`.
+   · التباين مقيسٌ لا مذوَّق.
+   · خمسة ألوان لا سادس، وحوافُّ حادّة.
+   ========================================================================== */
+
+/* ── الشريط الحبريّ ─────────────────────────────────────────────────────
+   عمقُه من طبقتين: هالةٌ زرقاء داخلية، وحقلُ شظايا مائلة خلف المحتوى. */
+.deck {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      120% 160% at 88% -20%,
+      color-mix(in oklab, var(--primary) 62%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      90% 130% at 6% 120%,
+      color-mix(in oklab, var(--sky) 26%, transparent),
+      transparent 58%
+    ),
+    var(--charcoal);
+  color: var(--snow);
+  border: 1px solid color-mix(in oklab, var(--sky) 30%, transparent);
+}
+
+/* شبكةٌ مائلة رفيعة — أثرُ ورقٍ هندسيّ لا صفحةُ رسمٍ بيانيّ:
+   تظهر في الربع العلويّ وتتلاشى، فلا تصير خلفيةً تحت كل شيء. */
+.deck::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  opacity: 0.16;
+  background-image: repeating-linear-gradient(
+    calc(90deg - var(--mis-slant)),
+    color-mix(in oklab, var(--sky) 70%, transparent) 0 1px,
+    transparent 1px 46px
+  );
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 58%);
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 58%);
+}
+
+.deck::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* الرقم الضخم — يُقصّ منه شيء أبدًا، والسطر الأساس مضبوطٌ يدويًّا */
+.deck-figure {
+  font-size: clamp(4.5rem, 13vw, 10.5rem);
+  line-height: 0.78;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* شظيّةُ يومٍ في حقل الوصول */
+.shard {
+  transform-origin: bottom;
+  transition: fill 160ms ease;
+}
+.shard-hit:hover .shard,
+.shard-hit:focus-visible .shard {
+  fill: var(--snow);
+}
+
+/* ── الحركة: كلّها اختيارية، ولا شيء مخفيٌّ بدونها ──────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  /* الشظايا تنمو من القاع — وهي مرسومةٌ كاملةً في الـHTML أصلًا،
+     فالحركة تحويلٌ فوق موجود لا كشفٌ عن مخفيّ. */
+  .deck-live .shard {
+    animation: shard-rise 620ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: calc(var(--i) * 26ms);
+  }
+  @keyframes shard-rise {
+    from {
+      transform: scaleY(0.06);
+    }
+  }
+
+  /* شعاعٌ يمرّ مرّةً واحدة عند التحميل — زينةٌ صريحة لا تحمل معنًى */
+  .deck-live .deck-sweep {
+    animation: deck-sweep 1500ms cubic-bezier(0.22, 1, 0.36, 1) 220ms both;
+  }
+  @keyframes deck-sweep {
+    from {
+      opacity: 0;
+      transform: translateX(-16%) skewX(calc(-1 * var(--mis-slant)));
+    }
+    38% {
+      opacity: 0.5;
+    }
+    to {
+      opacity: 0;
+      transform: translateX(115%) skewX(calc(-1 * var(--mis-slant)));
+    }
+  }
+
+  /* الشرائط تُرسم من المصدر إلى المقصد */
+  .flow-live .ribbon {
+    animation: ribbon-draw 900ms cubic-bezier(0.33, 1, 0.68, 1) backwards;
+    animation-delay: calc(var(--i) * 34ms);
+  }
+  @keyframes ribbon-draw {
+    from {
+      opacity: 0.06;
+      transform: translateX(3%);
+    }
+  }
+}
+
+/* ── مخطّط التدفّق ──────────────────────────────────────────────────── */
+.ribbon {
+  transition:
+    fill-opacity 180ms ease,
+    fill 180ms ease;
+}
+/* الإبراز بالمجموعة: تمرير الفأرة على عقدةٍ يخفت ما لا يمسّها */
+.flow-dim .ribbon:not(.ribbon-on) {
+  fill-opacity: 0.07;
+}
+.flow-dim .ribbon-on {
+  fill: var(--primary);
+  fill-opacity: 0.72;
+}
+.flow-node {
+  transition: opacity 180ms ease;
+}
+.flow-dim .flow-node:not(.flow-node-on) {
+  opacity: 0.34;
 }

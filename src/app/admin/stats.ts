@@ -23,9 +23,38 @@ export type Row = {
   choice3: string;
   status: string;
   cv_path: string | null;
+  /* ما يُعرض في تفصيل الصفّ — محفوظٌ منذ البداية ولم يكن يُعرض */
+  national_id: string;
+  university_other: string | null;
+  major_other: string | null;
+  why: string;
+  heard_from: string;
+  answers: Record<string, string>;
+  portfolio: string | null;
+  linkedin: string | null;
+  /** `open` نموذجٌ بثلاث رغبات · `direct` رابطٌ مباشر لجهةٍ واحدة */
+  source: string;
 };
 
+/**
+ * ⚠️ **الطلبُ يُحسب من الطلبات المفتوحة وحدها.**
+ *
+ * «الرغبة الأولى» في النموذج المفتوح **تفضيلٌ بين بدائل**؛ وفي الرابط
+ * المباشر **هي الخيار الوحيد المعروض** — فالمتقدّم لم يفاضل أصلًا. وخلطُهما
+ * يجعل جهةً استقطبت عشرين شخصًا برابطها تبدو أكثرَ جهةٍ مطلوبة في النادي،
+ * ويُري قائدَها «يزاحمك عشرون» فيرفض مرشّحًا جيّدًا لسببٍ لا وجود له.
+ *
+ * والمباشرون لا يُخفَون: يظهرون في الجدول وفي عدّاد الإجمالي وفي كل رقمٍ
+ * لا يقيس **المفاضلة**. وهذا الفصلُ هو ما تُشترى به الميزة كلّها.
+ */
+export function openOnly(rows: readonly Row[]): readonly Row[] {
+  return rows.filter((r) => r.source !== "direct");
+}
+
 /* ── الحالات ────────────────────────────────────────────────────────────
+   الخامسة «محال للثانية» وعدَ بها حسام القادة — والوجهة `choice2` نفسها
+   يكتبها المتقدّم، فلا يختارها القائد. والقيم من `dash.css` حيث القياس.
+
    ⚠️ **هذا الترتيب مقيسٌ لا مذوَّق.** مدقّق `dataviz` قاس الأزواج المتجاورة:
    بترتيب (جديد · مراجعة · مقبول · معتذَر) يتلاصق الأخضر والأحمر فيهبط
    الفصل إلى ΔE 7.2 عند عمى الأحمر — داخل نطاق الخطر. وبهذا الترتيب يصير
@@ -35,10 +64,11 @@ export type Row = {
    ولأن الأخضر والمحايد يسقطان في «أرضية التشبّع» (يُقرآن رماديين)، **كل
    حالةٍ تحمل اسمها نصًّا دائمًا** — اللون ثانويّ لا وحيد. */
 export const STATUSES = [
-  { key: "accepted", label: "مقبول", color: "var(--color-success)" },
-  { key: "reviewing", label: "قيد المراجعة", color: "var(--color-warning)" },
-  { key: "new", label: "جديد", color: "var(--ink-quiet)" },
-  { key: "rejected", label: "معتذَر عنه", color: "var(--color-danger)" },
+  { key: "accepted", label: "مقبول", color: "var(--st-accepted)" },
+  { key: "reviewing", label: "قيد المراجعة", color: "var(--st-reviewing)" },
+  { key: "new", label: "جديد", color: "var(--st-new)" },
+  { key: "referred", label: "محال للثانية", color: "var(--st-referred)" },
+  { key: "rejected", label: "معتذَر عنه", color: "var(--st-rejected)" },
 ] as const;
 
 /* ⚠️ الرتب تدرّجٌ كمّيّ من الخمسة الرسمية: عائلةٌ واحدة **رتيبةُ الإضاءة** من الأدكن للأفتح،
@@ -82,6 +112,7 @@ export type DemandRow = {
  */
 export function demand(rows: readonly Row[]): DemandRow[] {
   const map = new Map<string, DemandRow>();
+  rows = openOnly(rows);
   const bump = (value: string, rank: 0 | 1 | 2) => {
     if (!value) return;
     const existing = map.get(value) ?? {
