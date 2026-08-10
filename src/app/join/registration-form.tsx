@@ -11,6 +11,7 @@ import {
   type RegistrationState,
 } from "@/lib/registration";
 import { submitRegistration } from "./actions";
+import { RequestCard } from "./request-card";
 import { StepPersonal } from "./step-personal";
 import { StepPreferences } from "./step-preferences";
 import { StepQuestions } from "./step-questions";
@@ -156,6 +157,34 @@ export function RegistrationForm({
     });
   }
 
+  /**
+   * ما كُتب في الحقول الآن — تقرأه بطاقة الطلب.
+   *
+   * ⚠️ **مستمعٌ واحدٌ على النموذج لا حالةٌ لكل حقل.** ربطُ كل حقلٍ بحالة
+   * يحوّل النموذج كلَّه إلى مضبوطٍ (`controlled`)، فيُعاد رسمُ ثلاثين حقلًا
+   * عند كل حرف، ويُفقد ما يميّز البناء الحاليّ: أنه يعمل بلا جافاسكربت.
+   * والمستمعُ هنا **يقرأ ولا يملك** — الحقول تبقى كما هي.
+   *
+   * والبدء من `state.values` مقصود: بعد ردّ خطأٍ من الخادم يعود الطالب إلى
+   * نموذجٍ ممتلئ، فبطاقةٌ فارغةٌ فوقه تُوهمه أن ما كتبه ضاع.
+   */
+  const [live, setLive] = useState<Record<string, string>>(state.values);
+  if (lastState !== state) setLive(state.values);
+
+  function captureLive(event: React.ChangeEvent<HTMLFormElement>) {
+    const field = event.target;
+    if (!field?.name) return;
+    /* غيرُ المؤشَّر لا يُكتب: وإلّا محا ترك الخيارِ قيمةَ الخيار المختار */
+    if (
+      field instanceof HTMLInputElement &&
+      (field.type === "radio" || field.type === "checkbox") &&
+      !field.checked
+    ) {
+      return;
+    }
+    setLive((current) => ({ ...current, [field.name]: field.value }));
+  }
+
   function chooseAt(slot: number, value: string) {
     setChoices((current) =>
       current.map((existing, index) => (index === slot ? value : existing)),
@@ -198,109 +227,137 @@ export function RegistrationForm({
           فيرفع المرفقَ بلا جافاسكربت أصلًا. وكتابتهما يدويًا يُطلق تحذير React
           «will get overridden» في التطوير بلا فائدة. مُتحقَّق منه في مصدر
           الصفحة المُرسَل من الخادم. */}
+      {/* ── لوحتان: الحقول تسأل، والبطاقة تُري ما صار ───────────────────
+          البطاقة أوّلًا على الجوّال عمدًا: هي فوق أوّل حقلٍ يكتبه الطالب،
+          فيرى اسمه يحطّ عليها وهو يكتبه — ولو وُضعت أسفل النموذج لما رآها
+          إلّا بعد ثلاثين حقلًا، وأكثرُ من يقدّم علينا من جوّاله. */}
       <form
         ref={formRef}
         action={formAction}
+        onChange={captureLive}
         noValidate
-        className="flex flex-col gap-s6"
+        className="grid items-start gap-s6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-s7"
       >
-        {!lockedTo && (
-          <div className="js-only">
-            <Stepper current={step} onGoTo={setStep} />
-          </div>
-        )}
+        <div className="flex flex-col gap-s6">
+          {!lockedTo && (
+            <div className="js-only">
+              <Stepper current={step} onGoTo={setStep} />
+            </div>
+          )}
 
-        {lockedTo && (
-          <p className="border-s-2 border-accent bg-bg-sunken px-s4 py-s3 text-[0.9rem]">
-            تقدّم على{" "}
-            <strong className="font-semibold">{lockedLabel ?? lockedTo}</strong>
-          </p>
-        )}
+          {lockedTo && (
+            <p className="border-s-2 border-accent bg-bg-sunken px-s4 py-s3 text-[0.9rem]">
+              تقدّم على{" "}
+              <strong className="font-semibold">
+                {lockedLabel ?? lockedTo}
+              </strong>
+            </p>
+          )}
 
-        {state.message && (
-          <div
-            role="alert"
-            className="border border-danger/35 bg-danger/8 px-5 py-4 text-[0.93rem] text-danger"
-          >
-            {state.message}
-            {/* المتصفح لا يحتفظ بالمرفق بعد ردّ الخادم — يُقال صراحةً
+          {state.message && (
+            <div
+              role="alert"
+              className="border border-danger/35 bg-danger/8 px-5 py-4 text-[0.93rem] text-danger"
+            >
+              {state.message}
+              {/* المتصفح لا يحتفظ بالمرفق بعد ردّ الخادم — يُقال صراحةً
                 بدل أن يرسل الطالب طلبه ثانيةً بلا سيرة ذاتية وهو لا يدري */}
-            <span className="mt-1 block text-[0.84rem]">
-              إن كنت أرفقت ملفًا، أعد اختياره قبل الإرسال.
-            </span>
-          </div>
-        )}
+              <span className="mt-1 block text-[0.84rem]">
+                إن كنت أرفقت ملفًا، أعد اختياره قبل الإرسال.
+              </span>
+            </div>
+          )}
 
-        {/* مصيدة الآليات — مخفية عن العين وعن قارئ الشاشة، لا عن الروبوت */}
-        <div className="hidden" aria-hidden="true">
-          <label htmlFor="website">لا تملأ هذا الحقل</label>
-          <input id="website" name="website" tabIndex={-1} autoComplete="off" />
+          {/* مصيدة الآليات — مخفية عن العين وعن قارئ الشاشة، لا عن الروبوت */}
+          <div className="hidden" aria-hidden="true">
+            <label htmlFor="website">لا تملأ هذا الحقل</label>
+            <input
+              id="website"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
+
+          <StepPersonal index={0} current={step} values={v} errors={errors} />
+
+          {lockedTo ? (
+            /* ⚠️ **حقلٌ خفيّ لا خطوةٌ معطّلة.** الحقل المعطّل `disabled` لا
+             يُرسل أصلًا في `FormData`، فتصل الرغبة فارغةً إلى الخادم. */
+            <>
+              <input type="hidden" name="mode" value="direct" />
+              <input type="hidden" name="choice1" value={lockedTo} />
+              <input type="hidden" name="choice2" value="" />
+              <input type="hidden" name="choice3" value="" />
+            </>
+          ) : (
+            <>
+              <input type="hidden" name="mode" value="open" />
+              <StepPreferences
+                index={1}
+                current={step}
+                choices={choices}
+                onChange={chooseAt}
+                values={v}
+                errors={errors}
+              />
+            </>
+          )}
+
+          <StepQuestions
+            index={2}
+            current={step}
+            choices={choices}
+            values={v}
+            errors={errors}
+          />
+
+          <div className="flex flex-wrap items-center gap-s4 border-t border-line pt-s5">
+            <div className="js-only flex flex-wrap gap-s3">
+              {step > 0 && (
+                <Button type="button" variant="secondary" onClick={goBack}>
+                  السابق
+                </Button>
+              )}
+              {step < LAST_STEP && (
+                <Button type="button" onClick={goNext}>
+                  التالي
+                </Button>
+              )}
+            </div>
+
+            <div
+              className="js-step flex flex-wrap items-center gap-s4"
+              data-active={step === LAST_STEP ? "" : undefined}
+            >
+              <Button type="submit" disabled={pending} aria-busy={pending}>
+                {pending ? (
+                  <>
+                    <BusyMark /> جارٍ الإرسال…
+                  </>
+                ) : (
+                  "أرسل الطلب"
+                )}
+              </Button>
+              <p className="text-[0.84rem] text-fg-muted">
+                تصلك النتيجة على بريدك خلال أسبوع.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <StepPersonal index={0} current={step} values={v} errors={errors} />
-
-        {lockedTo ? (
-          /* ⚠️ **حقلٌ خفيّ لا خطوةٌ معطّلة.** الحقل المعطّل `disabled` لا
-             يُرسل أصلًا في `FormData`، فتصل الرغبة فارغةً إلى الخادم. */
-          <>
-            <input type="hidden" name="mode" value="direct" />
-            <input type="hidden" name="choice1" value={lockedTo} />
-            <input type="hidden" name="choice2" value="" />
-            <input type="hidden" name="choice3" value="" />
-          </>
-        ) : (
-          <>
-            <input type="hidden" name="mode" value="open" />
-            <StepPreferences
-              index={1}
-              current={step}
-              choices={choices}
-              onChange={chooseAt}
-              values={v}
-              errors={errors}
-            />
-          </>
-        )}
-
-        <StepQuestions
-          index={2}
-          current={step}
-          choices={choices}
-          values={v}
-          errors={errors}
-        />
-
-        <div className="flex flex-wrap items-center gap-s4 border-t border-line pt-s5">
-          <div className="js-only flex flex-wrap gap-s3">
-            {step > 0 && (
-              <Button type="button" variant="secondary" onClick={goBack}>
-                السابق
-              </Button>
-            )}
-            {step < LAST_STEP && (
-              <Button type="button" onClick={goNext}>
-                التالي
-              </Button>
-            )}
-          </div>
-
-          <div
-            className="js-step flex flex-wrap items-center gap-s4"
-            data-active={step === LAST_STEP ? "" : undefined}
-          >
-            <Button type="submit" disabled={pending} aria-busy={pending}>
-              {pending ? (
-                <>
-                  <BusyMark /> جارٍ الإرسال…
-                </>
-              ) : (
-                "أرسل الطلب"
-              )}
-            </Button>
-            <p className="text-[0.84rem] text-fg-muted">
-              تصلك النتيجة على بريدك خلال أسبوع.
-            </p>
-          </div>
+        {/* `js-only`: مرآةٌ لا مصدر — بلا جافاسكربت تغيب ولا يفقد الطالب شيئًا.
+            وترتيبُها **بعد الحقول** لا قبلها، والسبب جوّاليٌّ محض: فوقها كانت
+            تأكل ١٦٧px قبل أول حقل وهي فارغة، وكلُّ سطرٍ يُضاف إليها يزحزح
+            الحقلَ الذي يكتب فيه الطالب تحتها. وأسفلَ الصفحة تنمو في فراغٍ لا
+            يزحزح شيئًا. وعلى الشاشة الواسعة يرفعها العمود الثاني إلى جانب
+            الحقول ملتصقةً بالتمرير، فتُرى وهي تُبنى. */}
+        <div className="js-only lg:sticky lg:top-28">
+          <RequestCard
+            values={live}
+            choices={choices}
+            progress={(step + 1) / STEPS.length}
+          />
         </div>
       </form>
     </>

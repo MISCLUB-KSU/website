@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 
 export default function JoinPage() {
   return (
-    <main className="mx-auto w-full max-w-2xl px-5 py-14 sm:py-20">
-      <header className="mb-10">
+    <main className="mx-auto w-full max-w-5xl px-5 py-14 sm:py-20">
+      <header className="mb-10 max-w-2xl">
         {/* الميلان مأخوذ من الشعار — عنصر واحد بارز في الشاشة لا أكثر */}
         <span className="mis-slant bg-deep mb-4 inline-block px-7 py-1.5">
           <span className="text-snow text-[0.7rem] font-semibold tracking-widest">
