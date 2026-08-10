@@ -30,7 +30,10 @@ import { SelectMenu } from "./select-menu";
 const BASE =
   "w-full min-h-[46px] bg-bg-raised px-3.5 py-3 text-[0.95rem] text-fg " +
   "border-[1.5px] border-line-field transition-colors duration-150 " +
-  "placeholder:text-fg-muted/70 hover:border-sky " +
+  /* ⚠️ بلا `/70`: الشفافية ٧٠٪ تنزل بلونٍ مضبوطٍ أصلًا (6.76:1) إلى
+     **3.59:1** نهارًا و**3.60:1** ليلًا — تحت عتبة 4.5. والنائبُ نصٌّ
+     يُقرأ لا زخرفة: هو ما يقول للطالب ما شكل الجواب المتوقَّع. */
+  "placeholder:text-fg-muted hover:border-sky " +
   "focus:border-accent focus:outline-none " +
   "disabled:cursor-not-allowed disabled:bg-bg-sunken disabled:text-fg-muted " +
   /* ⚠️ **السمة `[readonly]` لا الصنف `read-only:`.** الزائفةُ `:read-only`

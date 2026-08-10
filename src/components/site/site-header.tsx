@@ -95,8 +95,16 @@ export function SiteHeader() {
               className="relative lg:hidden"
               summaryClassName="inline-flex min-h-11 cursor-pointer list-none items-center gap-s2 text-sm font-medium text-fg [&::-webkit-details-marker]:hidden"
             >
+              {/* ⚠️ **`start-0` لا `end-0`** — والفرق أن `end` في الاتجاه
+                  العربيّ هي **اليسار**. فكانت الحافّة اليسرى تُثبَّت عند حافّة
+                  الزرّ اليسرى (214px) وتنمو القائمة **يمينًا** إلى 390px على
+                  شاشةٍ عرضها 375: تتجاوز بـ15px، والصفحة لا تُمرَّر أفقيًّا
+                  فتُقصّ صامتًا — تُبتلع الحشوة اليمنى كاملةً ويبعد النصّ
+                  **2px** عن حافّة الشاشة بدل ١٦.
+                  و`start-0` تثبّت الحافّة اليمنى عند يمين الزرّ فتنمو القائمة
+                  يسارًا نحو داخل الشاشة، وهو سلوك القوائم المنسدلة الصحيح. */}
               <nav
-                className="absolute end-0 top-full z-10 mt-s2 min-w-44 border border-line bg-bg-raised px-s4 py-s2"
+                className="absolute start-0 top-full z-10 mt-s2 min-w-44 border border-line bg-bg-raised px-s4 py-s2"
                 aria-label="أقسام الموقع"
               >
                 <NavLinks as="list" className="flex flex-col" />

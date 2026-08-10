@@ -38,7 +38,7 @@ export function Stepper({ current, onGoTo }: StepperProps) {
             ? "text-fg font-semibold"
             : isDone
               ? "text-fg-muted"
-              : "text-fg-muted/70";
+              : "text-fg-muted"; /* بلا `/70` — كان 3.50:1 نهارًا */
 
           const content = (
             <>

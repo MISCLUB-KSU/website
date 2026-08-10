@@ -42,10 +42,11 @@
   --color-primary-600: #02418d;
   --color-deep-900: #011c40;
 
-  /* ألوان وظيفية — للحالات فقط (نجاح/تحذير/خطأ)، ليست من الهوية */
-  --color-success: #10664e;
-  --color-warning: #a35f07;
-  --color-danger: #b62a26;
+  /* ⚠️ **الألوان الوظيفية لم تعد هنا.** كانت قيمًا ثابتة في `@theme`، فلم
+     تنقلب مع الوضع: قِيست ليلًا فوجدت `danger` **2.83:1** و`success`
+     **2.56:1** و`warning` **3.55:1** — أي أن رسالة الخطأ وشاشة «وصل طلبك»
+     تُقرأ بالكاد. صارت أدوارًا في الكتل الدلالية أدناه، وجسرُها في
+     `@theme inline`. */
 
   --font-sans: var(--font-plex-arabic), system-ui, sans-serif;
 
@@ -122,6 +123,13 @@
   --color-line-control: var(--line-control);
   --color-ring: var(--focus);
 
+  /* الحالات — أدوارٌ تنقلب مع الوضع. وقيمُها الليلية ليست جديدة: هي نفسها
+     التي كانت مضبوطةً في `.home-ink` أدناه لأن سياقه حبريّ، فعُمّمت على
+     الليل كلِّه بدل أن تبقى حبيسة الرئيسية. */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
   /* المقاسات وارتفاعات السطور */
   --text-display: var(--t-display);
   --text-lead: var(--t-lead);
@@ -163,6 +171,10 @@
   --border: var(--color-sky-200);
   --border-strong: var(--color-sky);
   --ring: var(--color-primary);
+  /* الحالات نهارًا — القيم كما اعتُمدت، بلا تغيير بشعرة */
+  --success: #10664e;
+  --warning: #a35f07;
+  --danger: #b62a26;
   /* العلامة محفورةٌ في الصفحة: كحليّ الأرضية على الثلج — 10.56:1.
      نفس قيمة `--surface-floor` النهاريّة بالضبط، فلا يتغيّر النهار بشعرة. */
   --mark: var(--ink-floor);
@@ -185,6 +197,10 @@
     --border: #3c424f;
     --border-strong: #727a88;
     --ring: var(--color-sky);
+    /* الحالات ليلًا — 8.90:1 و9.65:1 و9.78:1 على الأرضية، مقيسة */
+    --success: #5fd3ae;
+    --warning: #e6b976;
+    --danger: #ff9d97;
     /* تنقلب العلامة مع الأرضية — وهي القاعدة التي أرساها `.home-ink` أدناه
        (`--mark: var(--color-snow)`) حين يصير السياق حبرًا. تُعمَّم هنا. */
     --mark: var(--snow);
@@ -211,6 +227,10 @@
   --border: #3c424f;
   --border-strong: #727a88;
   --ring: var(--color-sky);
+  /* توأمُ ما في كتلة `@media` — الكتلتان تُعدَّلان معًا دائمًا */
+  --success: #5fd3ae;
+  --warning: #e6b976;
+  --danger: #ff9d97;
   --mark: var(--snow);
   --mark-quiet: var(--sky);
 }

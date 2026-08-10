@@ -214,7 +214,8 @@ export function SelectMenu({
                 : "border-line-field hover:border-sky"
           }`}
         >
-          <span className={current ? "text-fg" : "text-fg-muted/70"}>
+          {/* النائب بلا شفافية — انظر `field.tsx`: `/70` تنزل به تحت 4.5:1 */}
+          <span className={current ? "text-fg" : "text-fg-muted"}>
             {current?.label ?? placeholder}
           </span>
           {/* السهم يدور مع الفتح — علامةُ حالةٍ لا زخرفة */}
