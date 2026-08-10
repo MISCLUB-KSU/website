@@ -33,7 +33,9 @@ export default function AchievementsPage() {
         <PageHeader
           id="achievements"
           title="الإنجازات"
-          lede={`منذ ${FOUNDED}، وهذي حصيلة ما نُفِّذ فعلًا — كل رقم بمصدره، بلا تقدير ولا تدوير.`}
+          lede={isolateLatin(
+            `منذ ${FOUNDED}، وهذي حصيلة ما نُفِّذ فعلًا — كل رقم بمصدره، بلا تقدير ولا تدوير.`,
+          )}
         />
 
         <div className="mx-auto max-w-6xl px-s4 py-s8 sm:px-s7">

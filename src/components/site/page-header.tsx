@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import Link from "next/link";
 
 import { RakedField } from "@/components/site/raked-field";
@@ -6,7 +8,7 @@ type PageHeaderProps = {
   /** مُعرّف فريد — الأقنعة داخل SVG تحتاج معرّفًا لا يتكرّر في الصفحة */
   id: string;
   title: string;
-  lede: string;
+  lede: ReactNode;
   /** روابط شقيقة داخل نفس القسم */
   siblings?: readonly { label: string; href: string }[];
   currentHref?: string;

@@ -7,6 +7,7 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { PARTNERS, PARTNERSHIP_TRACKS } from "@/content/about";
 import { ABOUT_SECTION } from "@/content/navigation";
+import { isolateLatin } from "@/lib/bidi";
 
 export const metadata: Metadata = {
   title: "الشراكات",
@@ -86,6 +87,15 @@ export default function PartnershipsPage() {
                       {partner.name}
                     </h3>
                     <p className="text-sm leading-relaxed text-fg-muted">
+                      {/* ⚠️ **بلا `isolateLatin` عمدًا — وقياسًا لا اجتهادًا.**
+                        نصُّ الإسهام ينتهي بمقطعٍ لاتينيّ تليه نقطة
+                        («…لمعرض LearnX.»). والعزل يغلق الصندوق قبل النقطة،
+                        فتصير النقطةُ محايدًا في سياقٍ عربيّ فتُرسم **يمين**
+                        الاسم لا يساره: قِيس فقفزت من 263 إلى 212→216، أي
+                        بين «لمعرض» و«LearnX». وبلا عزلٍ تلتصق النقطة بالمقطع
+                        اللاتينيّ نفسه فتُرسم في موضعها الصحيح.
+                        القاعدة: العزل يصلح حين يكتنف العربيُّ اللاتينيَّ من
+                        الجهتين، ويضرّ حين تليه علامةُ ترقيمٍ خِتاميّة. */}
                       {partner.contribution}
                     </p>
                   </li>

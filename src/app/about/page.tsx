@@ -8,6 +8,7 @@ import { ABOUT_INTRO, FOUNDED_YEAR, WHAT_YOU_GET } from "@/content/about";
 import { ABOUT_SECTION } from "@/content/navigation";
 import { COMMITTEES } from "@/content/committees";
 import { PROJECTS } from "@/content/projects";
+import { isolateLatin } from "@/lib/bidi";
 
 export const metadata: Metadata = {
   title: "حول النادي",
@@ -42,7 +43,7 @@ export default function AboutPage() {
                   key={paragraph.slice(0, 24)}
                   className="mt-s4 max-w-measure text-lead leading-loose first:mt-0"
                 >
-                  {paragraph}
+                  {isolateLatin(paragraph)}
                 </p>
               ))}
 

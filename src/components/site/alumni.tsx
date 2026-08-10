@@ -55,8 +55,9 @@ export function Alumni() {
         </div>
 
         <p className="text-fg-muted mx-auto max-w-[54ch] text-center leading-relaxed">
-          طلبةُ التخصّص الذين سلّط عليهم النادي الضوء في «MIS Spotlight» — وأين
-          هم اليوم.
+          {isolateLatin(
+            "طلبةُ التخصّص الذين سلّط عليهم النادي الضوء في «MIS Spotlight» — وأين هم اليوم.",
+          )}
         </p>
       </div>
 
