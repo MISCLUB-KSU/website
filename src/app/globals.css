@@ -83,6 +83,8 @@
      `text-deep`، وهو لونُ لوحةٍ خام لا ينقلب مع الوضع، فسقطت أربعةُ عناوين
      في النموذج إلى **1.32:1** ليلًا: كحليٌّ فوق أرضيةٍ فحميّة. */
   --color-ink-label: var(--ink-label);
+  /* حدُّ حقل الإدخال — دورٌ مستقلّ عن `--line` لأنه يخدم ضابطًا لا سطحًا */
+  --color-line-field: var(--line-field);
   --color-fg-muted: var(--ink-quiet);
   --color-fg-invert: var(--on-ink);
   --color-accent: var(--action);

@@ -9,13 +9,33 @@ import type { ReactNode } from "react";
  *  · المثال داخل الحقل يطابق شرط القبول حرفيًا
  */
 
+/**
+ * ⚠️ **أدوارٌ لا ألوانَ خام.** كانت هنا خمسةُ ألوانِ لوحةٍ ثابتة
+ * (`bg-white` · `text-charcoal` · `border-sky-200` · `bg-sky-50` مرّتين)
+ * فبقيت الحقولُ **بيضاءَ ناصعة على أرضيةٍ فحميّة** في الوضع الداكن —
+ * والصفحةُ حولها داكنة. وهو عطلُ `text-deep` نفسه: لونُ لوحةٍ حيث يجب
+ * دورٌ ينقلب.
+ *
+ * والقيم النهاريّة **لم تتغيّر بشعرة**: `--surface-raised` نهارًا `#ffffff`
+ * و`--ink` هو الفحميّ و`--line-field` هو `sky-200` نفسه.
+ *
+ * ⚠️ و`focus:` صار `accent` لا `primary`: الأزرقُ الأساسيّ على حقلٍ ليليّ
+ * `#212530` يعطي 1.9:1 — مؤشّرُ تركيزٍ لا يُرى، ومن يتنقّل بالكيبورد يضيع.
+ * و`--accent` نهارًا هو `primary` نفسه، فلا شيء يتغيّر في النهار.
+ */
 const BASE =
-  "w-full min-h-[46px] bg-white px-3.5 py-3 text-[0.95rem] text-charcoal " +
-  "border-[1.5px] border-sky-200 transition-colors duration-150 " +
+  "w-full min-h-[46px] bg-bg-raised px-3.5 py-3 text-[0.95rem] text-fg " +
+  "border-[1.5px] border-line-field transition-colors duration-150 " +
   "placeholder:text-fg-muted/70 hover:border-sky " +
-  "focus:border-primary focus:outline-none " +
-  "disabled:cursor-not-allowed disabled:bg-sky-50 disabled:text-fg-muted " +
-  "read-only:bg-sky-50 read-only:border-dashed";
+  "focus:border-accent focus:outline-none " +
+  "disabled:cursor-not-allowed disabled:bg-bg-sunken disabled:text-fg-muted " +
+  /* ⚠️ **السمة `[readonly]` لا الصنف `read-only:`.** الزائفةُ `:read-only`
+     في CSS تطابق كلَّ ما ليس قابلًا للتحرير — و`<select>` ليس قابلًا
+     للتحرير أبدًا، فكانت **كلُّ قائمةٍ منسدلة** تلبس ثوب «للقراءة فقط».
+     نهارًا مرّ الخطأ لأن الثوب كان `sky-50` (#f3f8fc) أفتحَ من أن يُرى،
+     وليلًا صار غائرًا `#101218` **أدكنَ من الصفحة نفسها**: الحقولُ ترتفع
+     والقائمةُ تغوص. والسمةُ تطابق ما وُسم فعلًا، وهو المقصود. */
+  "[&[readonly]]:bg-bg-sunken [&[readonly]]:border-dashed";
 
 const INVALID = "border-danger hover:border-danger focus:border-danger";
 
@@ -256,8 +276,12 @@ export function CheckField({
           aria-invalid={error ? true : undefined}
           aria-describedby={error || hint ? hintId : undefined}
           className={
-            "mt-0.5 size-[21px] shrink-0 appearance-none border-[1.5px] bg-white " +
+            "mt-0.5 size-[21px] shrink-0 appearance-none border-[1.5px] bg-bg-raised " +
             "transition-colors duration-150 " +
+            /* ⚠️ المعلَّم يبقى `primary` لا `accent`: علامةُ الصحّ ثلجيّةٌ
+               **محفورةٌ في الـSVG** أدناه، وليلًا يصير `accent` سماويًّا
+               فاتحًا فتختفي العلامةُ عليه (1.9:1). الأزرقُ الأساسيّ يبقى
+               داكنًا في الوضعين، فتبقى العلامةُ مقروءة. */
             "checked:bg-primary checked:border-primary " +
             "checked:bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22 fill=%22none%22><path d=%22M3 8.5l3.5 3.5L13 5%22 stroke=%22%23f9f9f9%22 stroke-width=%222.2%22 stroke-linecap=%22square%22/></svg>')] " +
             "checked:bg-center checked:bg-no-repeat " +
@@ -371,9 +395,14 @@ export function RadioGroup({
               /* الدائرة استثناء مقصود من حدّة الهوية — التمييز عن خانة
                  الاختيار المتعدد عادةٌ راسخة، وكسرها يربك الطالب */
               className={
-                "size-[21px] shrink-0 appearance-none rounded-full border-[1.5px] bg-white " +
+                "size-[21px] shrink-0 appearance-none rounded-full border-[1.5px] bg-bg-raised " +
                 "transition-colors duration-150 " +
-                "checked:border-[6px] checked:border-primary " +
+                /* ⚠️ عكسُ خانة الاختيار: هنا الحلقةُ هي العلامة و**قلبُها
+                   خلفيةُ العنصر نفسها**. فلو بقيت `primary` ليلًا لصارت
+                   حلقةً داكنة حول قلبٍ داكن — كتلةً واحدة لا يُعرف
+                   أمُختارةٌ هي أم لا. و`accent` يصير سماويًّا ليلًا فتُقرأ
+                   الحلقة، وهو `primary` نفسه نهارًا فلا شيء يتغيّر. */
+                "checked:border-[6px] checked:border-accent " +
                 (error ? "border-danger" : "border-sky")
               }
             />
