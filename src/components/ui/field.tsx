@@ -30,7 +30,7 @@ export function Label({ htmlFor, children, required, optional }: LabelProps) {
   return (
     <label
       htmlFor={htmlFor}
-      className="mb-1.5 block text-sm font-semibold text-deep"
+      className="text-ink-label mb-1.5 block text-sm font-semibold"
     >
       {children}
       {required && (
@@ -348,7 +348,7 @@ export function RadioGroup({
   const hintId = `${name}-hint`;
   return (
     <fieldset aria-describedby={error || hint ? hintId : undefined}>
-      <legend className="mb-2 text-sm font-semibold text-deep">
+      <legend className="text-ink-label mb-2 text-sm font-semibold">
         {legend}
         {required && (
           <span className="text-danger font-bold" aria-hidden="true">

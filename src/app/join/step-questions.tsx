@@ -351,7 +351,11 @@ function ClubExperience({
   return (
     <>
       <fieldset className="flex flex-col gap-s2">
-        <legend className="mb-1 text-sm font-semibold text-fg">
+        {/* ⚠️ `text-ink-label` لا `text-fg`: هذا عنوانُ حقلٍ في مستوى
+            «لماذا اخترت» و«كيف سمعت عنّا» المحيطَين به، فيلبس لباسهما.
+            وعناوينُ أسئلة القادة أدناه تبقى `text-fg` — تلك داخل صندوقٍ
+            مستقلٍّ لرغبةٍ بعينها، لا في مستوى النموذج. */}
+        <legend className="text-ink-label mb-1 text-sm font-semibold">
           سبق أن شاركت في نادٍ أو لجنة أو عمل تطوّعي؟
           <span className="font-bold text-danger" aria-hidden>
             {" "}

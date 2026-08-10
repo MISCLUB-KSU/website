@@ -18,7 +18,7 @@ export default function JoinPage() {
             عضوية النادي
           </span>
         </span>
-        <h1 className="text-deep mb-3 text-3xl leading-tight font-bold sm:text-4xl">
+        <h1 className="text-ink-label mb-3 text-3xl leading-tight font-bold sm:text-4xl">
           انضم إلى النادي
         </h1>
         <p className="text-fg-muted max-w-[56ch] leading-relaxed">
