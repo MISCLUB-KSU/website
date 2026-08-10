@@ -19,7 +19,7 @@ import {
 import { FAQ } from "@/content/faq";
 import { isolateLatin } from "@/lib/bidi";
 import { OPEN_PROJECTS } from "@/content/projects";
-import { InkWords, PillarDeck } from "@/components/site/mobile-motion";
+import { Drift, InkWords, PillarDeck } from "@/components/site/mobile-motion";
 
 /* شطرُ الشركاء صفّين: نصفٌ لكلٍّ فلا يتكرّر شعارٌ بين الصفّين. الشطر عند
    المنتصف بالأعلى (`ceil`) فيأخذ الصفّ الأوّل الزائدَ حين يكون العدد فرديًّا. */
@@ -322,26 +322,31 @@ export default function HomePage() {
           <div className="partners-panel flex w-full flex-col gap-s5 py-s6">
             {[0, 1].map((row) => (
               <div key={row} className="partners-viewport w-full" dir="ltr">
-                <div
-                  className="partners-rail"
-                  data-reverse={row === 1 ? "" : undefined}
-                >
-                  {[false, true].map((isClone) => (
-                    <ul
-                      key={String(isClone)}
-                      data-clone={isClone ? "" : undefined}
-                      aria-hidden={isClone || undefined}
-                      className="flex w-max shrink-0 items-center gap-s6 px-s3 sm:gap-s7"
-                    >
-                      {PARTNER_ROWS[row].map((partner) => (
-                        <li key={partner.name} className="shrink-0">
-                          {partner.logo ? (
-                            /* لكل شريكٍ الآن نسختان: `logo` للوضع الفاتح
+                {/* ⚠️ غلاف الانجراف بين النافذة والسكّة — لا على السكّة:
+                    السكّة يحرّكها `keyframes` بـ`transform`، وتحويل Motion
+                    على العنصر ذاته يمحوه فيتجمّد الدوران. الغلاف يركّب
+                    التحويلين، والصفّان يتعاكسان فيستجيب القسم للتمرير. */}
+                <Drift x={row === 0 ? [-24, 24] : [24, -24]}>
+                  <div
+                    className="partners-rail"
+                    data-reverse={row === 1 ? "" : undefined}
+                  >
+                    {[false, true].map((isClone) => (
+                      <ul
+                        key={String(isClone)}
+                        data-clone={isClone ? "" : undefined}
+                        aria-hidden={isClone || undefined}
+                        className="flex w-max shrink-0 items-center gap-s6 px-s3 sm:gap-s7"
+                      >
+                        {PARTNER_ROWS[row].map((partner) => (
+                          <li key={partner.name} className="shrink-0">
+                            {partner.logo ? (
+                              /* لكل شريكٍ الآن نسختان: `logo` للوضع الفاتح
                            و`logoDark` للداكن، والتبديل بـ `dark:` لا بفلتر.
                            ⚠️ وأحدَ عشرَ من النسخ الداكنة **مُعاد تلوينها** لا
                            رسميّة — القرار وحدوده موثَّقان في `about.ts` عند
                            تعريف `logoDark`. */
-                            /* ⚠️ **السقف 260px لا 200.** الارتفاع مثبَّت والعرض
+                              /* ⚠️ **السقف 260px لا 200.** الارتفاع مثبَّت والعرض
                            تابعٌ له (`w-auto`)، فسقفٌ يقصّ العرضَ يُبقي الارتفاع
                            فيهبط الشعار المرسوم داخل صندوقه بـ`object-contain`:
                            **هيئة الزكاة** نسبتها 4.48 فتحتاج 251px عند 56px،
@@ -353,43 +358,44 @@ export default function HomePage() {
                            و260 مشتقٌّ لا مُقدَّر: أعرضُ شعارٍ بعدها «مداريم»
                            عند 196px، فالسقف لا يمسّ أحدًا سواها ويبقى حائلًا
                            لو وصل شعارٌ أعرض. */
-                            <>
-                              <Image
-                                src={partner.logo}
-                                alt={`شعار ${partner.name}`}
-                                width={200}
-                                height={64}
-                                className={`h-12 w-auto max-w-[260px] object-contain sm:h-14${
-                                  partner.logoDark ? " dark:hidden" : ""
-                                }`}
-                              />
-                              {partner.logoDark ? (
+                              <>
                                 <Image
-                                  src={partner.logoDark}
+                                  src={partner.logo}
                                   alt={`شعار ${partner.name}`}
                                   width={200}
                                   height={64}
-                                  className="hidden h-12 w-auto max-w-[260px] object-contain dark:block sm:h-14"
+                                  className={`h-12 w-auto max-w-[260px] object-contain sm:h-14${
+                                    partner.logoDark ? " dark:hidden" : ""
+                                  }`}
                                 />
-                              ) : null}
-                            </>
-                          ) : (
-                            /* ⚠️ B4: كان `border-s-2 border-accent` — حدٌّ من جهةٍ
+                                {partner.logoDark ? (
+                                  <Image
+                                    src={partner.logoDark}
+                                    alt={`شعار ${partner.name}`}
+                                    width={200}
+                                    height={64}
+                                    className="hidden h-12 w-auto max-w-[260px] object-contain dark:block sm:h-14"
+                                  />
+                                ) : null}
+                              </>
+                            ) : (
+                              /* ⚠️ B4: كان `border-s-2 border-accent` — حدٌّ من جهةٍ
                            واحدة، وهو ممنوع: «الحدود تدور حول الشكل كلّه أو لا
                            تكون». صار حدًّا محيطًا بلون العلامة، وسقط ظلّ
                            `inset` لأنه كان يؤدّي دور الحدّ الثاني فيزدوجان. */
-                            <span
-                              dir="rtl"
-                              className="flex h-12 items-center whitespace-nowrap border-2 border-accent bg-bg-raised px-s5 font-display text-base font-bold text-fg sm:h-14 sm:text-lg"
-                            >
-                              {isolateLatin(partner.name)}
-                            </span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  ))}
-                </div>
+                              <span
+                                dir="rtl"
+                                className="flex h-12 items-center whitespace-nowrap border-2 border-accent bg-bg-raised px-s5 font-display text-base font-bold text-fg sm:h-14 sm:text-lg"
+                              >
+                                {isolateLatin(partner.name)}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    ))}
+                  </div>
+                </Drift>
               </div>
             ))}
           </div>

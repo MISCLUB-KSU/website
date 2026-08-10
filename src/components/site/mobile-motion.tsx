@@ -157,6 +157,93 @@ export function PillarDeck({
   );
 }
 
+/* ── عمق الواجهة ─────────────────────────────────────────────────────────
+   نصُّ الواجهة يغرق ببطءٍ بينما المسرح ملتصقٌ والعلامة تتشكّل — ثلاث طبقاتٍ
+   بثلاث سرعات: الحقل ثابت، والنصّ يزحف، والعلامة تطير بيد `MarkMorph`.
+   هذا هو العمق كلّه — فرقُ سرعةٍ لا زخرفة.
+
+   ⚠️ **القياس من `scrollY` المطلق لا من مرجعٍ ملتصق.** النصّ داخل مسرحٍ
+   `sticky` صندوقُه مثبَّتٌ أثناء التمرير، فمرجعُه يكذب — والواجهة تبدأ من
+   قمّة الصفحة فالإزاحة المطلقة صادقةٌ بالبناء.
+
+   ⚠️ **والاتجاه أسفلُ لا أعلى.** النصّ يجلس `top-s5` (20px) تحت قمّة
+   المسرح، وأعلى المسرح يحدّه الشريطُ الملتصق — انزياحٌ لأعلى بأكثر من
+   20px يُدخل العنوان تحت الشريط ويقصّه القصّ. */
+
+type HeroDriftProps = {
+  children: ReactNode;
+  className?: string;
+  /** المسافة بالبكسل التي يغرقها المحتوى حتى اكتمال `over` من الشاشة */
+  y?: number;
+  /** كم شاشةً من التمرير تستهلك الرحلة */
+  over?: number;
+};
+
+export function HeroDrift({
+  children,
+  className,
+  y = 36,
+  over = 0.9,
+}: HeroDriftProps) {
+  const isMobile = useIsMobile();
+  const calm = useReducedMotion() ?? false;
+  const { scrollY } = useScroll();
+  const [range, setRange] = useState(0);
+  useEffect(() => {
+    const sync = () => setRange(window.innerHeight * over);
+    sync();
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, [over]);
+
+  const raw = useTransform(scrollY, [0, range || 1], [0, y], {
+    clamp: true,
+  });
+  const gy = useTransform(raw, (v) => (isMobile && !calm ? v : 0));
+
+  return (
+    <motion.div className={className} style={{ y: gy }}>
+      {children}
+    </motion.div>
+  );
+}
+
+/* ── الانجراف المعاكس ────────────────────────────────────────────────────
+   صفّا الشركاء ينجرفان باتجاهين متعاكسين مع التمرير — فوق حركة السكّة
+   الذاتية، فيستجيب القسم للإصبع لا يدور وحده فقط.
+
+   ⚠️ **غلافٌ بين النافذة والسكّة، لا تحويلٌ على السكّة نفسها.** السكّة
+   يحرّكها `keyframes` بـ`transform`، وأي `transform` من Motion على العنصر
+   ذاته يمحوه — فيتجمّد الدوران. الغلاف الجديد يركّب التحويلين.
+
+   والإزاحة ±24px داخل نافذةٍ تقصّ (`overflow: hidden`) وسكّةٍ أعرض من
+   الشاشة بأضعاف — فلا فراغ يُكشف ولا تجاوز أفقيّ يُحدث. */
+
+type DriftProps = {
+  children: ReactNode;
+  className?: string;
+  /** من أين إلى أين ينجرف أفقيًّا أثناء عبور القسم للشاشة */
+  x: readonly [number, number];
+};
+
+export function Drift({ children, className, x }: DriftProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  const calm = useReducedMotion() ?? false;
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const raw = useTransform(scrollYProgress, [0, 1], [x[0], x[1]]);
+  const gx = useTransform(raw, (v) => (isMobile && !calm ? v : 0));
+
+  return (
+    <motion.div ref={ref} className={className} style={{ x: gx }}>
+      {children}
+    </motion.div>
+  );
+}
+
 /* ── الحبر يتبع القراءة ──────────────────────────────────────────────────
    جملة «من نحن» الافتتاحية تُرسم كاملةً بلون النصّ الهادئ (مقروءًا دائمًا)،
    وفوق كل كلمةٍ طبقةُ حبرٍ كامل تتكشّف بتقدّم التمرير — فتتحبّر الجملة
