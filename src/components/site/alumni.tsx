@@ -1,5 +1,6 @@
 import { ALUMNI, type Alumnus } from "@/content/alumni";
 import { isolateLatin } from "@/lib/bidi";
+import { SwipeSpotlight } from "@/components/site/mobile-motion";
 
 /**
  * «مبدعون مرّوا من هنا» — بين «شركاء النجاح» و«الأسئلة الشائعة».
@@ -79,7 +80,22 @@ export function Alumni() {
           ))}
         </div>
 
-        <div className="alu-marquee">
+        {/* ⚠️ **بنيتان بتبديلٍ بـCSS لا بجافاسكربت**: لا فرعَ في التصيير
+            فلا خطرَ اختلافِ خادمٍ عن متصفّح، وكلتاهما مُصيَّرةٌ على الخادم.
+            كلفتُها ثمانِ بطاقاتٍ زائدةٍ في الترميز — رخيصةٌ مقابل يقين. */}
+
+        {/* الجوّال: مسارٌ واحدٌ يُسحب، بالثمانية كاملةً بلا استنساخ.
+            الاستنساخ لغةُ الشريط المنساب (يخفي حدَّ الدوران)، وفي مسارٍ
+            يقوده الإصبع يصير تكرارًا يربك: يمرّ الطالب بالاسم مرّتين
+            فيظنّه غلطًا. */}
+        <SwipeSpotlight className="alu-swipe lg:hidden">
+          {ALUMNI.map((person) => (
+            <Card key={`m-${person.name}`} person={person} />
+          ))}
+        </SwipeSpotlight>
+
+        {/* الشاشة الواسعة: الصفّان المنسابان كما هما — لم يُمسّا */}
+        <div className="alu-marquee max-lg:hidden">
           <div className="alu-track alu-track--fast">
             {doubled(top).map((person, i) => (
               <Card
@@ -119,8 +135,12 @@ function Card({
   return (
     <article
       aria-hidden={wall || muted || undefined}
+      /* `data-spot` و`alu-spot` على بطاقات المسار وحدها: `SwipeSpotlight`
+         تقيس ما يحمل السمة، والصنف يترجم `--near` مقاسًا. وبطاقاتُ الجدار
+         خارجهما — زخرفةٌ ضبابيّة لا تُسحب. */
+      {...(wall ? {} : { "data-spot": "" })}
       className={`bg-bg-raised border-line flex flex-col justify-center border p-s5 ${
-        wall ? "alu-wall-card" : "w-[clamp(17rem,25vw,21rem)] shrink-0"
+        wall ? "alu-wall-card" : "alu-spot w-[clamp(17rem,25vw,21rem)] shrink-0"
       }`}
     >
       <div className="flex items-center gap-x-s4">

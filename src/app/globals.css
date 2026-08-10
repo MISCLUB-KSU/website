@@ -922,6 +922,62 @@ html.mark-morphing [data-mark-static] {
   animation-play-state: paused;
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   وضع الجوّال — مسارٌ واحدٌ يُسحب بدل صفَّين يجريان
+
+   الصفّان المنسابان لغةُ الشاشة الواسعة: تُرى فيهما ستُّ بطاقاتٍ معًا
+   فيُقرأ الشريط جمعًا. وعلى 375px تُرى **واحدةٌ ونصف** فيصير الشريط
+   طابورًا يمرّ بلا أن يُمسك. فتحته يصير المسار **مسحوبًا**: البطاقة
+   تلتقط مركز الشاشة، والمركزيّة تكبر — يقوده الإصبع لا المؤقّت.
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1023px) {
+  /* ⚠️ **الإخفاء هنا لا بـ`max-lg:hidden`.** `.alu-marquee` صنفٌ عاديّ
+     خارج طبقات Tailwind، فيغلب أداةَ `hidden` بترتيب الطبقات مهما كانت
+     الأولوية — قِيس فبقي `display: flex` والصفّان ظاهرين تحت المسار
+     المسحوب. نفس تصادم `.tile` مع `flex-row` الموثَّق في هذا الملفّ. */
+  .alu-marquee {
+    display: none;
+  }
+
+  .alu-swipe {
+    display: flex;
+    gap: 18px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    /* الحشوة الجانبية تُخلي للأولى والأخيرة أن تبلغا المركز — بلا هذا
+       تقف الطرفيّتان عند الحافّة فلا تكبران أبدًا. نصفُ الشاشة ناقص
+       نصفَ البطاقة (17rem أضيقُ مقاسٍ في `clamp`). */
+    padding-inline: max(16px, calc(50% - 8.5rem));
+    /* شريطُ التمرير يُخفى: المسار يقول عن نفسه إنه يُسحب بحافّةِ بطاقةٍ
+       ظاهرةٍ عند الطرف، ولا يحتاج مسطرةً رماديّة */
+    scrollbar-width: none;
+  }
+  .alu-swipe::-webkit-scrollbar {
+    display: none;
+  }
+  .alu-swipe > * {
+    scroll-snap-align: center;
+  }
+
+  /* المقاس هو الإشارة — لا الشفافية. تخفيتُ الجانبيّتين تُنزل تباين
+     نصّهما، والتباين لا يُتنازل عنه. و`--near` افتراضُها **1** فبلا
+     جافاسكربت تبقى البطاقات كاملةً. */
+  .alu-spot {
+    transform: scale(calc(0.92 + 0.08 * var(--near, 1)));
+    transform-origin: center;
+    transition: transform 120ms linear;
+    will-change: transform;
+  }
+}
+
+@media (max-width: 1023px) and (prefers-reduced-motion: reduce) {
+  .alu-spot {
+    transform: none;
+    transition: none;
+  }
+}
+
 /* ⚠️ **والحركة تُوقَف كليًّا لمن طلب ذلك، ويُعاد له المحور تمريرًا** — فلا
    يبقى نصفُ البطاقات خارج متناوله. */
 @media (prefers-reduced-motion: reduce) {

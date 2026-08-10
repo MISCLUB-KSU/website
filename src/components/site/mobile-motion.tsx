@@ -244,6 +244,83 @@ export function Drift({ children, className, x }: DriftProps) {
   );
 }
 
+/* ── الضوء يتبع الإصبع ───────────────────────────────────────────────────
+   على الجوّال يتحوّل شريط الخريجين من صفَّين يجريان وحدهما إلى **مسارٍ
+   واحدٍ يُسحب**: البطاقة تلتقط مركز الشاشة (`scroll-snap`)، والمركزيّة
+   تكبر. فيصير القسم شيئًا **تقوده أنت** لا شيئًا يمرّ أمامك — وهذا هو
+   الفرق بين تجربة اللمس وتجربة الفأرة.
+
+   ⚠️ **بالمقاس وحده لا بالشفافية.** تخفيتُ الجانبيّتين تُنزل تباين نصّهما
+   (الأرضية والنصّ يُمزجان معًا نحو أرضية الصفحة) — والتباين من الثلاثة
+   التي لا يُتنازل عنها. فالتمييز بالحجم: 0.92 → 1.00، والنصّ كامل
+   الوضوح في كل بطاقة.
+
+   ⚠️ **الافتراض `--near: 1` أي بحجمها الكامل.** تعثّر الجافاسكربت؟ بقيت
+   البطاقات كلّها كاملةً قابلةً للسحب — لا شيء يختفي بانتظار حساب.
+
+   ⚠️ **الحساب على `transform` وحده وبلا إعادة رسمٍ لReact**: خاصّيةٌ
+   مخصّصة تُكتب مباشرةً على العنصر داخل `requestAnimationFrame`. أربع
+   عشرة بطاقةً تُقاس في الإطار الواحد — رخيصةٌ، ولا حالة تتغيّر. */
+
+type SwipeSpotlightProps = {
+  children: ReactNode;
+  className?: string;
+};
+
+export function SwipeSpotlight({ children, className }: SwipeSpotlightProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  const calm = useReducedMotion() ?? false;
+
+  useEffect(() => {
+    const box = ref.current;
+    if (!box) return;
+
+    /* خارج الجوّال أو مع تقليل الحركة: تُمسح الخاصّية فتعود البطاقات
+       إلى الافتراض الكامل — ولا مستمعَ يُركَّب أصلًا. */
+    if (!isMobile || calm) {
+      box
+        .querySelectorAll<HTMLElement>("[data-spot]")
+        .forEach((el) => el.style.removeProperty("--near"));
+      return;
+    }
+
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const rect = box.getBoundingClientRect();
+      const mid = rect.left + rect.width / 2;
+      /* نصفُ عرض النافذة هو المدى: بطاقةٌ عند الحافّة تكون عند صفر
+         والمركزيّة عند واحد */
+      const reach = rect.width / 2 || 1;
+      for (const el of box.querySelectorAll<HTMLElement>("[data-spot]")) {
+        const r = el.getBoundingClientRect();
+        const d = Math.abs(r.left + r.width / 2 - mid);
+        const near = Math.max(0, 1 - d / reach);
+        el.style.setProperty("--near", near.toFixed(3));
+      }
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+
+    measure();
+    box.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      box.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+    };
+  }, [isMobile, calm]);
+
+  return (
+    <div ref={ref} className={className}>
+      {children}
+    </div>
+  );
+}
+
 /* ── الحبر يتبع القراءة ──────────────────────────────────────────────────
    جملة «من نحن» الافتتاحية تُرسم كاملةً بلون النصّ الهادئ (مقروءًا دائمًا)،
    وفوق كل كلمةٍ طبقةُ حبرٍ كامل تتكشّف بتقدّم التمرير — فتتحبّر الجملة
