@@ -95,10 +95,22 @@ export function Hero({ isOpen }: HeroProps) {
             الأضلاعُ الستّة أثناء انتقالها نحو خاناتها فتكتسح شريطًا كان
             يغطّي الكولوفون — أُصلحت الآن ببنية الكولوفون نفسها (مسرحٌ
             ملتصقٌ ثانٍ أسفل هذا القسم)، لا بهندسة هذا المرساة. */}
+        {/* ⚠️ **تحديث ١٠ أغسطس: الجوّال الطويل يعرض العلامة كاملةً.**
+            كان عرضها `(ارتفاع المسرح × 1.117)` — أي ٨٢٠px على شاشة 375
+            فتُقصّ من الجانبين، وطلب حسام صراحةً: «اللوقو مب ظاهر كله».
+            فصار العرض `100% − 32px` (هامش `s4` من كل جهة): كاملةً بلا
+            قصٍّ، بارتفاع ~129px. والمقعد `bottom-[22%]` لا `s9`: العلامة
+            الأصغر عند القاع كانت تترك ~300px فراغًا فوقها، و22% تجلسها
+            وسط الفجوة بين الشارح والكولوفون — مقيسًا على 812: أعلاها 444
+            والشارح الغارق ينتهي ~228، وأسفلها 573 والكولوفون يبدأ ~664.
+            وفرع القِصار (≤700px) باقٍ على نزيفه المقيس: فسحتُه لا تتّسع
+            لعلامةٍ كاملة فوق النصّ والكولوفون معًا، والقصُّ هناك قرارٌ
+            قديمٌ مقصود لا سهو. والمرساة تتحرّك بأمان: `place()` تعيد
+            قياسها كلَّ تمريرة. */}
         <div
           aria-hidden
           data-mark-anchor="hero"
-          className="absolute bottom-[-3%] left-[-10%] w-[72%] max-md:bottom-s9 max-md:left-1/2 max-md:w-[calc((100svh-var(--header-h))*1.117)] max-md:-translate-x-1/2 max-md:[@media(max-height:700px)]:bottom-[22%] max-md:[@media(max-height:700px)]:left-[-10%] max-md:[@media(max-height:700px)]:w-[118%] max-md:[@media(max-height:700px)]:translate-x-0"
+          className="absolute bottom-[-3%] left-[-10%] w-[72%] max-md:bottom-[22%] max-md:left-1/2 max-md:w-[calc(100%-32px)] max-md:-translate-x-1/2 max-md:[@media(max-height:700px)]:bottom-[22%] max-md:[@media(max-height:700px)]:left-[-10%] max-md:[@media(max-height:700px)]:w-[118%] max-md:[@media(max-height:700px)]:translate-x-0"
           style={{ aspectRatio: "2701 / 1016" }}
         >
           <div data-mark-static="" className="h-full w-full">

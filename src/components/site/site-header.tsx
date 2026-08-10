@@ -108,10 +108,22 @@ export function SiteHeader() {
                 aria-label="أقسام الموقع"
               >
                 <NavLinks as="list" className="flex flex-col" />
+                {/* المبدّل هنا على الجوّال — انظر سبب نقله عند غلافه أدناه */}
+                <div className="mt-s2 flex border-t border-line pt-s2">
+                  <ThemeToggle />
+                </div>
               </nav>
             </MobileMenu>
 
-            <ThemeToggle />
+            {/* ⚠️ **المبدّل خلف القائمة على الجوّال، ظاهرٌ على الواسعة.**
+                قال حسام «الهيدر أحسّه زحمة مرّة»: أربع كتلٍ في شريط 375px.
+                والمبدّل أداةٌ تُلمس مرّةً ثم تُنسى — لا تستحق مقعدًا دائمًا
+                يزاحم العلامة والتنقّل والإجراء الأساسيّ. فبقي الثلاثة الذين
+                لكلٍّ منهم وظيفةُ كلِّ زيارة، وسكن المبدّل أسفل القائمة.
+                والوضع محفوظٌ في `localStorage` فلا يُعاد ضبطه إلا نادرًا. */}
+            <div className="max-lg:hidden">
+              <ThemeToggle />
+            </div>
 
             <Link
               href={PRIMARY_ACTION.href}
