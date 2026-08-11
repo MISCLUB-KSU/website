@@ -217,11 +217,21 @@ function Kpis({
     { label: "متوسّط الاكتمال", value: avg, of: 100, tint: "var(--primary)", pctOnly: true },
   ];
   return (
-    <ul className="grid shrink-0 grid-cols-2 gap-s3 lg:grid-cols-4">
+    /* ⚠️ **على الجوّال صفٌّ يُسحب لا شبكةُ ٢×٢.** الشبكةُ كانت تأكل ≈300px
+       فوق الطيّة قبل أوّل طلب، والبطاقاتُ الأربعُ **ملخَّصٌ** لا وجهة —
+       ولها تبويبُها «اللوحة» أصلًا. والسحبُ الأفقيّ يُبقيها في متناول
+       الإبهام بارتفاعِ بطاقةٍ واحدة. الحاسبُ يبقى شبكةَ أربعة. */
+    <ul className="-mx-s4 flex shrink-0 snap-x snap-mandatory gap-s3 overflow-x-auto px-s4 pb-s2 [scrollbar-width:none] lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0 lg:pb-0">
       {cards.map((c, i) => {
         const pct = c.of ? Math.round((c.value / c.of) * 100) : 0;
         return (
-          <li key={c.label} className="tile fade-up" style={{ ["--i" as string]: i }}>
+          <li
+            key={c.label}
+            /* `shrink-0` + عرضٌ ثابت: بدونهما تنكمش البطاقاتُ الأربعُ في
+               عرض الشاشة فيضيع السحبُ ولا يُقرأ رقم. */
+            className="tile fade-up w-[62vw] max-w-[15rem] shrink-0 snap-start lg:w-auto lg:max-w-none"
+            style={{ ["--i" as string]: i }}
+          >
             <div className="flex items-center gap-x-s3 px-s4 py-s3">
               <Arc pct={pct} color={c.tint} size={44} />
               <div className="min-w-0">
@@ -336,7 +346,9 @@ function Toolbar({
           />
         </label>
 
-        <div className="flex flex-wrap gap-x-s2 gap-y-s2">
+        {/* ⚠️ **صفٌّ واحدٌ يُسحب على الجوّال لا التفافٌ على ثلاثة صفوف.**
+            الستّةُ كانت تلتفّ فتأكل ≈250px أخرى فوق الطيّة. */}
+        <div className="-mx-s4 flex gap-x-s2 overflow-x-auto px-s4 pb-s1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:gap-y-s2 sm:overflow-visible sm:px-0 sm:pb-0">
           <Chip
             label="الكلّ"
             count={total}
@@ -397,7 +409,7 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex min-h-11 lg:min-h-10 items-center gap-x-s2 rounded-full border px-s3 text-[0.8rem] transition-all ${
+      className={`flex min-h-11 shrink-0 items-center gap-x-s2 rounded-full border px-s3 text-[0.8rem] transition-all lg:min-h-10 ${
         active
           ? "border-deep bg-deep text-snow"
           : "border-line bg-bg-sunken hover:bg-line-quiet"

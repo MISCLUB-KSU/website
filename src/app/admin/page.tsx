@@ -77,11 +77,14 @@ export default async function AdminPage() {
       {/* ⚠️ الترويسة **خفيفةٌ عمدًا**: كل بكسلٍ فيها يُخصم من الشاشة التي
           يجب أن تسع اللوحة كاملةً بلا تمرير. ولذلك لا لوحَ لها ولا حشوٌ
           رأسيّ كبير — وارتفاعها `--dash-head` نفسه المخصوم من `100svh`. */}
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-s5 gap-y-s2 py-s3">
-        <div className="flex items-center gap-x-s4">
+      {/* ⚠️ **صفٌّ واحدٌ على الجوّال أيضًا.** كانت تلتفّ إلى صفّين (113px)
+          لأن مجموع الكتلتين يتجاوز العرضَ بـ13px فقط — فالفجوةُ تضيق على
+          الجوّال وتتّسع على الحاسب، وكتلةُ النطاق تنكمش وتُقصّ عند الحاجة. */}
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-s3 gap-y-s2 py-s3 lg:gap-x-s5">
+        <div className="flex min-w-0 flex-1 items-center gap-x-s3 lg:flex-none lg:gap-x-s4">
           <Mark className="h-6 w-auto text-deep" />
-          <div className="border-s border-line ps-s4">
-            <p className="text-[0.68rem] opacity-60">
+          <div className="min-w-0 border-s border-line ps-s3 lg:ps-s4">
+            <p className="truncate text-[0.68rem] opacity-60">
               {me.role === "admin"
                 ? "كل اللجان والمشاريع"
                 : scopeNames.join(" · ") || "بلا نطاق"}
