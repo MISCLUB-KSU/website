@@ -67,8 +67,11 @@ function MarkGlyph({ className }: { className?: string }) {
 export function ImmersiveHero({ term }: { term: LeadershipTerm }) {
   const calm = useReducedMotion();
 
+  /* ⚠️ لا غلافَ `.im-stage` هنا — يملكه `board.tsx`. غلافان متداخلان
+     يكرّران الأرضيةَ و`overflow: clip` ويجعلان لوحَ التحميل داخل سياقِ
+     تكديسٍ ثانٍ. */
   return (
-    <div className="im-stage">
+    <>
       {/* لوحُ التحميل — طبقةٌ تنسحب، والمحتوى تحتها مُصيَّرٌ من الخادم */}
       <div className="im-loader" aria-hidden>
         <MarkGlyph className="im-loader-mark" />
@@ -102,6 +105,6 @@ export function ImmersiveHero({ term }: { term: LeadershipTerm }) {
           انزل
         </p>
       </section>
-    </div>
+    </>
   );
 }

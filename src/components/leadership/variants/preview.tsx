@@ -11,7 +11,7 @@ import { PillarsVariant } from "@/components/leadership/variants/pillars";
 import { PosterVariant } from "@/components/leadership/variants/poster";
 import { TreeVariant } from "@/components/leadership/variants/tree";
 import { LeadershipStage } from "@/components/leadership/stage/stage";
-import { ImmersiveHero } from "@/components/leadership/immersive/hero";
+import { ImmersiveBoard } from "@/components/leadership/immersive/board";
 import { countPeople, type LeadershipTerm } from "@/content/leadership";
 
 /**
@@ -27,7 +27,7 @@ const VARIANTS = [
   {
     id: "immersive",
     label: "هـ · الغامرة",
-    note: "الواجهة وحدها — بلغة immersive-g.com: خطّ عملاق تصعد كلماته، وعلامة مجسّمة، ولوح تحميل.",
+    note: "بلغة immersive-g.com: خطّ عملاق، علامة مجسّمة، وعنوانُ كل جهةٍ يلتصق بينما يمرّ فريقُه.",
   },
   {
     id: "stage",
@@ -105,7 +105,7 @@ export function VariantsPreview({ term }: { term: LeadershipTerm }) {
           </p>
 
           <OpenPersonProvider value={openPerson}>
-            {variant === "immersive" ? <ImmersiveHero term={term} /> : null}
+            {variant === "immersive" ? <ImmersiveBoard term={term} /> : null}
             {variant === "stage" ? <LeadershipStage term={term} /> : null}
             {variant === "poster" ? <PosterVariant term={term} /> : null}
             {variant === "tree" ? <TreeVariant term={term} /> : null}
