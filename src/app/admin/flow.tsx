@@ -170,7 +170,10 @@ function LabelColumn({
           onBlur={() => onHot(null)}
           onClick={() => onHot(hot === n.key ? null : n.key)}
           aria-pressed={hot === n.key}
-          className={`absolute flex min-h-6 w-full items-center gap-x-s2 py-[3px] text-[0.78rem] leading-tight transition-opacity ${
+          /* ⚠️ **هدفُ اللمس 44px على الجوّال.** قِيس 24px، والعُقدُ مطويّةٌ عند
+             ١١ عقدةً كحدٍّ أقصى فالمسافةُ بينها ≥54px — فـ44 تتّسع بلا تداخل.
+             والزرُّ شفّافٌ أصلًا، فالتغييرُ في مساحة اللمس لا في المظهر. */
+          className={`absolute flex min-h-11 lg:min-h-6 w-full items-center gap-x-s2 py-[3px] text-[0.78rem] leading-tight transition-opacity ${
             side === "start" ? "justify-end text-end" : "justify-start text-start"
           } ${hot && hot !== n.key ? "opacity-40" : "opacity-100"}`}
           style={{

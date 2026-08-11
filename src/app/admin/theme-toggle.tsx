@@ -40,7 +40,7 @@ export function ThemeToggle() {
         localStorage.setItem(ADMIN_THEME_KEY, next);
         document.documentElement.dataset.theme = next;
       }}
-      className="border-line bg-bg-sunken hover:bg-line-quiet flex size-10 shrink-0 items-center justify-center rounded-full border transition-colors"
+      className="border-line bg-bg-sunken hover:bg-line-quiet flex size-11 lg:size-10 shrink-0 items-center justify-center rounded-full border transition-colors"
     >
       {next === "light" ? <Sun /> : <Moon />}
     </button>

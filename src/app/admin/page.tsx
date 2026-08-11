@@ -105,7 +105,7 @@ export default async function AdminPage() {
           <form action={signOut}>
             <button
               type="submit"
-              className="min-h-9 rounded-full bg-bg-sunken px-s4 text-[0.78rem] font-semibold transition-colors hover:bg-line-quiet"
+              className="min-h-11 lg:min-h-9 rounded-full bg-bg-sunken px-s4 text-[0.78rem] font-semibold transition-colors hover:bg-line-quiet"
             >
               خروج
             </button>

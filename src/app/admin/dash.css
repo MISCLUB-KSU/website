@@ -92,7 +92,14 @@
   background: var(--bg-sunken);
   border: 1px solid var(--line-quiet);
 }
+/* ⚠️ **هدفُ اللمس على الجوّال 44px، والكثافةُ تعود على الحاسب.**
+   قِيس التبويبُ 32×63 على 390px — وهو أهمُّ ضابطٍ في اللوحة. ولا يُرفع
+   على الحاسب: ترويسةُ اللوحة «خفيفةٌ عمدًا» وكلُّ بكسلٍ فيها يُخصم من
+   `100svh` (انظر رأس `admin/page.tsx`). */
 .seg-item {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
   border-radius: 999px;
   padding: 0.4rem 0.95rem;
   font-size: 0.82rem;
@@ -104,6 +111,12 @@
 }
 .seg-item:hover {
   color: var(--fg);
+}
+
+@media (min-width: 1024px) {
+  .seg-item {
+    min-block-size: 0;
+  }
 }
 .seg-item[aria-selected="true"] {
   background: var(--deep);

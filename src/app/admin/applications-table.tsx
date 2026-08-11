@@ -360,7 +360,7 @@ function Toolbar({
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as typeof sort)}
-            className="border-line bg-bg-sunken text-fg min-h-10 rounded-xl border px-s3 text-[0.82rem]"
+            className="border-line bg-bg-sunken text-fg min-h-11 lg:min-h-10 rounded-xl border px-s3 text-[0.82rem]"
           >
             {SORTS.map((s) => (
               <option key={s.key} value={s.key}>
@@ -397,7 +397,7 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex min-h-10 items-center gap-x-s2 rounded-full border px-s3 text-[0.8rem] transition-all ${
+      className={`flex min-h-11 lg:min-h-10 items-center gap-x-s2 rounded-full border px-s3 text-[0.8rem] transition-all ${
         active
           ? "border-deep bg-deep text-snow"
           : "border-line bg-bg-sunken hover:bg-line-quiet"
@@ -832,7 +832,7 @@ function StatusPicker({ row, dark }: { row: Row; dark?: boolean }) {
                   if (!res.ok) setError(res.message);
                 })
               }
-              className={`flex min-h-10 items-center gap-x-s2 rounded-xl border px-s4 text-[0.82rem] font-semibold transition-all ${
+              className={`flex min-h-11 lg:min-h-10 items-center gap-x-s2 rounded-xl border px-s4 text-[0.82rem] font-semibold transition-all ${
                 on
                   ? "cursor-default"
                   : noTarget
