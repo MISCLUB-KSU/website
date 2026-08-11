@@ -92,7 +92,9 @@ export default async function AdminPage() {
             <p className="text-[0.86rem] font-bold">
               {rows.length} طلبًا
               {lastAt && (
-                <span className="ms-s2 text-[0.72rem] font-normal opacity-60">
+                /* ⚠️ يُطوى دون `sm`: التفافُه إلى سطرٍ ثالث هو ما جعل
+                   الترويسة تتضخّم على شاشةٍ 374px. والعددُ يبقى. */
+                <span className="ms-s2 hidden text-[0.72rem] font-normal opacity-60 sm:inline">
                   · آخرُ طلبٍ {lastAt}
                 </span>
               )}
