@@ -49,6 +49,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
        تُعاد هذي السطور عند الفتح. */
 
     page("/about", 0.7),
+    page("/about/structure", 0.6),
     page("/about/partnerships", 0.6),
 
     page("/achievements", 0.7),

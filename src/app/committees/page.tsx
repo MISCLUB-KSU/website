@@ -72,8 +72,15 @@ export default function CommitteesPage() {
             ))}
           </ul>
 
-          {/* ⚠️ نُزعت الإحالةُ إلى «الهيكل القيادي» — الصفحة مرفوعةٌ
-              مؤقّتًا (١١ أغسطس ٢٠٢٦). تعود مع الصفحة. */}
+          <p className="mt-s6 text-sm text-fg-muted">
+            تبحث عن من يقود كل لجنة هذا الفصل؟{" "}
+            <Link
+              href="/about/structure"
+              className="font-medium text-accent underline decoration-line-control underline-offset-4 transition-colors hover:text-accent-hover hover:decoration-current"
+            >
+              صفحة الهيكل القيادي
+            </Link>
+          </p>
         </div>
       </main>
 
