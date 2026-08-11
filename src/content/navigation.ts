@@ -41,10 +41,11 @@ export const ABOUT_SECTION: NavSection = {
 export const NAVIGATION: readonly NavSection[] = [
   { label: "الرئيسية", href: "/" },
   { label: "الإنجازات", href: "/achievements" },
-  /* ⚠️ «المشاريع» محجوبةٌ من الشريط والتذييل — الصفحة مغلقةٌ مؤقّتًا حتى
-     تجهز شعارات المشاريع (١٠ أغسطس ٢٠٢٦). تُعاد هنا وفي `FOOTER_LINKS`
-     عند الفتح. والصفحة نفسها تعمل وتعرض «ترقّبونا» لمن وصلها من رابطٍ
-     قديم — انظر `src/app/projects/page.tsx`. */
+  /* ⚠️ **الرابط باقٍ والصفحةُ مغلقة — بقرار حسام صراحةً.** وجهتُه اليوم
+     صفحةُ «ترقّبونا» حتى تجهز شعارات المشاريع. والوجهة صادقةٌ لا مخيّبة:
+     تقول ما يحدث ولماذا، وتُخرج الزائرَ إلى التقديم أو السؤال. وحذفُ
+     الرابط كان يُخفي أن للنادي مشاريع أصلًا — وهي أبرز ما فيه. */
+  { label: "المشاريع", href: "/projects" },
   ABOUT_SECTION,
   { label: "تواصل معنا", href: "/contact" },
   { label: "الأسئلة الشائعة", href: "/faq" },
@@ -56,7 +57,8 @@ export const NAVIGATION: readonly NavSection[] = [
  */
 export const FOOTER_LINKS: readonly NavLink[] = [
   { label: "الإنجازات", href: "/achievements" },
-  /* «المشاريع» مغلقةٌ مؤقّتًا — انظر التعليق في `NAVIGATION` أعلاه */
+  /* الصفحة مغلقةٌ مؤقّتًا والرابط باقٍ — انظر `NAVIGATION` أعلاه */
+  { label: "المشاريع", href: "/projects" },
   { label: "المقالات", href: "/posts" },
   { label: "الأسئلة الشائعة", href: "/faq" },
   { label: "قدِّم للعضوية", href: "/join" },
