@@ -54,6 +54,18 @@ export type LeadershipProject = {
   slug: string;
   /** الاسم اللاتيني كما يُكتب رسميًّا — يُعرض داخل `dir="ltr"` */
   name: string;
+  /**
+   * لونُ هوية المشروع.
+   *
+   * ⚠️ **مصدرُه بطاقةُ النادي الرسمية للفصل** التي فرّقت المشاريعَ الثلاثة
+   * بألوانها، لا اختيارٌ منّا — فقاعدةُ «خمسةُ ألوانٍ لا سادس» لم تُخرق:
+   * الاستثناءُ من تصميم النادي نفسِه. وكلُّ لونٍ هنا مقيسٌ فوق 6:1 مع
+   * الثلجيّ، فيصلح أرضيةً لنصٍّ أبيض.
+   *
+   * ولا علاقةَ له بـ`accent` في `content/projects.ts` — تلك «لم تُعتمد
+   * بعد» وتخصّ صفحاتِ المشاريع لا الهيكل.
+   */
+  accent: string;
   manager: LeadershipPerson;
   deputies: readonly LeadershipPerson[];
 };
@@ -178,6 +190,7 @@ export const LEADERSHIP_TERMS: readonly LeadershipTerm[] = [
       {
         slug: "misology",
         name: "MISology",
+        accent: "#3f4fa8", /* 6.57:1 مع الثلجيّ */
         /* ⚠️ قراءة اسم العائلة تحتاج تأكيدًا — «العربدي» في البطاقة. */
         manager: { name: "عبدالعزيز العربدي", role: "مدير المشروع" },
         deputies: [
@@ -188,6 +201,7 @@ export const LEADERSHIP_TERMS: readonly LeadershipTerm[] = [
       {
         slug: "datathon",
         name: "Datathon",
+        accent: "#93356b", /* 6.50:1 مع الثلجيّ */
         manager: { name: "رغد الجويعي", role: "مديرة المشروع" },
         deputies: [
           { name: "جودي الغامدي", role: "نائبة مدير المشروع" },
@@ -197,6 +211,7 @@ export const LEADERSHIP_TERMS: readonly LeadershipTerm[] = [
       {
         slug: "learnx",
         name: "LearnX",
+        accent: "#1f6b4d", /* 6.00:1 مع الثلجيّ */
         manager: { name: "لمى القحطاني", role: "مديرة المشروع" },
         deputies: [
           { name: "ريناد العجلان", role: "نائبة مدير المشروع" },

@@ -10,6 +10,7 @@ import { PersonDialog } from "@/components/leadership/person-dialog";
 import { PillarsVariant } from "@/components/leadership/variants/pillars";
 import { PosterVariant } from "@/components/leadership/variants/poster";
 import { TreeVariant } from "@/components/leadership/variants/tree";
+import { LeadershipStage } from "@/components/leadership/stage/stage";
 import { countPeople, type LeadershipTerm } from "@/content/leadership";
 
 /**
@@ -22,6 +23,11 @@ import { countPeople, type LeadershipTerm } from "@/content/leadership";
  */
 
 const VARIANTS = [
+  {
+    id: "stage",
+    label: "د · المسرح",
+    note: "علامةُ النادي مجسَّمةً، وشعارٌ ضبابيٌّ خلف كل صندوق يصحو عند المرور، ولكلِّ مشروعٍ لونُه.",
+  },
   {
     id: "poster",
     label: "أ · الملصق",
@@ -42,7 +48,7 @@ const VARIANTS = [
 type VariantId = (typeof VARIANTS)[number]["id"];
 
 export function VariantsPreview({ term }: { term: LeadershipTerm }) {
-  const [variant, setVariant] = useState<VariantId>("poster");
+  const [variant, setVariant] = useState<VariantId>("stage");
   const [view, setView] = useState<PersonView | null>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
 
@@ -77,17 +83,23 @@ export function VariantsPreview({ term }: { term: LeadershipTerm }) {
 
       <div className="vx-stage">
         <div className="vx-shell">
+          {/* نسخةُ «المسرح» تطبع سطرَ الفصل بنفسها، فلا يُكرَّر هنا */}
           <p className="vx-term">
             {current.note}
-            <br />
-            {term.label}
-            <span aria-hidden className="mx-s2">
-              ·
-            </span>
-            <span dir="ltr">{countPeople(term)}</span> قياديًّا
+            {variant === "stage" ? null : (
+              <>
+                <br />
+                {term.label}
+                <span aria-hidden className="mx-s2">
+                  ·
+                </span>
+                <span dir="ltr">{countPeople(term)}</span> قياديًّا
+              </>
+            )}
           </p>
 
           <OpenPersonProvider value={openPerson}>
+            {variant === "stage" ? <LeadershipStage term={term} /> : null}
             {variant === "poster" ? <PosterVariant term={term} /> : null}
             {variant === "tree" ? <TreeVariant term={term} /> : null}
             {variant === "pillars" ? <PillarsVariant term={term} /> : null}

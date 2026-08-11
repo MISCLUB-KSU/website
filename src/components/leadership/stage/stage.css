@@ -1,0 +1,355 @@
+/* ==========================================================================
+   الهيكل القيادي — «المسرح».
+
+   بُنيت على النسخة الأقرب لذهن حسام (أ · الملصق: أعمدةٌ متماثلة)، وأُضيف
+   إليها ما طلبه صراحةً (١١ أغسطس ٢٠٢٦):
+   · علامةُ النادي **مجسَّمةً** خلف الرئاسة — three.js لا حيلةَ CSS.
+   · **الشعارُ خلفيةً ضبابيّة** داخل كل صندوق، يصحو عند المرور.
+   · **لكلِّ مشروعٍ هويتُه** — لونُه من بطاقة النادي الرسمية.
+   · حركةٌ ودخولٌ وميلٌ يتبع المؤشّر.
+
+   وما بقي من القيود المرفوضة سابقًا: أرضيةُ الموقع نفسُها (تنقلب مع
+   الوضع)، وتماثلٌ من فوق لتحت، و**كلُّ شخصٍ في صندوقه**.
+
+   ⚠️ **الميلُ عند المرور دورانٌ لا ارتفاع.** «بطاقاتٌ ترتفع عند المرور»
+   ممنوعةٌ في هذا المستودع؛ فلا `translateY` ولا ظلٌّ يكبر — الميلُ
+   `rotateX/Y` بمنظور، والحدثُ الحقيقيُّ أن **الشعار يصحو من الضباب**.
+   ========================================================================== */
+
+.st-field {
+  --st-accent: var(--action);
+  --st-gap: 0.75rem;
+  position: relative;
+  isolation: isolate;
+  background: var(--surface);
+  color: var(--ink);
+  overflow-x: clip;
+}
+
+/* هالةٌ هادئةٌ خلف الرئاسة — عمقٌ بلا أرضيةٍ داكنة */
+.st-field::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  block-size: 46rem;
+  z-index: -2;
+  pointer-events: none;
+  background: radial-gradient(
+    60rem 34rem at 50% 18%,
+    color-mix(in oklab, var(--action) 16%, transparent),
+    transparent 68%
+  );
+}
+
+.st-shell {
+  margin-inline: auto;
+  max-width: 78rem;
+  padding-block: var(--s6, 2rem) var(--s9, 6rem);
+  padding-inline: var(--s4, 1rem);
+}
+
+@media (min-width: 640px) {
+  .st-shell {
+    padding-inline: var(--s6, 2rem);
+  }
+}
+
+/* ── الواجهة: العلامةُ المجسَّمة خلف بطاقتَي الرئاسة ─────────────────── */
+.st-hero {
+  position: relative;
+  padding-block: var(--s6, 2rem) var(--s7, 3rem);
+}
+
+.st-canvas-wrap {
+  position: absolute;
+  inset: -6rem 0 -2rem;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.st-canvas {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.st-term {
+  margin-block-end: var(--s5, 1.5rem);
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ink-quiet);
+}
+
+.st-top {
+  display: grid;
+  gap: var(--st-gap);
+  justify-content: center;
+}
+
+@media (min-width: 560px) {
+  .st-top {
+    grid-template-columns: repeat(2, minmax(0, 16rem));
+  }
+}
+
+/* ── عنوانُ الطبقة ────────────────────────────────────────────────────── */
+.st-label {
+  display: flex;
+  align-items: center;
+  gap: var(--s4, 1rem);
+  margin-block: var(--s7, 3rem) var(--s5, 1.5rem);
+}
+
+.st-label::before,
+.st-label::after {
+  content: "";
+  flex: 1 1 0;
+  block-size: 1px;
+  background: var(--line);
+}
+
+.st-label-text {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--ink-quiet);
+}
+
+/* ── الأعمدة ──────────────────────────────────────────────────────────── */
+.st-grid {
+  display: grid;
+  gap: var(--s5, 1.5rem);
+}
+
+@media (min-width: 900px) {
+  .st-grid {
+    grid-template-columns: repeat(var(--st-n), minmax(0, 1fr));
+    gap: var(--st-gap);
+    align-items: start;
+  }
+}
+
+.st-col {
+  display: grid;
+  gap: var(--st-gap);
+}
+
+.st-plate {
+  position: relative;
+  overflow: hidden;
+  padding: var(--s3, 0.75rem);
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--on-action);
+  background: var(--st-accent);
+  text-wrap: balance;
+}
+
+.st-plate-text {
+  position: relative;
+  z-index: 1;
+}
+
+/* داخل اللوحة أرضيتُها هي اللكنةُ نفسُها، فالعلامةُ تُرسم بلون النصّ */
+.st-plate .st-mark {
+  color: var(--on-action);
+  opacity: 0.16;
+  filter: blur(5px);
+}
+
+.st-plate-latin {
+  font-size: 1.0625rem;
+  letter-spacing: -0.01em;
+}
+
+/* ⚠️ لوحةُ المشروع لا تتبع `--on-action`. لونُ أرضيتها **ثابتٌ في
+   الوضعين** (هويةُ المشروع من بطاقة النادي)، بينما `--on-action` ينقلب
+   فحميًّا في الليل لأن الإجراءَ يصير سماويًّا — فقِيست اللوحةُ ليلًا
+   **2.64:1**: فحميٌّ على نيليّ. الثلجيُّ ثابتٌ مثلها، وكلُّ لونٍ منها
+   مقيسٌ فوق 6:1 معه. */
+.st-plate-brand {
+  color: var(--snow);
+}
+
+.st-plate-brand .st-mark {
+  color: var(--snow);
+}
+
+.st-stack {
+  display: grid;
+  gap: var(--s2, 0.5rem);
+}
+
+/* وصلةٌ قصيرةٌ فوق كلِّ صندوق */
+.st-stack > * {
+  position: relative;
+}
+
+.st-stack > *::before {
+  content: "";
+  position: absolute;
+  inset-block-start: calc(var(--s2, 0.5rem) * -1 - 1px);
+  inset-inline-start: calc(50% - 1px);
+  inline-size: 2px;
+  block-size: var(--s2, 0.5rem);
+  background: var(--line);
+}
+
+.st-stack > :first-child::before {
+  inset-block-start: calc(var(--st-gap) * -1 - 1px);
+  block-size: var(--st-gap);
+  background: var(--st-accent);
+}
+
+/* ── الصندوق: الشعارُ ضبابيٌّ خلفه، ويصحو عند المرور ───────────────────
+   الميلُ يتبع المؤشّر عبر `--st-rx/--st-ry` يكتبهما JS في `requestAnimation
+   Frame` — دورانٌ فقط، فلا يغيّر تخطيطًا ولا يرفع بطاقة. */
+.st-box {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  min-block-size: 2.75rem; /* 44px — هدفُ لمسٍ كامل */
+  padding: var(--s3, 0.75rem);
+  overflow: hidden;
+  text-align: center;
+  background: var(--surface-raised);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transform: perspective(700px) rotateX(var(--st-rx, 0deg))
+    rotateY(var(--st-ry, 0deg));
+  transform-style: preserve-3d;
+  transition:
+    transform 220ms var(--ease, ease),
+    box-shadow var(--dur-state, 140ms) var(--ease, ease);
+}
+
+.st-box:hover,
+.st-box:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--st-accent);
+}
+
+.st-box:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+/* العلامةُ خلفَ النصّ: ضبابيّةٌ ساكنةً، تصحو وتكبر عند المرور */
+.st-mark {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  z-index: 0;
+  inline-size: 130%;
+  translate: 50% -50%;
+  color: var(--st-accent);
+  opacity: 0.09;
+  filter: blur(7px);
+  pointer-events: none;
+  transition:
+    filter 320ms var(--ease, ease),
+    opacity 320ms var(--ease, ease),
+    scale 320ms var(--ease, ease);
+}
+
+/* ⚠️ الاتجاهُ يقلب معنى `translate: 50%`: في RTL يزيح إلى اليسار وفي LTR
+   إلى اليمين. القاعدةُ أعلاه للعربية، وهذي تصحّح اللاتينية. */
+:dir(ltr) .st-mark {
+  translate: -50% -50%;
+}
+
+@media (hover: hover) {
+  .st-box:hover .st-mark,
+  .st-box:focus-visible .st-mark {
+    opacity: 0.2;
+    filter: blur(2px);
+    scale: 1.08;
+  }
+}
+
+.st-box > :not(.st-mark) {
+  position: relative;
+  z-index: 1;
+}
+
+/* بطاقةُ الرئاسة: أكبر، وأرضيتُها حبريّة */
+.st-chief {
+  padding: var(--s5, 1.5rem) var(--s4, 1rem);
+  color: var(--on-ink);
+  background: var(--surface-ink);
+  box-shadow: none;
+}
+
+.st-chief .st-role {
+  color: var(--on-ink-quiet);
+}
+
+.st-chief .st-name {
+  color: var(--on-ink);
+  font-size: clamp(1.125rem, 1rem + 0.6vw, 1.5rem);
+}
+
+.st-chief .st-mark {
+  color: var(--snow);
+  opacity: 0.14;
+}
+
+@media (hover: hover) {
+  .st-chief:hover .st-mark,
+  .st-chief:focus-visible .st-mark {
+    opacity: 0.26;
+  }
+}
+
+.st-role {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-quiet);
+}
+
+.st-name {
+  display: block;
+  margin-block-start: 0.125rem;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.st-has-link {
+  display: inline-block;
+  inline-size: 5px;
+  block-size: 5px;
+  margin-inline-start: var(--s2, 0.5rem);
+  rotate: 45deg;
+  background: var(--st-accent);
+}
+
+.st-unit-label {
+  margin-block-start: var(--s3, 0.75rem);
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ink-quiet);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .st-box,
+  .st-mark {
+    transition: none;
+  }
+
+  /* لا ميلَ ولا صحوةَ شعارٍ لمن طلب تقليل الحركة — يبقى الصندوق ساكنًا */
+  .st-box {
+    transform: none !important;
+  }
+}
