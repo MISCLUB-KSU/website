@@ -25,7 +25,9 @@ export async function sendLoginLink(
 ): Promise<LoginState> {
   const same: LoginState = {
     ok: true,
-    message: "إن كان بريدك مسجّلًا في الطاقم، وصلك رابط الدخول. تحقّق منه.",
+    /* ⚠️ «القادة والإدارة» لا «الطاقم» — تتبع عنوانَ الشاشة (غُيّر ١١
+       أغسطس ٢٠٢٦). والصياغةُ الشرطيّة تبقى: لا تكشف أوجد البريدُ أم لا. */
+    message: "إن كان بريدك مسجّلًا ضمن القادة والإدارة، وصلك رابط الدخول. تحقّق منه.",
   };
 
   const email = String(formData.get("email") ?? "")
