@@ -32,10 +32,18 @@ const SORTS = [
   { key: "full", label: "الأكمل ملفًّا" },
 ] as const;
 
+/**
+ * شارات الرغبات الثلاث.
+ *
+ * ⚠️ **لكلِّ شارةٍ لونُ حبرها معها — ولا يُفترض الثلجيّ للجميع.** كان
+ * النصُّ ثلجيًّا على الثلاث، فوقع على السماويّ بنسبة **2.23:1** مقيسة:
+ * السماويُّ لونٌ **فاتح** لا يحمل نصًّا أبيض. والكحليُّ عليه 5.84:1.
+ * (الأولى 12.80:1 والثانية 7.71:1 — كلُّها مقيسةٌ لا مقدَّرة.)
+ */
 const RANK_META = [
-  { label: "رغبة أولى", color: "var(--deep)" },
-  { label: "رغبة ثانية", color: "var(--primary)" },
-  { label: "رغبة ثالثة", color: "var(--sky)" },
+  { label: "رغبة أولى", color: "var(--deep)", ink: "var(--snow)" },
+  { label: "رغبة ثانية", color: "var(--primary)", ink: "var(--snow)" },
+  { label: "رغبة ثالثة", color: "var(--sky)", ink: "var(--deep)" },
 ] as const;
 
 /** كم متقدّمًا يزاحم على كل جهة — يُحسب مرّةً لكل الصفوف */
@@ -723,8 +731,8 @@ function ChoiceLadder({
             >
               <span
                 dir="ltr"
-                className="text-snow flex size-7 shrink-0 items-center justify-center rounded-lg text-[0.8rem] font-bold"
-                style={{ background: meta.color, boxShadow: `0 4px 14px -6px ${meta.color}` }}
+                className="flex size-7 shrink-0 items-center justify-center rounded-lg text-[0.8rem] font-bold"
+                style={{ background: meta.color, color: meta.ink, boxShadow: `0 4px 14px -6px ${meta.color}` }}
               >
                 {i + 1}
               </span>
@@ -883,9 +891,11 @@ function LinkPill({
   label: string;
   external?: boolean;
 }) {
+  /* ⚠️ بلا `opacity-60`: اللونُ `--fg-muted` مضبوطٌ أصلًا على 6.76:1،
+     والشفافيةُ فوقه تُنزله إلى **3.33:1** مقيسة — تحت العتبة. */
   if (!href)
     return (
-      <span className="text-fg-muted rounded-full border border-line bg-bg-sunken px-s3 py-s2 text-[0.78rem] opacity-60">
+      <span className="text-fg-muted rounded-full border border-line bg-bg-sunken px-s3 py-s2 text-[0.78rem]">
         {label} — لا يوجد
       </span>
     );

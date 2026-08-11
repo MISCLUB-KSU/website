@@ -245,8 +245,12 @@ function NodeLabel({
   const leaf = i > 0 ? label.slice(i + 1).trim() : label;
   return (
     <span className={`min-w-0 ${align === "start" ? "text-end" : "text-start"}`}>
+      {/* ⚠️ بلا `opacity-75` أدناه: `--fg-muted` معايَرٌ على 7.13:1 نهارًا،
+          والشفافيةُ فوقه تُنزله إلى **4.01:1** مقيسة — تحت العتبة عند
+          10.88px. ونجح ليلًا مصادفةً، وهذا ما تحذّر منه قاعدةُ «التباين
+          يُقاس في الوضعين». */}
       {parent && (
-        <span className="text-fg-muted block text-[0.68rem] leading-tight opacity-75">
+        <span className="text-fg-muted block text-[0.68rem] leading-tight">
           {parent}
         </span>
       )}
