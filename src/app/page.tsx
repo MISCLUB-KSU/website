@@ -1,6 +1,5 @@
 import Image from "next/image";
 
-import { Alumni } from "@/components/site/alumni";
 import { FaqQuick } from "@/components/site/faq-quick";
 import { Hero } from "@/components/site/hero";
 import { MarkMorph } from "@/components/site/mark-morph";
@@ -401,9 +400,16 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* «مبدعون مرّوا من هنا» — بين الشركاء والأسئلة الشائعة بطلب حسام.
-            لا يُرسم ما دامت قائمة `ALUMNI` فارغة، فلا عنوانَ بلا محتوى. */}
-        <Alumni />
+        {/* 🚧 **«مبدعون مرّوا من هنا» مرفوعٌ مؤقّتًا — بقرار حسام
+            (١١ أغسطس ٢٠٢٦): «شِلها مؤقّتًا لين أفضى لها».**
+
+            القسمُ نفسُه سليم، والبياناتُ الثمانيةُ في `content/alumni.ts`
+            **لم تُمسّ** — وهي الأثمن: أسماءٌ وصورٌ ومناصبُ منقولةٌ من دليل
+            «MIS Spotlight». والمكوّنُ `components/site/alumni.tsx` باقٍ
+            كما هو ومعه أصنافُه في `globals.css`.
+
+            للعودة: أعِد `<Alumni />` هنا وحدها — لا شيءَ غيرها يحتاج
+            تغييرًا. والاستيرادُ نُزع من رأس الملفّ فيُعاد معه. */}
 
         {/* «إجابات سريعة». لغته البصرية من مرجعٍ اختاره حسام (نادي رؤية
             2030)، وهي **قطيعةٌ مقصودة** مع ميلان الهوية: حوافّ مدوّرة
