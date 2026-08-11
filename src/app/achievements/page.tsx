@@ -10,6 +10,7 @@ import {
   FOUNDED,
 } from "@/content/achievements";
 import { isolateLatin } from "@/lib/bidi";
+import { CountUp } from "@/components/site/mobile-motion";
 
 export const metadata: Metadata = {
   title: "الإنجازات",
@@ -47,10 +48,15 @@ export default function AchievementsPage() {
               >
                 {/* الرقم معزول وحده، ووحدته العربية خارج العزل — وإلا
                     قُرئت «+6 آلاف» على الشاشة «آلاف 6+». */}
+                {/* ⚠️ العدّاد يستبدل نصًّا **مطبوعًا من الخادم** ثم يعيده
+                    إليه — لا يبني رقمًا من عدم. تعثّر الجافاسكربت؟ بقيت
+                    القيمة الصحيحة مقروءة. وعلى الحاسب ومع تقليل الحركة:
+                    نصٌّ ثابتٌ كما كان. */}
                 <p className="font-display text-3xl font-bold text-accent">
-                  <span dir="ltr" className="tabular-nums">
-                    {item.value}
-                  </span>
+                  <CountUp
+                    value={item.value}
+                    className="tabular-nums inline-block"
+                  />
                   {item.unit ? ` ${item.unit}` : null}
                 </p>
                 <span className="text-[0.95rem] leading-relaxed text-fg">

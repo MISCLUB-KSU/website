@@ -321,6 +321,95 @@ export function SwipeSpotlight({ children, className }: SwipeSpotlightProps) {
   );
 }
 
+/* ── الرقم يُعَدّ حين يُقرأ ───────────────────────────────────────────────
+   أرقام الإنجازات تعدّ من صفرٍ إلى قيمتها حين تدخل الشاشة — فالحصيلة
+   تُقرأ **إنجازًا يتراكم** لا رقمًا مركونًا.
+
+   ⚠️ **والقيمة النهائية مطبوعةٌ في `HTML` من الخادم.** هذي قاعدةٌ مستقرّة
+   في هذا المستودع منذ عدّاد اللوحة: العدّاد يستبدل نصًّا **قائمًا** ثم
+   يعيده إلى أصله. تعثّر الجافاسكربت أو لم يدخل العنصر الشاشة؟ بقي الرقم
+   الصحيح مقروءًا — لا صفرٌ عالق ولا فراغ.
+
+   ⚠️ **ولا يُعَدّ إلّا ما هو عددٌ محض.** قيمُ الإنجازات فيها `+300` و
+   `+6,000` وقد يأتي `5 أيام` — فما لم يُقرأ عددًا يُترك كما هو حرفيًّا.
+   والبادئة واللاحقة تُحفظان فيعود `+` مكانه.
+
+   ⚠️ **`aria-hidden` أثناء العدّ لا بعده**: قارئ الشاشة لا يُلاحق رقمًا
+   يتغيّر ستّين مرّةً في الثانية — يقرأ النهائيّ مرّةً حين يستقرّ. */
+
+const COUNT_MS = 900;
+
+type CountUpProps = {
+  /** النصّ كما يُطبع من الخادم — «+300» أو «6,000» أو «5 أيام» */
+  value: string;
+  className?: string;
+};
+
+export function CountUp({ value, className }: CountUpProps) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const isMobile = useIsMobile();
+  const calm = useReducedMotion() ?? false;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !isMobile || calm) return;
+
+    /* شقُّ القيمة: بادئةٌ غير رقمية، ثم العدد، ثم لاحقة */
+    const match = value.match(/^(\D*)([\d,]+)(.*)$/);
+    if (!match) return;
+    const [, prefix, digits, suffix] = match;
+    const target = Number(digits.replace(/,/g, ""));
+    if (!Number.isFinite(target) || target === 0) return;
+    const grouped = digits.includes(",");
+
+    let frame = 0;
+    let start = 0;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return;
+        io.disconnect();
+        el.setAttribute("aria-hidden", "true");
+
+        const step = (now: number) => {
+          if (!start) start = now;
+          const t = Math.min(1, (now - start) / COUNT_MS);
+          /* تباطؤٌ في الآخر — الرقم يستقرّ ولا يصطدم */
+          const eased = 1 - Math.pow(1 - t, 3);
+          const n = Math.round(target * eased);
+          el.textContent =
+            prefix + (grouped ? n.toLocaleString("en-US") : String(n)) + suffix;
+          if (t < 1) {
+            frame = requestAnimationFrame(step);
+          } else {
+            /* يعود إلى نصّ الخادم حرفيًّا — لا إلى صياغةٍ نُعيد بناءها */
+            el.textContent = value;
+            el.removeAttribute("aria-hidden");
+          }
+        };
+        frame = requestAnimationFrame(step);
+      },
+      { threshold: 0.6 },
+    );
+
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+      el.textContent = value;
+      el.removeAttribute("aria-hidden");
+    };
+  }, [value, isMobile, calm]);
+
+  /* ⚠️ `dir="ltr"` جزءٌ من العنصر لا خيارٌ للمستدعي: هذا عددٌ دائمًا،
+     وبلا عزلٍ تُقرأ «+6,000 آلاف» على الشاشة «آلاف 6,000+». كان العزل
+     على الغلاف السابق، ونزعُه مع استبدال العنصر كان سيمرّ صامتًا. */
+  return (
+    <span ref={ref} dir="ltr" className={className}>
+      {value}
+    </span>
+  );
+}
+
 /* ── الحبر يتبع القراءة ──────────────────────────────────────────────────
    جملة «من نحن» الافتتاحية تُرسم كاملةً بلون النصّ الهادئ (مقروءًا دائمًا)،
    وفوق كل كلمةٍ طبقةُ حبرٍ كامل تتكشّف بتقدّم التمرير — فتتحبّر الجملة
