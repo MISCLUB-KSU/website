@@ -4,6 +4,8 @@ import { useEffect, useRef } from "react";
 
 import type { PersonView } from "@/components/leadership/person-context";
 
+import "./person-dialog.css";
+
 /**
  * لوحُ الشخص — `<dialog>` أصليّ واحدٌ مشترك، لا واحدٌ لكلِّ عقدة.
  *

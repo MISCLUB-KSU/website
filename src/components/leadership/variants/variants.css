@@ -1,0 +1,526 @@
+/* ==========================================================================
+   ثلاث نسخٍ من الهيكل القيادي — صفحةُ اختيارٍ مؤقّتة.
+
+   ⚠️ **هذا الملفّ للمعاينة لا للإنتاج.** يُحذف مع `/about/structure/preview`
+   بعد أن يختار حسام نسخةً، وتُنقل المختارةُ وحدها إلى الصفحة الأصلية.
+
+   الأربعةُ التي رُفضت في النسخة السابقة (١١ أغسطس ٢٠٢٦) قيدٌ على الثلاث:
+   · لا تبادلَ يمينًا ويسارًا — تماثلٌ من فوق لتحت.
+   · لا أرضيةَ داكنة — أرضيةُ الموقع نفسُها، تنقلب مع الوضع.
+   · لا صفوفَ داخل لوحة — **كلُّ شخصٍ في صندوقه**.
+   · حركةٌ حقيقيّة لا سكون.
+
+   والألوانُ كلُّها رموزُ الموقع الدلالية (`--ink` · `--surface` · `--action`
+   · `--line`)، فينقلب الوضعان بلا كتلةٍ ثانية تُنسى. ولا رموزَ `@theme`
+   جديدة: صنفٌ يشير إلى رمزٍ غير مسجَّلٍ يخرج بلا CSS وبلا خطأ بناء.
+   ========================================================================== */
+
+.vx-stage {
+  --vx-gap: 1rem;
+  --vx-drop: 1.75rem;
+  position: relative;
+  background: var(--surface);
+  color: var(--ink);
+  overflow-x: clip;
+}
+
+.vx-shell {
+  margin-inline: auto;
+  max-width: 72rem;
+  padding-block: var(--s7, 3rem) var(--s9, 6rem);
+  padding-inline: var(--s4, 1rem);
+}
+
+@media (min-width: 640px) {
+  .vx-shell {
+    padding-inline: var(--s6, 2rem);
+  }
+}
+
+.vx-term {
+  margin-block-end: var(--s6, 2rem);
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ink-quiet);
+}
+
+/* عنوانُ الطبقة بين خطّين */
+.vx-label {
+  display: flex;
+  align-items: center;
+  gap: var(--s4, 1rem);
+  margin-block: var(--s7, 3rem) var(--s5, 1.5rem);
+}
+
+.vx-label::before,
+.vx-label::after {
+  content: "";
+  flex: 1 1 0;
+  block-size: 1px;
+  background: var(--line);
+}
+
+.vx-label-text {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--ink-quiet);
+}
+
+/* وصلةٌ رأسيةٌ مركزية */
+.vx-tie {
+  display: block;
+  inline-size: 2px;
+  block-size: var(--vx-drop);
+  margin-inline: auto;
+  transform-origin: top;
+  background: var(--line-control);
+}
+
+/* ==========================================================================
+   النسخة أ — «الملصق»: أعمدةٌ متماثلة، لكلِّ لجنةٍ لوحةُ عنوانٍ مصمتة
+   وتحتها صناديقُ أشخاصها.
+   ========================================================================== */
+
+.v1-top {
+  display: grid;
+  gap: var(--vx-gap);
+  justify-content: center;
+}
+
+@media (min-width: 560px) {
+  .v1-top {
+    grid-template-columns: repeat(2, minmax(0, 15rem));
+  }
+}
+
+.v1-chief {
+  display: block;
+  inline-size: 100%;
+  min-block-size: 2.75rem;
+  padding: var(--s5, 1.5rem) var(--s4, 1rem);
+  text-align: center;
+  color: var(--on-ink);
+  background: var(--surface-ink);
+  transition: background-color var(--dur-state, 140ms) var(--ease, ease);
+}
+
+.v1-chief:hover {
+  background: var(--action-hover);
+}
+
+.v1-chief .vx-role {
+  color: var(--on-ink-quiet);
+}
+
+.v1-chief .vx-name {
+  color: var(--on-ink);
+  font-size: clamp(1.125rem, 1rem + 0.6vw, 1.5rem);
+}
+
+.v1-grid {
+  display: grid;
+  gap: var(--s5, 1.5rem);
+}
+
+@media (min-width: 900px) {
+  .v1-grid {
+    grid-template-columns: repeat(var(--vx-n), minmax(0, 1fr));
+    gap: var(--vx-gap);
+    align-items: start;
+  }
+}
+
+.v1-col {
+  display: grid;
+  gap: 0;
+}
+
+.v1-plate {
+  padding: var(--s3, 0.75rem) var(--s3, 0.75rem);
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--on-action);
+  background: var(--action);
+  text-wrap: balance;
+}
+
+.v1-plate-latin {
+  letter-spacing: -0.01em;
+}
+
+.v1-stack {
+  display: grid;
+  gap: var(--s2, 0.5rem);
+  margin-block-start: var(--s3, 0.75rem);
+}
+
+/* وصلةٌ قصيرةٌ فوق كلِّ صندوق — تربط العمود بلوحته */
+.v1-stack > * {
+  position: relative;
+}
+
+.v1-stack > *::before {
+  content: "";
+  position: absolute;
+  inset-block-start: calc(var(--s2, 0.5rem) * -1 - 1px);
+  inset-inline-start: calc(50% - 1px);
+  inline-size: 2px;
+  block-size: var(--s2, 0.5rem);
+  background: var(--line);
+}
+
+.v1-stack > :first-child::before {
+  inset-block-start: calc(var(--s3, 0.75rem) * -1 - 1px);
+  block-size: var(--s3, 0.75rem);
+  background: var(--line-control);
+}
+
+.v1-unit-gap {
+  block-size: var(--s3, 0.75rem);
+}
+
+/* ==========================================================================
+   النسخة ب — «الشجرة»: تنمو من جهة البداية إلى نهايتها بمرفقٍ لكلِّ عنصر،
+   كشجرة الملفّات. كلُّ الفروع من جهةٍ واحدة فلا زيقزاغ.
+
+   المرفقُ من `::before` رأسيٍّ و`::after` أفقيّ: الرأسيُّ يملأ ارتفاعَ
+   العنصر إلّا في الأخير فيقف عند منتصف سطره الأوّل — وهو ما يجعل الشجرةَ
+   تُقرأ شجرةً لا شبكةً من الخطوط. وكلُّها خصائصُ منطقية فتنقلب مع الاتجاه.
+   ========================================================================== */
+
+.v2-root {
+  display: grid;
+  gap: var(--s3, 0.75rem);
+  justify-items: center;
+}
+
+.v2-root-item {
+  inline-size: 100%;
+  max-inline-size: 26rem;
+}
+
+.v2-branch {
+  --v2-reach: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .v2-branch {
+    --v2-reach: 2.5rem;
+  }
+}
+
+.v2-item {
+  position: relative;
+  padding-inline-start: var(--v2-reach);
+  padding-block-start: var(--s2, 0.5rem);
+}
+
+/* الجذعُ الرأسيّ للعنصر */
+.v2-item::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  inline-size: 2px;
+  block-size: 100%;
+  background: var(--line);
+}
+
+/* الأخيرُ يقف عند مرفقه فتنتهي الشجرةُ نهايةً نظيفة */
+.v2-item:last-child::before {
+  block-size: calc(var(--s2, 0.5rem) + 1.375rem);
+}
+
+/* المرفقُ الأفقيّ إلى الصندوق */
+.v2-item::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-start: calc(var(--s2, 0.5rem) + 1.375rem);
+  inline-size: var(--v2-reach);
+  block-size: 2px;
+  background: var(--line);
+}
+
+/* عقدةُ اللجنة أو المشروع.
+   ⚠️ عرضٌ أقصى للصناديق: بلا سقفٍ يمتدّ كلُّ صندوقٍ إلى آخر السطر فتُقرأ
+   الشجرةُ **جدولًا** — وهو ما رُفض صراحةً. السقفُ يُظهر السلّم. */
+.v2-node {
+  max-inline-size: 44rem;
+  padding: var(--s3, 0.75rem) var(--s4, 1rem);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--on-action);
+  background: var(--action);
+}
+
+.v2-node-latin {
+  letter-spacing: -0.01em;
+}
+
+/* صندوقُ الشخص في الشجرة: مبدوءٌ لا مركزيّ، والاسمُ يتقدّم */
+.v2-person {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3, 0.75rem);
+  inline-size: 100%;
+  max-inline-size: 36rem;
+  min-block-size: 2.75rem;
+  padding: var(--s3, 0.75rem);
+  text-align: start;
+  background: var(--surface-raised);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition:
+    background-color var(--dur-state, 140ms) var(--ease, ease),
+    box-shadow var(--dur-state, 140ms) var(--ease, ease);
+}
+
+.v2-person:hover {
+  background: var(--surface-sunken);
+  box-shadow: inset 0 0 0 1px var(--line-control);
+}
+
+.v2-person:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+.v2-person .vx-name {
+  margin-block-start: 0;
+}
+
+.v2-person .vx-role {
+  flex: 0 0 auto;
+}
+
+.v2-person-leaf {
+  background: var(--surface);
+}
+
+.v2-person-chief {
+  padding: var(--s4, 1rem);
+  box-shadow: inset 0 0 0 2px var(--line-control);
+}
+
+.v2-person-chief .vx-name {
+  font-size: clamp(1.0625rem, 0.98rem + 0.4vw, 1.25rem);
+}
+
+/* ==========================================================================
+   النسخة ج — «الأعمدة»: خمسةُ أعمدةٍ كبيرة، تُضغط فيتوسّع العمود وتظهر
+   وحداتُه. الحركةُ هنا هي الفكرة لا الزينة.
+   ========================================================================== */
+
+.v3-row {
+  display: grid;
+  gap: var(--s4, 1rem);
+}
+
+@media (min-width: 900px) {
+  .v3-row {
+    grid-template-columns: repeat(var(--vx-n), minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.v3-pillar {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-raised);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.v3-pillar[data-open="true"] {
+  box-shadow: inset 0 0 0 2px var(--action);
+}
+
+/* شريطٌ علويٌّ يميّز العمود ويتلوّن حين يُفتح */
+.v3-pillar::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  block-size: 3px;
+  background: var(--line-control);
+  transition: background-color var(--dur-state, 140ms) var(--ease, ease);
+}
+
+.v3-pillar[data-open="true"]::before {
+  background: var(--action);
+}
+
+.v3-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3, 0.75rem);
+  inline-size: 100%;
+  min-block-size: 3.5rem;
+  padding: var(--s4, 1rem) var(--s3, 0.75rem) var(--s3, 0.75rem);
+  text-align: start;
+  transition: background-color var(--dur-state, 140ms) var(--ease, ease);
+}
+
+.v3-trigger:hover {
+  background: var(--bg-sunken, var(--surface-sunken));
+}
+
+.v3-title {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.v3-count {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-quiet);
+}
+
+.v3-body {
+  overflow: hidden;
+}
+
+.v3-inner {
+  display: grid;
+  gap: var(--s2, 0.5rem);
+  padding: 0 var(--s3, 0.75rem) var(--s3, 0.75rem);
+}
+
+.v3-hint {
+  margin-block-start: var(--s3, 0.75rem);
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--ink-quiet);
+}
+
+/* ==========================================================================
+   المشترك: صندوقُ الشخص. **كلُّ شخصٍ في صندوقه** — لا صفوفَ داخل لوحة.
+   ========================================================================== */
+
+.vx-person {
+  display: block;
+  inline-size: 100%;
+  min-block-size: 2.75rem; /* 44px — هدفُ لمسٍ كامل */
+  padding: var(--s3, 0.75rem);
+  text-align: center;
+  background: var(--surface-raised);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition:
+    background-color var(--dur-state, 140ms) var(--ease, ease),
+    box-shadow var(--dur-state, 140ms) var(--ease, ease);
+}
+
+.vx-person:hover {
+  background: var(--surface-sunken);
+  box-shadow: inset 0 0 0 1px var(--line-control);
+}
+
+.vx-person:focus-visible,
+.v1-chief:focus-visible,
+.v3-trigger:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+/* صندوقُ قائدِ وحدة — أهدأ، فيُقرأ العمقُ من اللون */
+.vx-person-deep {
+  background: var(--surface);
+}
+
+.vx-role {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-quiet);
+}
+
+.vx-name {
+  display: block;
+  margin-block-start: 0.125rem;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.vx-has-link {
+  display: inline-block;
+  inline-size: 5px;
+  block-size: 5px;
+  margin-inline-start: var(--s2, 0.5rem);
+  rotate: 45deg;
+  background: var(--action);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vx-person,
+  .v1-chief,
+  .v3-trigger,
+  .v3-pillar::before {
+    transition: none;
+  }
+
+  /* الخطوطُ تُرسم كاملةً لمن طلب تقليل الحركة — `!important` تغلب النمط
+     السطريَّ الذي يكتبه Motion. */
+  .vx-tie,
+  .v2-bus {
+    transform: none !important;
+  }
+}
+
+/* ==========================================================================
+   شريطُ الاختيار — للمعاينة وحدها.
+   ========================================================================== */
+
+.vx-picker {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2, 0.5rem);
+  justify-content: center;
+  padding: var(--s3, 0.75rem) var(--s4, 1rem);
+  background: var(--surface-ink);
+}
+
+.vx-pick {
+  min-block-size: 2.75rem;
+  padding-inline: var(--s4, 1rem);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--on-ink-quiet);
+  box-shadow: inset 0 0 0 1px rgb(249 249 249 / 0.25);
+  transition:
+    color var(--dur-state, 140ms) var(--ease, ease),
+    background-color var(--dur-state, 140ms) var(--ease, ease);
+}
+
+.vx-pick[aria-pressed="true"] {
+  color: var(--charcoal);
+  background: var(--sky);
+  box-shadow: none;
+}
+
+.vx-pick:focus-visible {
+  outline: 3px solid var(--sky);
+  outline-offset: 2px;
+}
