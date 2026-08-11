@@ -119,7 +119,7 @@ export default function AboutPage() {
                   aria-hidden
                   className="mis-slant inline-block h-3.5 w-1 bg-current"
                 />
-                اطّلع على الهيكلة الكاملة
+                اطّلع على الهيكل القيادي
               </Link>
             </aside>
           </div>

@@ -1,31 +1,42 @@
 import type { Metadata } from "next";
 
-import { Leaders } from "@/components/site/leaders";
+import { LeadershipChart } from "@/components/leadership/chart";
 import { PageHeader } from "@/components/site/page-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
-import { COMMITTEES } from "@/content/committees";
+import { newestTerm } from "@/content/leadership";
 import { ABOUT_SECTION } from "@/content/navigation";
 
+import "./structure.css";
+
 export const metadata: Metadata = {
-  title: "هيكلة النادي",
+  title: "الهيكل القيادي",
   description:
-    "الهيكل المعتمد لنادي نظم المعلومات الإدارية: اللجان ووحداتها ونطاق كل واحدة.",
+    "من يقود نادي نظم المعلومات الإدارية هذا الفصل: الرئاسة، ثم اللجان ووحداتها، ثم المشاريع.",
   alternates: { canonical: "/about/structure" },
 };
 
 /**
- * هيكلة النادي.
+ * الهيكل القيادي — «النزول القيادي».
  *
- * لا مخطّط شجريّ مرسوم: على الجوال ينهار أي شجرة إلى فوضى، وقارئ الشاشة
- * لا يقرأ الخطوط. الهيكل هنا قائمة متداخلة — تُقرأ بالعين وبالقارئ سواء.
+ * ⚠️ **هذه الصفحة عكست قرارين كانا مكتوبين هنا**، فلا يُعاد أحدهما ظنًّا
+ * أنه سقط سهوًا:
  *
- * ملاحظة خصوصية: أسماء رؤساء اللجان والوحدات موجودة في العرض المعتمد
- * ولا تُنشر — بقرار الرئاسة. وقد صار لها **موضعٌ جاهز** أعلى الصفحة
- * (`<Leaders />`) يقرأ `LEADERS` من `content/people.ts`؛ والقائمة فارغةٌ
- * فيحذف نفسه، فلا يظهر منه شيء حتى يصدر القرار وتُؤخذ موافقة كل شخص.
+ * 1. **كانت لا تُنشر أسماء.** صارت تُنشر — لأن الهيكل القيادي ينشره النادي
+ *    رسميًّا كلَّ فصل في بطاقةٍ مصمَّمة. حدُّ الاستثناء `content/leadership.ts`
+ *    وهذه الصفحة وحدها؛ وقاعدةُ `content/people.ts` قائمةٌ لم تُلغَ.
+ * 2. **كان لا مخطّط شجريّ.** صار — لكنّ اعتراضَ التعليق القديم بقي محلولًا
+ *    لا متجاهَلًا: الشجرة **قائمةٌ متداخلةٌ دلاليًّا** (`section` ← `h2` ←
+ *    `ol` ← `li`) بترتيبٍ تنازليٍّ صارم، والخطوطُ الواصلةُ زخرفةٌ موسومةٌ
+ *    `aria-hidden`. فقارئُ الشاشة يقرأ الهرم، والعينُ ترى الفروع، ولا
+ *    ينهار شيءٌ على الجوّال لأن المروحة تصير سلسلةً رأسيّةً دون 1024px.
+ *
+ * والمرجعُ شكلًا صفحةُ `/board` في الموقع القديم — طلبها حسام «أنضج وأحسن
+ * وبهوية النادي». الفروقُ مجدولةٌ في رأس `structure.css`.
  */
 export default function StructurePage() {
+  const term = newestTerm();
+
   return (
     <>
       <SiteHeader />
@@ -33,79 +44,13 @@ export default function StructurePage() {
       <main>
         <PageHeader
           id="structure"
-          title="هيكلة النادي"
-          lede="لكل لجنة نطاق واضح، وتحت بعضها وحدات متخصّصة. الطالب ينضم إلى وحدة لها عمل محدّد، لا إلى النادي بصفة عامة."
+          title="الهيكل القيادي"
+          lede="من الرئاسة إلى آخر وحدة: كل من يقود النادي هذا الفصل، ومكانه من الهيكل."
           siblings={ABOUT_SECTION.children}
           currentHref="/about/structure"
         />
 
-        <div className="mx-auto max-w-6xl px-s4 py-s8 sm:px-s7">
-          {/* رأس الهيكل قبل لجانه. يحذف نفسه ما دامت `LEADERS` فارغة —
-              وهي كذلك حتى يصدر قرار الرئاسة بنشر الأسماء. */}
-          <Leaders />
-
-          <ol className="grid gap-s5">
-            {COMMITTEES.map((committee, index) => (
-              <li
-                key={committee.slug}
-                className="rake grid gap-s4 bg-bg-raised p-s5 shadow-[inset_0_0_0_1px_var(--border)] sm:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] sm:gap-s6"
-              >
-                <div>
-                  <p
-                    dir="ltr"
-                    className="text-xs font-bold tabular-nums text-fg-muted"
-                  >
-                    {String(index + 1).padStart(2, "0")}
-                  </p>
-                  <h2 className="mt-s1 font-display text-xl font-semibold">
-                    {committee.name}
-                  </h2>
-                  {committee.reportsToPresidency ? (
-                    <p className="mt-s2 inline-flex items-center gap-s2 text-sm font-medium text-fg-muted">
-                      <span
-                        aria-hidden
-                        className="mis-slant inline-block h-3 w-1 bg-line-strong"
-                      />
-                      بإشراف الرئاسة مباشرة
-                    </p>
-                  ) : null}
-                </div>
-
-                <div>
-                  <p className="max-w-measure leading-relaxed text-fg-muted">
-                    {committee.description}
-                  </p>
-
-                  {committee.units.length > 0 ? (
-                    <>
-                      <h3 className="mt-s5 text-sm font-bold">
-                        الوحدات
-                      </h3>
-                      <ul className="mt-s3 grid gap-s3">
-                        {committee.units.map((unit) => (
-                          <li
-                            key={unit.slug}
-                            /* خصائص منطقية لا فيزيائية: تتبع اتجاه المستند */
-                            className="border-s-2 border-line-control ps-s3"
-                          >
-                            <p className="font-semibold">{unit.name}</p>
-                            <p className="mt-s1 max-w-measure text-sm text-fg-muted">
-                              {unit.description}
-                            </p>
-                          </li>
-                        ))}
-                      </ul>
-                    </>
-                  ) : (
-                    <p className="mt-s4 text-sm text-fg-muted">
-                      تعمل ككتلة واحدة بلا وحدات فرعية.
-                    </p>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
+        <LeadershipChart term={term} />
       </main>
 
       <SiteFooter />

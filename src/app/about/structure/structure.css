@@ -1,0 +1,692 @@
+/* ==========================================================================
+   الهيكل القيادي — شجرةٌ بجذعٍ مركزيّ وفروعٍ متبادلة وجذور.
+
+   المرجع الشكليّ: مخطّط «الشجرة» الذي أرسله حسام (١١ أغسطس ٢٠٢٦): جذعٌ
+   رأسيٌّ في المنتصف، فروعٌ تخرج منه يمينًا ويسارًا بالتناوب وينتهي كلُّ
+   فرعٍ بلوحةٍ مرقَّمة، ثم جذورٌ تتفرّع في الأسفل. وقال: «صُغها بالطريقة
+   التي ترى» — فما اجتُهد فيه:
+
+   | المرجع | هنا | لماذا |
+   |---|---|---|
+   | زوايا دائرية ووصلاتٌ منحنية | حوافُّ حادّة ووصلاتٌ مستقيمة | قاعدةُ الهوية: لا زاويةَ دائريةً واحدة |
+   | ثمانية ألوان زاهية | ألوانُ النادي الخمسة | الهوية |
+   | أرقامٌ زخرفية | أرقامٌ ترتيبيّة حقيقية | الرقم يدلّ لا يزيّن |
+   | لوحاتٌ بنصٍّ صوريّ | لوحةُ اللجنة وفيها قادتُها | المحتوى هو الهيكل |
+   | جذورٌ زخرفية | جذورٌ = المشاريع الثلاثة | الطبقة الثالثة فعلًا |
+
+   ── ما يحكم هذا الملفّ ──────────────────────────────────────────────────
+   · **لا رموز `@theme` جديدة.** في Tailwind v4 صنفٌ يشير إلى رمزٍ غير
+     مسجَّلٍ يخرج **بلا CSS وبلا خطأ بناء** (موثَّقٌ في `globals.css`).
+   · **العزلُ بالانضباط:** ملفُّ CSS يُستورَد من صفحةٍ يصير عامًّا بعد أوّل
+     زيارة، فكلُّ صنفٍ هنا يبدأ بـ`org-` (نفس عقد `admin.css`).
+   · **لا كتلةَ وضعٍ داكن — عمدًا.** الحقلُ داكنٌ في الوضعين (كحليٌّ نهارًا
+     ورماديٌّ ليلًا، تبعًا لـ`--surface-ink` نفسِه الذي تقف عليه ترويسةُ
+     الصفحة)، والنصُّ ثلجيٌّ فوقه في الحالتين. فلا انقلابَ يُنسى نصفُه —
+     وهي المصيدة التي أنتجت 1.32:1 من قبل.
+   · **لا إحداثيّاتٍ فيزيائية ولا SVG:** التبادلُ بـ`align-self` والوصلاتُ
+     بخصائصَ منطقية، فتنقلب مع الاتجاه بلا حساب.
+   ========================================================================== */
+
+.org-field {
+  /* ── لوحةُ الحقل: ثابتةٌ في الوضعين لأن الحقل داكنٌ في الوضعين ──────── */
+  --org-ink: var(--snow);
+  --org-ink-quiet: #afc2d7; /* 5.19:1 على أفتح بقعة في الحقل */
+  /* ⚠️ **لونان لا لون واحد.** السماويُّ الصافي على أفتح بقعةٍ في الحقل
+     (`--surface-ink` نفسُه، أعلى التدرّج) يعطي **4.03:1** مقيسًا — يكفي
+     رسمًا دالًّا (عتبة 3:1) ولا يكفي نصًّا (4.5:1). فالنصُّ على الدرجة
+     المفتَّحة `#a4c5e3` (5.29:1)، والسماويُّ للخطوط والعُقد وحلقة التركيز.
+     نفس تفريق النظام بين `--mark-quiet` و`--on-ink-quiet`. */
+  --org-accent: #a4c5e3; /* نصًّا — 5.29:1 على أفتح بقعة */
+  --org-accent-line: var(--sky); /* رسمًا — 4.03:1، فوق عتبة 3:1 */
+  --org-card: rgb(249 249 249 / 0.06);
+  --org-card-lit: rgb(249 249 249 / 0.11);
+  --org-line: rgb(249 249 249 / 0.22);
+  --org-line-quiet: rgb(249 249 249 / 0.12);
+
+  /* ── الهندسة ────────────────────────────────────────────────────────── */
+  --org-drop: 2rem; /* طولُ الوصلة الرأسية */
+  --org-reach: 3rem; /* امتدادُ الفرع من الجذع إلى اللوحة */
+  --org-gap: 1.25rem; /* الفجوةُ بين الجذور — ويحتاجها حسابُ الشريط */
+  --org-node: 9px; /* ضلعُ العقدة على الجذع */
+
+  position: relative;
+  isolation: isolate;
+  /* يخرج من أرضية الترويسة نفسِها ثم يعمُق — فلا يُرى بينهما خطُّ وصل */
+  background: linear-gradient(
+    to bottom,
+    var(--surface-ink),
+    color-mix(in oklab, var(--surface-ink) 62%, var(--charcoal)) 38%
+  );
+  color: var(--org-ink);
+  overflow-x: clip;
+}
+
+/* حبيبةٌ تكسر تسطيح الأرضية الداكنة — تُحَسّ ولا تُرى، وخلف المحتوى */
+.org-field::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.org-shell {
+  margin-inline: auto;
+  max-width: 64rem;
+  padding-block: var(--s7, 3rem) var(--s9, 6rem);
+  padding-inline: var(--s4, 1rem);
+}
+
+@media (min-width: 640px) {
+  .org-shell {
+    padding-inline: var(--s6, 2rem);
+  }
+}
+
+.org-term {
+  margin-block-end: var(--s6, 2rem);
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--org-ink-quiet);
+}
+
+/* ── الوصلةُ الرأسية بين عقدتين ───────────────────────────────────────── */
+.org-tie {
+  display: block;
+  inline-size: 2px;
+  block-size: var(--org-drop);
+  margin-inline: auto;
+  transform-origin: top;
+  background: var(--org-line);
+}
+
+/* ── قمّةُ الشجرة: الرئاسة على الجذع ──────────────────────────────────── */
+.org-apex {
+  display: grid;
+  justify-items: center;
+  gap: var(--org-drop);
+}
+
+.org-apex > * {
+  position: relative;
+  inline-size: 100%;
+  max-inline-size: 20rem;
+}
+
+/* وصلةٌ في كل فجوة بين بطاقتَي القمّة */
+.org-apex > * + *::before {
+  content: "";
+  position: absolute;
+  inset-block-start: calc(var(--org-drop) * -1);
+  inset-inline-start: calc(50% - 1px);
+  inline-size: 2px;
+  block-size: var(--org-drop);
+  background: var(--org-line);
+}
+
+/* ── فاصلُ الطبقة ─────────────────────────────────────────────────────── */
+.org-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--s4, 1rem);
+  margin-block: var(--org-drop);
+}
+
+.org-divider::before,
+.org-divider::after {
+  content: "";
+  flex: 1 1 0;
+  block-size: 1px;
+  background: var(--org-line-quiet);
+}
+
+.org-divider-label {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--org-accent);
+}
+
+/* ==========================================================================
+   الفروع: جذعٌ مركزيّ ولوحاتٌ تتبادل جهتَيه.
+
+   التبادلُ بـ`align-self` في عمودٍ مرن — لا صفوفَ شبكةٍ محسوبةٍ بـ`calc`
+   على أرقام الأسطر (ليست مدعومةً في كل متصفّح). و`flex-start` في RTL هو
+   اليمين، فالفرعُ الأوّل يمينًا ثم يتبادل.
+   ========================================================================== */
+
+/* ⚠️ الجذعُ خارج قائمة الفروع لا داخلها: لو كان ابنًا لها لأزاح
+   `nth-child` بمقدارِ واحد، فانقلب التبادلُ يمينًا ويسارًا كلَّه. */
+.org-limbs {
+  position: relative;
+  padding-block: var(--org-drop);
+}
+
+.org-branches {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5, 1.5rem);
+}
+
+/* الجذع: خطٌّ يملأ ارتفاع الفروع كلِّها — طولُه من التخطيط لا من قياس */
+.org-trunk {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(50% - 1px);
+  z-index: 0;
+  inline-size: 2px;
+  transform-origin: top;
+  background: var(--org-line);
+}
+
+.org-branch {
+  position: relative;
+  z-index: 1;
+  inline-size: calc(50% - var(--org-reach));
+}
+
+/* الفرعُ الفرديُّ إلى جهة البداية (اليمين في RTL)، والزوجيُّ إلى مقابلها */
+.org-branch:nth-child(odd) {
+  align-self: flex-start;
+}
+
+.org-branch:nth-child(even) {
+  align-self: flex-end;
+}
+
+/* الوصلةُ الأفقية من اللوحة إلى الجذع — على الجهة المواجهة للجذع */
+.org-branch::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 1.75rem;
+  inline-size: var(--org-reach);
+  block-size: 2px;
+  background: var(--org-line);
+}
+
+/* العقدةُ على الجذع نفسِه */
+.org-branch::after {
+  content: "";
+  position: absolute;
+  inset-block-start: calc(1.75rem + 1px - var(--org-node) / 2);
+  inline-size: var(--org-node);
+  block-size: var(--org-node);
+  rotate: 45deg;
+  background: var(--org-accent-line);
+}
+
+.org-branch:nth-child(odd)::before {
+  inset-inline-end: calc(var(--org-reach) * -1);
+}
+
+.org-branch:nth-child(odd)::after {
+  inset-inline-end: calc(var(--org-reach) * -1 - var(--org-node) / 2);
+}
+
+.org-branch:nth-child(even)::before {
+  inset-inline-start: calc(var(--org-reach) * -1);
+}
+
+.org-branch:nth-child(even)::after {
+  inset-inline-start: calc(var(--org-reach) * -1 - var(--org-node) / 2);
+}
+
+/* ⚠️ دون 900px ينتقل الجذع إلى حافّة البداية وتصطفّ الفروع كلُّها إلى
+   جهةٍ واحدة: التبادلُ على شاشةٍ ضيّقة يترك نصفَ العرض فارغًا ويقصّ
+   الأسماء. الشجرةُ تبقى شجرة، لكنّها من جانبٍ واحد. */
+@media (max-width: 899px) {
+  .org-branches {
+    padding-inline-start: calc(var(--org-reach) + 2px);
+  }
+
+  .org-trunk {
+    inset-inline-start: 0;
+  }
+
+  /* ⚠️ يُذكر الانتقاءان معًا: `nth-child` خصوصيّتُه أعلى من `.org-branch`
+     وحدها، فقاعدةٌ بصنفٍ واحدٍ هنا لا تغلب `:nth-child(odd)` أعلاه —
+     فيبقى الفرعُ الفرديُّ على `flex-start` بعرضِ محتواه ويختلّ الرصف. */
+  .org-branch:nth-child(odd),
+  .org-branch:nth-child(even) {
+    align-self: stretch;
+    inline-size: auto;
+  }
+
+  .org-branch:nth-child(odd)::before,
+  .org-branch:nth-child(even)::before {
+    inset-inline-start: calc(var(--org-reach) * -1);
+    inset-inline-end: auto;
+  }
+
+  .org-branch:nth-child(odd)::after,
+  .org-branch:nth-child(even)::after {
+    inset-inline-start: calc(var(--org-reach) * -1 - var(--org-node) / 2 + 1px);
+    inset-inline-end: auto;
+  }
+}
+
+/* ── لوحةُ الفرع ──────────────────────────────────────────────────────── */
+.org-panel {
+  background: var(--org-card);
+  box-shadow: inset 0 0 0 1px var(--org-line-quiet);
+}
+
+.org-panel-head {
+  display: flex;
+  align-items: stretch;
+  gap: var(--s3, 0.75rem);
+  padding-inline-end: var(--s4, 1rem);
+  border-block-end: 1px solid var(--org-line-quiet);
+}
+
+/* اللوحةُ المرقَّمة — الرقمُ ترتيبيٌّ يدلّ على موضع الفرع، لا زخرفة */
+.org-plate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 3rem;
+  padding-inline: var(--s3, 0.75rem);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  /* ⚠️ فحميٌّ لا كحليّ: الكحليُّ `--surface-ink` على السماويّ يعطي
+     **4.07:1** مقيسًا — تحت عتبة النصّ (4.5:1) عند هذا المقاس. والفحميُّ
+     أحدُ الخمسة الرسميّة ويعطي 8.19:1، ولا يتغيّر مع الوضع لأن أرضيةَ
+     اللوحة سماويّةٌ ثابتةٌ في الحالتين. */
+  color: var(--charcoal);
+  background: var(--org-accent-line);
+}
+
+.org-panel-title {
+  align-self: center;
+  padding-block: var(--s3, 0.75rem);
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--org-ink);
+  text-wrap: balance;
+}
+
+.org-panel-title-latin {
+  letter-spacing: -0.01em;
+}
+
+.org-panel-body {
+  padding: var(--s3, 0.75rem);
+}
+
+/* فاصلُ الوحدات داخل اللوحة */
+.org-unit-label {
+  display: flex;
+  align-items: center;
+  gap: var(--s3, 0.75rem);
+  margin-block: var(--s3, 0.75rem) var(--s2, 0.5rem);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--org-ink-quiet);
+}
+
+.org-unit-label::after {
+  content: "";
+  flex: 1 1 auto;
+  block-size: 1px;
+  background: var(--org-line-quiet);
+}
+
+/* ── صفُّ الشخص داخل اللوحة ───────────────────────────────────────────
+   الاسمُ يتقدّم والمسمّى يليه هادئًا — التسلسلُ يُقرأ من الوزن لا من
+   الترتيب وحده. */
+.org-person {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3, 0.75rem);
+  inline-size: 100%;
+  min-block-size: 2.75rem; /* 44px — هدفُ لمسٍ كامل */
+  padding: var(--s2, 0.5rem) var(--s3, 0.75rem);
+  text-align: start;
+  transition: background-color var(--dur-state, 140ms) var(--ease, ease);
+}
+
+.org-person + .org-person {
+  border-block-start: 1px solid var(--org-line-quiet);
+}
+
+.org-person:hover {
+  background: var(--org-card-lit);
+}
+
+.org-person:focus-visible,
+.org-card:focus-visible {
+  outline: 3px solid var(--org-accent-line);
+  outline-offset: -3px;
+}
+
+.org-person-name {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--org-ink);
+}
+
+.org-person-role {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--org-ink-quiet);
+}
+
+/* نقطةٌ تدلّ على أن خلف الصفّ رابطًا — ومعها نصٌّ للقارئ */
+.org-has-link {
+  display: inline-block;
+  inline-size: 5px;
+  block-size: 5px;
+  margin-inline-start: var(--s2, 0.5rem);
+  rotate: 45deg;
+  background: var(--org-accent-line);
+}
+
+/* ── بطاقةُ القمّة ────────────────────────────────────────────────────── */
+.org-card {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  min-block-size: 2.75rem;
+  padding: var(--s5, 1.5rem) var(--s4, 1rem);
+  text-align: center;
+  background: var(--org-card-lit);
+  box-shadow: inset 0 0 0 1px var(--org-line);
+  transition:
+    background-color var(--dur-state, 140ms) var(--ease, ease),
+    box-shadow var(--dur-state, 140ms) var(--ease, ease);
+}
+
+.org-card:hover {
+  box-shadow: inset 0 0 0 1px var(--org-accent-line);
+}
+
+/* شريطٌ سماويٌّ يعلو الرأس وحده — يميّز القمّة عمّا تحتها */
+.org-card-apex::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  block-size: 2px;
+  background: var(--org-accent-line);
+}
+
+.org-card-lead {
+  padding-block: var(--s4, 1rem);
+  background: var(--org-card);
+}
+
+.org-role {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--org-ink-quiet);
+}
+
+.org-name {
+  display: block;
+  margin-block-start: 0.25rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--org-ink);
+  text-wrap: balance;
+}
+
+.org-name-apex {
+  font-size: clamp(1.375rem, 1.1rem + 1.2vw, 1.875rem);
+}
+
+.org-name-lead {
+  font-size: clamp(1.0625rem, 0.98rem + 0.4vw, 1.25rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .org-card,
+  .org-person {
+    transition: none;
+  }
+
+  /* ⚠️ حزامٌ فوق حمّالة: `MotionConfig reducedMotion="user"` يقفز بالحركة
+     إلى قيمتها النهائية، لكنّ الخطّ يبقى معتمدًا على تشغيل الجافاسكربت
+     وعلى بلوغه الشاشة. و`!important` تغلب النمط السطريّ الذي يكتبه Motion،
+     فيُرسم الوصلُ كاملًا لمن طلب تقليل الحركة مهما جرى. */
+  .org-tie,
+  .org-trunk,
+  .org-bar {
+    transform: none !important;
+  }
+}
+
+/* ==========================================================================
+   الجذور: المشاريع الثلاثة تتفرّع في الأسفل.
+
+   الشريطُ الأفقيّ يمتدّ من **مركز أوّل جذرٍ إلى مركز آخره** بالضبط: نصفُ
+   عمودٍ إزاحةً من كلّ جهة، مشتقًّا من عددها (`--org-n`) والفجوة — فلا رقمَ
+   مكتوبٌ بيدٍ يتخلّف عن الشبكة.
+   ========================================================================== */
+
+.org-roots {
+  position: relative;
+  padding-block-start: var(--org-drop);
+}
+
+.org-bar {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: calc(
+    (100% - (var(--org-n) - 1) * var(--org-gap)) / (var(--org-n) * 2)
+  );
+  block-size: 2px;
+  transform-origin: center;
+  background: var(--org-line);
+}
+
+.org-roots-grid {
+  display: grid;
+  gap: var(--org-drop);
+}
+
+@media (min-width: 900px) {
+  .org-roots-grid {
+    grid-template-columns: repeat(var(--org-n), minmax(0, 1fr));
+    gap: var(--org-gap);
+    align-items: start;
+  }
+}
+
+@media (max-width: 899px) {
+  .org-bar {
+    display: none;
+  }
+}
+
+.org-root {
+  position: relative;
+}
+
+/* رأسُ الجذر بلا لوحةٍ مرقَّمة، فيحتاج حشوتَه من جهة البداية */
+.org-root .org-panel-head {
+  padding-inline-start: var(--s4, 1rem);
+}
+
+.org-root::before {
+  content: "";
+  position: absolute;
+  inset-block-start: calc(var(--org-drop) * -1);
+  inset-inline-start: calc(50% - 1px);
+  inline-size: 2px;
+  block-size: var(--org-drop);
+  background: var(--org-line);
+}
+
+/* جذعُ الجذور — على الجوّال وحده. فوق 900px يصل الشريطُ الأفقيُّ بينها،
+   وتحتها تصير سلسلةً رأسيّةً فتحتاج جذعًا كالفروع تمامًا. */
+.org-roots-trunk {
+  display: none;
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: 0;
+  inline-size: 2px;
+  background: var(--org-line);
+}
+
+@media (max-width: 899px) {
+  .org-roots-trunk {
+    display: block;
+  }
+
+  .org-roots-grid {
+    padding-inline-start: calc(var(--org-reach) + 2px);
+  }
+
+  /* الوصلةُ تصير أفقيّةً من الجذع إلى اللوحة — كما في الفروع */
+  .org-root::before {
+    inset-block-start: 1.75rem;
+    inset-inline-start: calc((var(--org-reach) + 2px) * -1);
+    inline-size: var(--org-reach);
+    block-size: 2px;
+  }
+}
+
+/* ── لوحُ الشخص ─────────────────────────────────────────────────────────
+   `<dialog>` أصليّ لا نافذةٌ معلّقة: الطبقةُ العليا تنجو من `containing
+   block` الذي ينشئه أيُّ تحويلٍ في الشجرة، ومعها حصرُ البؤرة وEsc بلا كود.
+   وهو **خارج الحقل الحبريّ** فيتبع ألوان الصفحة العادية في الوضعين. */
+.org-dialog {
+  inline-size: min(26rem, 100%);
+  max-inline-size: 100%;
+  margin: auto auto 0; /* ورقةٌ سفلية على الجوّال */
+  padding: 0;
+  border: 0;
+  color: var(--ink);
+  background: var(--surface-raised);
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 -18px 60px rgb(0 0 0 / 0.3);
+}
+
+@media (min-width: 640px) {
+  .org-dialog {
+    margin: auto;
+    box-shadow:
+      inset 0 0 0 1px var(--line),
+      0 24px 70px rgb(0 0 0 / 0.32);
+  }
+}
+
+.org-dialog::backdrop {
+  background: rgb(1 28 64 / 0.66);
+}
+
+.org-dialog-panel {
+  position: relative;
+  padding: var(--s6, 2rem) var(--s5, 1.5rem) var(--s5, 1.5rem);
+}
+
+.org-dialog-panel::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  block-size: 3px;
+  background: var(--action);
+}
+
+.org-dialog-tick {
+  display: block;
+  inline-size: 2rem;
+  block-size: 2px;
+  background: var(--action);
+}
+
+.org-dialog-role {
+  margin-block-start: var(--s3, 0.75rem);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--ink-quiet);
+}
+
+.org-dialog-name {
+  margin-block-start: 0.25rem;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.org-dialog-path {
+  margin-block-start: var(--s5, 1.5rem);
+  font-size: 0.875rem;
+  line-height: 1.9;
+  color: var(--ink-quiet);
+}
+
+.org-dialog-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 2.75rem;
+  min-block-size: 2.75rem;
+  color: var(--ink-quiet);
+  transition: color var(--dur-state, 140ms) var(--ease, ease);
+}
+
+.org-dialog-close:hover {
+  color: var(--ink);
+}
+
+.org-dialog-close:focus-visible,
+.org-linkedin:focus-visible {
+  outline: 2px solid var(--action);
+  outline-offset: 2px;
+}
+
+.org-linkedin {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-start: var(--s5, 1.5rem);
+  min-block-size: 2.75rem;
+  padding-inline: var(--s4, 1rem);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--on-action);
+  background: var(--action);
+  transition: background-color var(--dur-state, 140ms) var(--ease, ease);
+}
+
+.org-linkedin:hover {
+  background: var(--action-hover);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .org-dialog[open] .org-dialog-panel {
+    animation: org-panel-in 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@keyframes org-panel-in {
+  from {
+    transform: translateY(16px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}

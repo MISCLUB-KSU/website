@@ -31,7 +31,7 @@ export const ABOUT_SECTION: NavSection = {
   href: "/about",
   children: [
     { label: "نبذة عن النادي", href: "/about" },
-    { label: "هيكلة النادي", href: "/about/structure" },
+    { label: "الهيكل القيادي", href: "/about/structure" },
     { label: "اللجان", href: "/committees" },
     { label: "الشراكات", href: "/about/partnerships" },
   ],

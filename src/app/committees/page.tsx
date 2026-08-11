@@ -73,12 +73,12 @@ export default function CommitteesPage() {
           </ul>
 
           <p className="mt-s6 text-sm text-fg-muted">
-            تبحث عن الهيكل الكامل ونطاق كل لجنة؟{" "}
+            تبحث عن من يقود كل لجنة هذا الفصل؟{" "}
             <Link
               href="/about/structure"
               className="font-medium text-accent underline decoration-line-control underline-offset-4 transition-colors hover:text-accent-hover hover:decoration-current"
             >
-              صفحة هيكلة النادي
+              صفحة الهيكل القيادي
             </Link>
           </p>
         </div>

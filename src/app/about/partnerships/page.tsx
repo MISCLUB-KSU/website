@@ -131,8 +131,11 @@ export default function PartnershipsPage() {
                 مخصّصة للرعايات والشراكات.
               </p>
             </div>
+            {/* ⚠️ كان يشير إلى `/about/structure`، وتلك صارت **الهيكل
+                القيادي** (من يقود) لا وصفَ نطاق اللجنة. ونصُّ الرابط يَعِد
+                بالتعريف باللجنة، فمكانُه صفحتُها. */}
             <Link
-              href="/about/structure"
+              href="/committees/public-relations"
               className="inline-flex min-h-11 items-center gap-s2 font-medium text-accent underline decoration-line-control underline-offset-4 transition-colors hover:text-accent-hover hover:decoration-current"
             >
               <span
