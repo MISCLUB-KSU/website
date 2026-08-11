@@ -1,0 +1,286 @@
+/* ==========================================================================
+   «الغامرة» — واجهة الهيكل القيادي بلغة Immersive Garden / Active Theory.
+
+   المرجع اختاره حسام (١١ أغسطس ٢٠٢٦): immersive-g.com وactivetheory.net.
+   ما أُخذ منهما — بعد قراءة الأوّل فعليًّا لا من الذاكرة:
+
+   | في المرجع | هنا |
+   |---|---|
+   | أرضيةٌ فاتحةٌ رماديّةٌ دافئة (لا أبيض ولا داكن) | نفسها، مشتقّةً من ثلج النادي |
+   | preloader: علامة + خطّ تقدّم يمتدّ | نفسه، بعلامة النادي |
+   | عنوانٌ عملاقٌ بفواصل أسطرٍ يدويّة | نفسه، عربيًّا |
+   | كلماتٌ تصعد من قناع | نفسه — لكن بـCSS لا بجافاسكربت (انظر أدناه) |
+   | وسائطُ ملءَ الشاشة لكل مشروع | **لا نملكها** — العلامة المجسَّمة بديلًا |
+   | حجبُ المتصفّحات غير المدعومة | **مرفوض** — الهيكل HTML تحت التجربة دائمًا |
+
+   ⚠️ **الكشفُ بـCSS لا بـMotion — عمدًا.** قاعدةُ المستودع أن لا يُخفى
+   محتوًى بانتظار حركة. لو كُتب هذا بـ`initial={{y:'100%'}}` لبقي العنوانُ
+   **مخفيًّا تمامًا** لو تعثّرت الجافاسكربت. وحركةُ CSS تعمل بلا جافاسكربت
+   أصلًا، وتنطفئ عند `prefers-reduced-motion` فيبقى النصّ ظاهرًا في مكانه.
+   ========================================================================== */
+
+.im-stage {
+  --im-paper: #eae9e6; /* رماديٌّ دافئ — من ثلج النادي لا أبيض صريح */
+  --im-ink: #12141a;
+  --im-quiet: #5d6068;
+  --im-line: rgb(18 20 26 / 0.16);
+  --im-accent: var(--primary, #034ca6);
+
+  position: relative;
+  isolation: isolate;
+  background: var(--im-paper);
+  color: var(--im-ink);
+  overflow-x: clip;
+}
+
+/* ── الواجهة: طيّةٌ كاملة ─────────────────────────────────────────────── */
+.im-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-block-size: calc(100svh - var(--header-h, 76px));
+  padding-block: var(--s8, 4rem);
+  padding-inline: var(--s4, 1rem);
+}
+
+@media (min-width: 768px) {
+  .im-hero {
+    padding-inline: var(--s7, 3rem);
+  }
+}
+
+/* العلامة المجسَّمة — زخرفةٌ لا محتوى.
+   ⚠️ **تُزاح إلى ركنٍ فارغ ولا تُترك في المنتصف.** قِيست في المنتصف أوّلًا
+   فوقعت تحت العنوان وسطرِ الشرح معًا: النصُّ فحميٌّ والعلامةُ زرقاء، فسقطت
+   قراءةُ السطر. المرجعُ يضع وسائطَه حيث لا نصّ فوقها — والقاعدة أن النصَّ
+   لا يوضع على سطحٍ متحرّكٍ لا يُضمن لونُه. */
+.im-canvas {
+  position: absolute;
+  inset: auto;
+  inset-inline-end: -6%;
+  inset-block-end: -8%;
+  inline-size: 56%;
+  block-size: 62%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+@media (max-width: 767px) {
+  .im-canvas {
+    inline-size: 86%;
+    block-size: 42%;
+    opacity: 0.7;
+  }
+}
+
+.im-hero > *:not(.im-canvas) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── سطرُ الاستهلال ───────────────────────────────────────────────────── */
+.im-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--s3, 0.75rem);
+  margin-block-end: var(--s6, 2rem);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--im-quiet);
+}
+
+.im-eyebrow::after {
+  content: "";
+  flex: 1 1 auto;
+  block-size: 1px;
+  background: var(--im-line);
+}
+
+/* ── العنوان العملاق ──────────────────────────────────────────────────
+   المقاسُ يقارب عرضَ الشاشة كما في المرجع: سطرٌ واحدٌ يملأ الطيّة. */
+.im-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.75rem, 0.9rem + 9.4vw, 9.5rem);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+/* كلُّ كلمةٍ في قناعٍ تصعد منه */
+.im-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  /* ⚠️ الفسحةُ لازمة: `overflow: hidden` على سطرٍ عربيٍّ يقصّ النوازل
+     (ي · ج · ع) لأن صندوقَ السطر أقصرُ من الخطّ. مقيسٌ على «Noto Kufi». */
+  padding-block-end: 0.14em;
+  margin-block-end: -0.14em;
+}
+
+.im-word > span {
+  display: inline-block;
+  animation: im-rise 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 90ms + 350ms);
+}
+
+@keyframes im-rise {
+  from {
+    transform: translateY(105%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.im-lede {
+  max-inline-size: 34ch;
+  margin-block-start: var(--s6, 2rem);
+  font-size: clamp(1rem, 0.95rem + 0.3vw, 1.1875rem);
+  line-height: 1.9;
+  color: var(--im-quiet);
+  animation: im-fade 1s ease both;
+  animation-delay: 900ms;
+}
+
+@keyframes im-fade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── إشارةُ النزول ────────────────────────────────────────────────────── */
+.im-scroll {
+  display: flex;
+  align-items: center;
+  gap: var(--s3, 0.75rem);
+  margin-block-start: auto;
+  padding-block-start: var(--s7, 3rem);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--im-quiet);
+}
+
+.im-scroll-rail {
+  position: relative;
+  inline-size: 4.5rem;
+  block-size: 1px;
+  overflow: hidden;
+  background: var(--im-line);
+}
+
+.im-scroll-rail::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inline-size: 40%;
+  background: var(--im-ink);
+  animation: im-sweep 2.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* ⚠️ الاتجاه: الكنسُ يمشي مع القراءة — يمينًا إلى يسار في العربية */
+@keyframes im-sweep {
+  from {
+    transform: translateX(150%);
+  }
+  to {
+    transform: translateX(-250%);
+  }
+}
+
+:dir(ltr) .im-scroll-rail::after {
+  animation-name: im-sweep-ltr;
+}
+
+@keyframes im-sweep-ltr {
+  from {
+    transform: translateX(-150%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+/* ── لوحُ التحميل ─────────────────────────────────────────────────────
+   ⚠️ **لا يحجب المحتوى.** المحتوى مُصيَّرٌ تحته من الخادم، واللوحُ طبقةٌ
+   تنسحب. لو تعثّرت الجافاسكربت فقواعدُ `animation` تسحبه وحدها، فلا يبقى
+   ستارٌ على صفحةٍ جاهزة. */
+.im-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  gap: var(--s5, 1.5rem);
+  background: var(--im-paper);
+  animation: im-curtain 600ms cubic-bezier(0.65, 0, 0.35, 1) 1500ms both;
+  pointer-events: none;
+}
+
+@keyframes im-curtain {
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+.im-loader-mark {
+  inline-size: clamp(7rem, 18vw, 12rem);
+  color: var(--im-ink);
+}
+
+.im-loader-rail {
+  position: relative;
+  inline-size: min(22rem, 60vw);
+  block-size: 1px;
+  background: var(--im-line);
+}
+
+.im-loader-rail::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 100%;
+  transform-origin: inline-start;
+  background: var(--im-ink);
+  animation: im-load 1400ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+@keyframes im-load {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ── تقليل الحركة: كلُّ شيء في مكانه فورًا ───────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .im-word > span,
+  .im-lede,
+  .im-loader-rail::after {
+    animation: none;
+  }
+
+  .im-scroll-rail::after {
+    animation: none;
+    inline-size: 100%;
+  }
+
+  /* اللوحُ يختفي بلا انزلاق — ولا يبقى ستارًا */
+  .im-loader {
+    animation: none;
+    display: none;
+  }
+}

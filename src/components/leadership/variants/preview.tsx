@@ -11,6 +11,7 @@ import { PillarsVariant } from "@/components/leadership/variants/pillars";
 import { PosterVariant } from "@/components/leadership/variants/poster";
 import { TreeVariant } from "@/components/leadership/variants/tree";
 import { LeadershipStage } from "@/components/leadership/stage/stage";
+import { ImmersiveHero } from "@/components/leadership/immersive/hero";
 import { countPeople, type LeadershipTerm } from "@/content/leadership";
 
 /**
@@ -23,6 +24,11 @@ import { countPeople, type LeadershipTerm } from "@/content/leadership";
  */
 
 const VARIANTS = [
+  {
+    id: "immersive",
+    label: "هـ · الغامرة",
+    note: "الواجهة وحدها — بلغة immersive-g.com: خطّ عملاق تصعد كلماته، وعلامة مجسّمة، ولوح تحميل.",
+  },
   {
     id: "stage",
     label: "د · المسرح",
@@ -48,7 +54,7 @@ const VARIANTS = [
 type VariantId = (typeof VARIANTS)[number]["id"];
 
 export function VariantsPreview({ term }: { term: LeadershipTerm }) {
-  const [variant, setVariant] = useState<VariantId>("stage");
+  const [variant, setVariant] = useState<VariantId>("immersive");
   const [view, setView] = useState<PersonView | null>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
 
@@ -99,6 +105,7 @@ export function VariantsPreview({ term }: { term: LeadershipTerm }) {
           </p>
 
           <OpenPersonProvider value={openPerson}>
+            {variant === "immersive" ? <ImmersiveHero term={term} /> : null}
             {variant === "stage" ? <LeadershipStage term={term} /> : null}
             {variant === "poster" ? <PosterVariant term={term} /> : null}
             {variant === "tree" ? <TreeVariant term={term} /> : null}
