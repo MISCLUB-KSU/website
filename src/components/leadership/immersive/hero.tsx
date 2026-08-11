@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import type { CSSProperties } from "react";
 
 import { countPeople, type LeadershipTerm } from "@/content/leadership";
-import { MARK_POINTS, MARK_VIEWBOX } from "@/lib/geometry.generated";
 
 import "./immersive.css";
 
@@ -48,22 +47,6 @@ function Title({ text }: { text: string }) {
   );
 }
 
-function MarkGlyph({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox={MARK_VIEWBOX}
-      aria-hidden
-      focusable="false"
-      fill="currentColor"
-    >
-      {MARK_POINTS.map((points) => (
-        <polygon key={points} points={points} />
-      ))}
-    </svg>
-  );
-}
-
 export function ImmersiveHero({ term }: { term: LeadershipTerm }) {
   const calm = useReducedMotion();
 
@@ -72,12 +55,6 @@ export function ImmersiveHero({ term }: { term: LeadershipTerm }) {
      تكديسٍ ثانٍ. */
   return (
     <>
-      {/* لوحُ التحميل — طبقةٌ تنسحب، والمحتوى تحتها مُصيَّرٌ من الخادم */}
-      <div className="im-loader" aria-hidden>
-        <MarkGlyph className="im-loader-mark" />
-        <span className="im-loader-rail" />
-      </div>
-
       <section className="im-hero" aria-labelledby="im-title">
         {calm ? null : (
           <div className="im-canvas" aria-hidden>

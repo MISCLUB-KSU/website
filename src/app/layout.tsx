@@ -4,6 +4,10 @@ import Script from "next/script";
 import { SITE_URL } from "@/lib/site";
 
 import { MotionProvider } from "@/components/motion";
+import {
+  CURTAIN_INIT_SCRIPT,
+  LoadCurtain,
+} from "@/components/site/load-curtain";
 import { THEME_INIT_SCRIPT } from "@/components/site/theme-toggle";
 import "./globals.css";
 
@@ -90,6 +94,15 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <Script id="mis-theme-init" strategy="beforeInteractive">
           {THEME_INIT_SCRIPT}
         </Script>
+        {/* يضع `data-loaded` قبل أوّل رسم، فيعبر ستارُ التحميل مرّةً في
+            الجلسة لا في كلِّ صفحة. وفشلُه آمنٌ في الاتجاهين — التعليل
+            كاملًا في رأس `load-curtain.tsx`. */}
+        <Script id="mis-curtain-init" strategy="beforeInteractive">
+          {CURTAIN_INIT_SCRIPT}
+        </Script>
+        {/* الستارُ **قبل** المحتوى في الشجرة: هو زخرفةٌ `aria-hidden` لا
+            تبتلع ضغطة، وتنسحب بـCSS وحدها. */}
+        <LoadCurtain />
         {/* طبقة الحركة — تُوقف نفسها لمن طلب تقليل الحركة. لا تُخفي محتوى:
             انظر القاعدة في رأس `components/motion.tsx`. */}
         <MotionProvider>{children}</MotionProvider>

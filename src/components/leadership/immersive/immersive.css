@@ -7,7 +7,7 @@
    | في المرجع | هنا |
    |---|---|
    | أرضيةٌ فاتحةٌ رماديّةٌ دافئة (لا أبيض ولا داكن) | نفسها، مشتقّةً من ثلج النادي |
-   | preloader: علامة + خطّ تقدّم يمتدّ | نفسه، بعلامة النادي |
+   | preloader: علامة + خطّ تقدّم يمتدّ | **رُقّي للموقع كلِّه** — `load-curtain.tsx` |
    | عنوانٌ عملاقٌ بفواصل أسطرٍ يدويّة | نفسه، عربيًّا |
    | كلماتٌ تصعد من قناع | نفسه — لكن بـCSS لا بجافاسكربت (انظر أدناه) |
    | وسائطُ ملءَ الشاشة لكل مشروع | **لا نملكها** — العلامة المجسَّمة بديلًا |
@@ -211,77 +211,16 @@
   }
 }
 
-/* ── لوحُ التحميل ─────────────────────────────────────────────────────
-   ⚠️ **لا يحجب المحتوى.** المحتوى مُصيَّرٌ تحته من الخادم، واللوحُ طبقةٌ
-   تنسحب. لو تعثّرت الجافاسكربت فقواعدُ `animation` تسحبه وحدها، فلا يبقى
-   ستارٌ على صفحةٍ جاهزة. */
-.im-loader {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: grid;
-  place-items: center;
-  gap: var(--s5, 1.5rem);
-  background: var(--im-paper);
-  animation: im-curtain 600ms cubic-bezier(0.65, 0, 0.35, 1) 1500ms both;
-  pointer-events: none;
-}
-
-@keyframes im-curtain {
-  to {
-    transform: translateY(-100%);
-  }
-}
-
-.im-loader-mark {
-  inline-size: clamp(7rem, 18vw, 12rem);
-  color: var(--im-ink);
-}
-
-.im-loader-rail {
-  position: relative;
-  inline-size: min(22rem, 60vw);
-  block-size: 1px;
-  background: var(--im-line);
-}
-
-.im-loader-rail::after {
-  content: "";
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  inline-size: 100%;
-  transform-origin: inline-start;
-  background: var(--im-ink);
-  animation: im-load 1400ms cubic-bezier(0.65, 0, 0.35, 1) both;
-}
-
-@keyframes im-load {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
 /* ── تقليل الحركة: كلُّ شيء في مكانه فورًا ───────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .im-word > span,
-  .im-lede,
-  .im-loader-rail::after {
+  .im-lede {
     animation: none;
   }
 
   .im-scroll-rail::after {
     animation: none;
     inline-size: 100%;
-  }
-
-  /* اللوحُ يختفي بلا انزلاق — ولا يبقى ستارًا */
-  .im-loader {
-    animation: none;
-    display: none;
   }
 }
 

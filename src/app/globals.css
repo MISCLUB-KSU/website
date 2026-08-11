@@ -988,3 +988,79 @@ html.mark-morphing [data-mark-static] {
     overflow-x: auto;
   }
 }
+
+/* ==========================================================================
+   لوحُ التحميل — ستارٌ يعبر مرّةً في الجلسة.
+
+   وُلد في تجربة صفحة الهيكل واختاره حسام للموقع كلِّه (١١ أغسطس ٢٠٢٦).
+   المنطقُ والضماناتُ الثلاثة موثَّقةٌ في `components/site/load-curtain.tsx`؛
+   وهذا الملفّ يحمل الشكلَ وحده.
+
+   ⚠️ **الألوان رموزٌ لا قيمٌ ثابتة.** الستارُ يُرسم قبل أول محتوى، ونصُّ
+   الوضع (`data-theme`) يسبقه، فـ`--surface` صحيحةٌ عند الرسم. ولو ثُبّت
+   لونٌ فاتحٌ هنا لومض الستارُ أبيضَ في وجه من يفتح الموقع ليلًا.
+   ========================================================================== */
+
+.load-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  gap: var(--s5);
+  background: var(--surface);
+  /* لا يبتلع ضغطةً أبدًا — ولو علق لبقي الموقعُ قابلًا للاستعمال */
+  pointer-events: none;
+  animation: load-lift 450ms cubic-bezier(0.65, 0, 0.35, 1) 950ms both;
+}
+
+@keyframes load-lift {
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+.load-mark {
+  inline-size: clamp(6rem, 16vw, 10rem);
+  color: var(--mark);
+}
+
+.load-rail {
+  position: relative;
+  inline-size: min(20rem, 56vw);
+  block-size: 1px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.load-rail::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 100%;
+  transform-origin: inline-start;
+  background: var(--action);
+  animation: load-draw 900ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+@keyframes load-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* عُبر في هذي الجلسة — فلا يتكرّر في كلِّ صفحة */
+:root[data-loaded="1"] .load-curtain {
+  display: none;
+}
+
+/* ومن طلب تقليل الحركة لا يرى ستارًا أصلًا */
+@media (prefers-reduced-motion: reduce) {
+  .load-curtain {
+    display: none;
+  }
+}
