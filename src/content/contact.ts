@@ -37,7 +37,5 @@ export const CONTACT_REASONS = [
   {
     title: "المشاريع والفعاليات",
     body: "استفسار عن مشروع من مشاريع النادي أو مشاركة فيه.",
-    href: "/projects",
-    hrefLabel: "تصفّح المشاريع",
   },
 ] as const;

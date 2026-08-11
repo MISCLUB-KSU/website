@@ -2,7 +2,6 @@ import type { MetadataRoute } from "next";
 
 import { COMMITTEES } from "@/content/committees";
 import { POSTS } from "@/content/posts";
-import { PROJECTS } from "@/content/projects";
 import { SITE_URL } from "@/lib/site";
 
 /**
@@ -10,7 +9,7 @@ import { SITE_URL } from "@/lib/site";
  *
  * ⚠️ **مشتقّةٌ من المحتوى لا مكتوبةٌ بيدٍ.** لو كُتبت قائمةً ثابتة لصارت
  * تكذب عند أول مشروعٍ يُضاف أو لجنةٍ تُحذف — وقد حذفنا «لجنة المشاريع»
- * اليوم فعلًا. وهنا تُبنى من `COMMITTEES` و`PROJECTS` و`POSTS` أنفسها،
+ * اليوم فعلًا. وهنا تُبنى من `COMMITTEES` و`POSTS` أنفسها،
  * فتصحّ ما دامت هي تصحّ.
  *
  * ⚠️⚠️ **ولا تُدرج ما منعه `robots.ts`**: اللوحة، والروابط المباشرة،
@@ -45,8 +44,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     page("/committees", 0.9),
     ...COMMITTEES.map((c) => page(`/committees/${c.slug}`, 0.8)),
 
-    page("/projects", 0.9),
-    ...PROJECTS.map((p) => page(`/projects/${p.slug}`, 0.8)),
+    /* ⚠️ المشاريع خارج الخريطة ما دامت مغلقة: الفهرس `noindex` والصفحات
+       المنفردة تُوجَّه إليه، وإدراجُ ما لا يُفهرس يناقض الخريطة نفسها.
+       تُعاد هذي السطور عند الفتح. */
 
     page("/about", 0.7),
     page("/about/structure", 0.6),

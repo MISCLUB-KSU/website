@@ -123,12 +123,19 @@ export default function ContactPage() {
                     <p className="mt-1 text-[0.84rem] leading-relaxed text-fg-muted">
                       {reason.body}
                     </p>
-                    <Link
-                      href={reason.href}
-                      className="mt-1 inline-flex min-h-11 items-center text-[0.84rem] font-medium text-accent underline decoration-line-control underline-offset-4 transition-colors hover:text-accent-hover hover:decoration-current"
-                    >
-                      {reason.hrefLabel}
-                    </Link>
+                    {/* ⚠️ **الرابط اختياريّ.** بطاقةُ «المشاريع والفعاليات»
+                        بلا رابطٍ ما دامت صفحةُ المشاريع مغلقة — وإرسالُ من
+                        يسأل عن مشروعٍ إلى صفحة «ترقّبونا» ثم إعادتُه منها
+                        إلى هنا حلقةٌ مفرغة. والبطاقة تامّةٌ بلا رابط: هو
+                        على صفحة التواصل أصلًا، والوسائل أمامه. */}
+                    {"href" in reason ? (
+                      <Link
+                        href={reason.href}
+                        className="mt-1 inline-flex min-h-11 items-center text-[0.84rem] font-medium text-accent underline decoration-line-control underline-offset-4 transition-colors hover:text-accent-hover hover:decoration-current"
+                      >
+                        {reason.hrefLabel}
+                      </Link>
+                    ) : null}
                   </li>
                 ))}
               </ul>

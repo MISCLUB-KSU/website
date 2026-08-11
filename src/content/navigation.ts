@@ -41,7 +41,10 @@ export const ABOUT_SECTION: NavSection = {
 export const NAVIGATION: readonly NavSection[] = [
   { label: "الرئيسية", href: "/" },
   { label: "الإنجازات", href: "/achievements" },
-  { label: "المشاريع", href: "/projects" },
+  /* ⚠️ «المشاريع» محجوبةٌ من الشريط والتذييل — الصفحة مغلقةٌ مؤقّتًا حتى
+     تجهز شعارات المشاريع (١٠ أغسطس ٢٠٢٦). تُعاد هنا وفي `FOOTER_LINKS`
+     عند الفتح. والصفحة نفسها تعمل وتعرض «ترقّبونا» لمن وصلها من رابطٍ
+     قديم — انظر `src/app/projects/page.tsx`. */
   ABOUT_SECTION,
   { label: "تواصل معنا", href: "/contact" },
   { label: "الأسئلة الشائعة", href: "/faq" },
@@ -53,11 +56,14 @@ export const NAVIGATION: readonly NavSection[] = [
  */
 export const FOOTER_LINKS: readonly NavLink[] = [
   { label: "الإنجازات", href: "/achievements" },
-  { label: "المشاريع", href: "/projects" },
+  /* «المشاريع» مغلقةٌ مؤقّتًا — انظر التعليق في `NAVIGATION` أعلاه */
   { label: "المقالات", href: "/posts" },
   { label: "الأسئلة الشائعة", href: "/faq" },
   { label: "قدِّم للعضوية", href: "/join" },
 ];
 
 /** رابط الإجراء الوحيد في الشريط — منفصل عن التنقّل عمدًا. */
-export const PRIMARY_ACTION = { label: "قدِّم للعضوية", href: "/join" } as const;
+export const PRIMARY_ACTION = {
+  label: "قدِّم للعضوية",
+  href: "/join",
+} as const;
