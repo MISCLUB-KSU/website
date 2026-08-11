@@ -155,8 +155,20 @@ export function ApplicationsTable({ rows }: Props) {
     [counts, scored, rows],
   );
 
+  /* ⚠️ **على الجوّال تنقّلٌ لا تراصّ.** التخطيطُ سيّدٌ وتفصيلٌ جنبًا لجنب
+     على الحاسب؛ وعلى الجوّال كانا ينهاران فوق بعضهما فيقع الملفُّ أسفل
+     قائمةٍ من ٣٦ طلبًا — أي أن فتحَ طلبٍ لا يُرى أثرُه. فصار: القائمةُ
+     وحدها، ثم يملأ الملفُّ الشاشةَ عند الاختيار، ويعود بزرّ.
+
+     والتبديلُ بـ`data-open` وCSS لا بقياس عرضٍ في جافاسكربت: قياسُ العرض
+     يُرجع قيمةَ الخادم أوّلًا فيومض التخطيطُ الخطأ عند الترطيب. */
+  const openOnPhone = picked !== null;
+
   return (
-    <div className={`flex h-full min-h-0 flex-col gap-s3 ${live ? "dash-live" : ""}`}>
+    <div
+      data-open={openOnPhone ? "true" : "false"}
+      className={`apps flex h-full min-h-0 flex-col gap-s3 ${live ? "dash-live" : ""}`}
+    >
       <Kpis {...kpis} total={rows.length} />
 
       <Toolbar
@@ -184,6 +196,7 @@ export function ApplicationsTable({ rows }: Props) {
             items={current.items}
             pct={current.pct}
             rivalry={rivalry}
+            onBack={() => setPicked(null)}
           />
         ) : (
           <section className="tile items-center justify-center p-s7 text-center">
@@ -442,7 +455,7 @@ function Roster({
   onPick: (id: string) => void;
 }) {
   return (
-    <section className="tile min-h-0">
+    <section className="tile apps-roster min-h-0">
       <ul className="min-h-0 flex-1 overflow-y-auto p-s2">
         {items.map(({ row, pct }, i) => {
           const s = STATUSES.find((x) => x.key === row.status);
@@ -518,19 +531,32 @@ function Dossier({
   items,
   pct,
   rivalry,
+  onBack,
 }: {
   row: Row;
   items: readonly Item[];
   pct: number;
   rivalry: Competition;
+  onBack: () => void;
 }) {
   const s = STATUSES.find((x) => x.key === row.status);
   const asked = askedQuestions(row);
 
   return (
-    <section className="tile min-h-0">
+    <section className="tile apps-dossier min-h-0">
       <div className="min-h-0 flex-1 overflow-y-auto">
         <header className="tile-ink fade-up relative rounded-b-none px-s5 py-s5 sm:px-s6">
+          {/* رجوعٌ إلى القائمة — على الجوّال وحده، فالحاسبُ يعرض اللوحين معًا */}
+          <button
+            type="button"
+            onClick={onBack}
+            className="mb-s4 -ms-s2 inline-flex min-h-11 items-center gap-x-s2 px-s2 text-[0.82rem] font-semibold lg:hidden"
+          >
+            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M8 4l6 6-6 6" />
+            </svg>
+            كل الطلبات
+          </button>
           <div className="flex flex-wrap items-start justify-between gap-x-s5 gap-y-s4">
             <div className="min-w-0">
               <h2 className="font-display text-2xl leading-tight font-bold">
