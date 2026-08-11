@@ -528,13 +528,13 @@ function Costs({
   );
 }
 
-/* ── ٧ · المستوى الدراسي ────────────────────────────────────────────────── */
+/* ── ٧ · السنة الدراسية ─────────────────────────────────────────────────── */
 
 function Levels({ levels }: { levels: { label: string; value: number }[] }) {
   const max = Math.max(...levels.map((l) => l.value), 1);
   return (
     <section className="tile col-span-12 p-s5 lg:col-span-6">
-      <Head title="المستوى الدراسي" />
+      <Head title="السنة الدراسية" />
       <div className="mt-s4 flex min-h-0 flex-1 items-end gap-x-s4">
         {levels.map((l, i) => (
           /* ⚠️ **التسمية والرقم `shrink-0`.** قِسناهما فوجدنا صندوقًا

@@ -180,7 +180,10 @@ export function StepPersonal({
            وتُستعاد قيمته — React لا يعيد تطبيق defaultValue بعد التركيب. */
         key={`level-${v.level ?? ""}`}
         name="level"
-        legend="المستوى الدراسي"
+        /* ⚠️ «السنة» لا «المستوى» — الخياراتُ نفسُها في `ACADEMIC_LEVELS`
+           «السنة الأولى … السنة الخامسة فأكثر»، فالتسميةُ كانت تخالف
+           قيمَها. غُيّرت في اللوحة والنموذج معًا (١١ أغسطس ٢٠٢٦). */
+        legend="السنة الدراسية"
         required
         options={ACADEMIC_LEVELS}
         defaultValue={v.level}
