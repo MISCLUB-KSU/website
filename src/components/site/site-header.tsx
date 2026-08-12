@@ -5,7 +5,7 @@ import { MobileMenu } from "@/components/site/mobile-menu";
 import { NavLinks } from "@/components/site/nav-links";
 import { ScrollLift } from "@/components/site/scroll-lift";
 import { ThemeToggle } from "@/components/site/theme-toggle";
-import { NAVIGATION, PRIMARY_ACTION } from "@/content/navigation";
+import { PRIMARY_ACTION } from "@/content/navigation";
 
 /**
  * الشريط العلوي — لوح عائم يلتصق بالأعلى.
@@ -24,12 +24,9 @@ import { NAVIGATION, PRIMARY_ACTION } from "@/content/navigation";
  * فرض `display` عليه من الخارج.
  */
 
-const LINK_CLASS =
-  /* لون النصّ الكامل لا المخفَّف: اللوح يمرّ فوق الواجهة الداكنة وأرضيته
-     نصف شفّافة، فتنزل درجة `text-fg-muted` هناك إلى 3.88:1 وهو تحت الحدّ.
-     التباين يُقاس على أسوأ خلفية يمرّ عليها اللوح لا على أرضية الصفحة. */
-  "inline-flex min-h-11 items-center text-sm font-medium text-fg " +
-  "transition-colors hover:text-accent";
+/* ⚠️ الروابط وقائمتُها انتقلت إلى `nav-links.tsx` — ومعها ملاحظةُ التباين
+   المقيسة (`text-fg-muted` ينزل إلى 3.88:1 على اللوح الشفّاف). ما بقي هنا
+   نسخةٌ ميتة، وحذفُها هنا لا يُضيعها. */
 
 export function SiteHeader() {
   return (

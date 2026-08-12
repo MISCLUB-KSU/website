@@ -7,7 +7,6 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { PARTNERS, PARTNERSHIP_TRACKS } from "@/content/about";
 import { ABOUT_SECTION } from "@/content/navigation";
-import { isolateLatin } from "@/lib/bidi";
 
 export const metadata: Metadata = {
   title: "الشراكات",

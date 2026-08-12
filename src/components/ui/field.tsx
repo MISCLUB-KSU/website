@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
+import { useHydrated } from "@/lib/use-hydrated";
 import { SelectMenu } from "./select-menu";
 
 /**
@@ -224,8 +225,7 @@ export function SelectField({
      عطّل الجافاسكربت زرًّا لا يفتح شيئًا — والنموذج كلُّه مبنيٌّ على أن
      يعمل بدونه. فالأصليّة هي المرسومة أوّلًا، وتُستبدل حين يثبت أن
      الجافاسكربت يعمل فعلًا. */
-  const [enhanced, setEnhanced] = useState(false);
-  useEffect(() => setEnhanced(true), []);
+  const enhanced = useHydrated();
 
   /* القيمة تُقرأ من الأصليّة نفسها لا من حالةٍ موازية: الحقل قد يكون
      مضبوطًا من أبيه (أسئلة القادة) أو غيرَ مضبوط (الجامعة والتخصّص)،

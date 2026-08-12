@@ -147,6 +147,10 @@ function Card({
         {/* ⚠️ الصورة **اختيارية ولا بديلَ مخترعًا لها**: من لا صفحةَ له في
             الكتيّب لا صورةَ له، والفراغ أصدق من حرفين في دائرةٍ متدرّجة. */}
         {person.photo && (
+          /* ⚠️ `<img>` لا `next/image` عمدًا: الصورةُ ثابتةُ المقاس (56px)
+             ومقصوصةٌ في `public/` أصلًا، فلا شيء يُحسَّن. و`next/image` على
+             Vercel يُحاسَب بالتحويلة — ثمنٌ لصورةٍ لن تتغيّر. */
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={person.photo}
             alt=""

@@ -5,7 +5,6 @@ import { motion } from "motion/react";
 import {
   flattenUnits,
   IN_VIEW,
-  RISE,
   STAGGER,
   VLabel,
   VPerson,

@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 import { SelectField } from "@/components/ui/field";
+import { useHydrated } from "@/lib/use-hydrated";
 import {
   PREFERENCES,
   PREFERENCE_GROUPS,
@@ -61,8 +60,7 @@ export function StepPreferences({
      والعلاج أن تُرسم واحدةٌ فقط: الخادم يرسم القوائم (فتعمل بلا جافاسكربت)،
      وبعد التركيب تحلّ البطاقات محلّها. والتبديل في `useEffect` لا في
      المُهيّئ حتى يطابق أولُ رسمٍ ما جاء من الخادم. */
-  const [live, setLive] = useState(false);
-  useEffect(() => setLive(true), []);
+  const live = useHydrated();
 
   const complete = choices.every(Boolean);
   const hasCommittee = choices.some((value) => value && isCommitteeValue(value));

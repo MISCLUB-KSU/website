@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { findPreference } from "@/content/preferences";
+import { useHydrated } from "@/lib/use-hydrated";
 import type { Row } from "./stats";
 
 /**
@@ -56,8 +57,7 @@ type Ribbon = {
 
 export function FlowChart({ rows }: { rows: readonly Row[] }) {
   const [hot, setHot] = useState<string | null>(null);
-  const [live, setLive] = useState(false);
-  useEffect(() => setLive(true), []);
+  const live = useHydrated();
 
   const model = useMemo(() => build(rows), [rows]);
   if (!model) return null;

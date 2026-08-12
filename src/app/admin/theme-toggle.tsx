@@ -23,7 +23,16 @@ export function ThemeToggle() {
      `localStorage` هناك. والنصُّ في `layout` تكفّل بالوضع قبل أول رسم. */
   const [mode, setMode] = useState<Mode>("dark");
 
+  /* ⚠️ **`set-state-in-effect` مُسكَتٌ مؤقّتًا — وهذا آخرُ موضعٍ فيه.**
+     الخمسةُ الأخرى صارت `useHydrated` (انظر `lib/use-hydrated.ts`)، وهذا
+     يختلف: يقرأ قيمةً من `localStorage` لا رايةَ ترطيبٍ صرفة. وقراءتُها في
+     مُهيّئ `useState` تكسر الترطيب (الخادم لا يرى التخزين فيرسم غيرَ ما
+     يرسم المتصفّح).
+     الحلُّ الصحيح `useSyncExternalStore` بمُشترَكٍ على `localStorage` — وهو
+     يصلح المزامنة بين التبويبات أيضًا. مؤجَّلٌ: المكوّن يعمل، والتغيير
+     يمسّ لوحًا اعتُمد للتوّ. */
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMode(localStorage.getItem(ADMIN_THEME_KEY) === "light" ? "light" : "dark");
   }, []);
 

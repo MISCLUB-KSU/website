@@ -51,7 +51,8 @@ export default function OpengraphImage() {
       >
         {/* العرض 62% من الصورة: يترك هامشًا سخيًّا على الجوانب فلا تُقصّ
             العلامة حين تقصّ المنصّات حوافّ البطاقة. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {/* ⚠️ `<img>` لا `next/image`: هذي الصورةُ تُرسم في Satori على
+            الخادم لا في المتصفّح، ولا وجودَ لمُحسِّن الصور هناك. */}
         <img src={markSrc} alt="" width={744} height={280} />
       </div>
     ),

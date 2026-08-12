@@ -176,6 +176,12 @@ export function SelectMenu({
     }
 
     if (event.key.length === 1) {
+      /* ⚠️ **تنبيهٌ كاذب مقصودُ الإسكات.** `react-hooks/purity` يمنع
+         الدوالَّ غير الخالصة في الرسم، و`onListKey` دالّةٌ عاديةٌ في جسم
+         المكوّن فيعدّها المحلّل احتمالًا رسمًا — وهي **معالجُ ضغطِ مفتاح**
+         لا تُستدعى إلّا من حدث. وقياسُ زمنٍ للكتابة السريعة (اقفز إلى ما
+         يبدأ بما كتبتَه خلال 350ms) لا يُؤدّى بلا ساعة. */
+      // eslint-disable-next-line react-hooks/purity
       const now = Date.now();
       typed.current.text =
         now - typed.current.at > 350

@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useState } from "react";
 
+import { useHydrated } from "@/lib/use-hydrated";
 import {
   LEVEL_ORDER,
   STATUSES,
@@ -29,8 +30,7 @@ const CYAN = "var(--d-cyan)";
 const RANK = ["var(--deep)", "var(--primary)", "var(--sky)"] as const;
 
 export function Dashboard({ rows }: { rows: readonly Row[] }) {
-  const [live, setLive] = useState(false);
-  useEffect(() => setLive(true), []);
+  const live = useHydrated();
 
   const m = useMemo(() => {
     const statusCounts = Object.fromEntries(countBy(rows, (r) => r.status));
@@ -649,7 +649,21 @@ function Donut({
   const stroke = 15;
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
-  let acc = 0;
+
+  /* ⚠️ **الإزاحاتُ تُحسب قبل الرسم لا داخل `map`.** كان مجمِّعٌ (`let acc`)
+     يُزاد داخل ردّ نداء `map` — أي تعديلٌ أثناء الرسم عبر إغلاقة. يعمل ما
+     دام الرسم مرّةً واحدة متتابعة، ويكسر متى قاطعت React الرسمَ أو
+     استأنفته، فتُرسم القطعُ فوق بعضها. والحساب هنا خالصٌ لا يعتمد على
+     ترتيب تنفيذ الرسم — ولا يشمل القطعَ الصفريّة فلا تزيح ما بعدها. */
+  const arcs = slices.map((slice, i) => {
+    const before = slices.slice(0, i).reduce((a, s) => a + s.value, 0);
+    return {
+      slice,
+      i,
+      len: Math.max(0, (slice.value / sum) * circ - 3),
+      off: (before / sum) * circ,
+    };
+  });
 
   return (
     <svg
@@ -669,11 +683,7 @@ function Donut({
         stroke="var(--bg-sunken)"
         strokeWidth={stroke}
       />
-      {slices.map((s, i) => {
-        const frac = s.value / sum;
-        const len = Math.max(0, frac * circ - 3);
-        const off = acc * circ;
-        acc += frac;
+      {arcs.map(({ slice: s, i, len, off }) => {
         if (s.value === 0) return null;
         return (
           <circle
@@ -725,8 +735,13 @@ function leaf(label: string) {
 /** انظر `command-deck.tsx`: القيمة النهائية هي الحالة الابتدائية */
 function Counter({ value, className }: { value: number; className?: string }) {
   const [shown, setShown] = useState(value);
+  /* ⚠️ **`set-state-in-effect` مُسكَتٌ هنا بحقّ.** القاعدة تمنع ضبطَ حالةٍ
+     داخل أثرٍ لأنه يسلسل رسمًا بعد رسم — وهذا **بالضبط** ما يفعله عدّادٌ
+     يتصاعد: إطارٌ بعد إطار عبر `requestAnimationFrame`. وليس هنا قيمةٌ
+     مشتقّةٌ تُحسب في الرسم؛ القيمةُ زمنيّة. */
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShown(value);
       return;
     }

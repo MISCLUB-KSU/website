@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import { findPreference, questionBlocks } from "@/content/preferences";
 import {
@@ -9,6 +9,7 @@ import {
   type QuestionType,
 } from "@/content/questions";
 import { isolateLatin } from "@/lib/bidi";
+import { useHydrated } from "@/lib/use-hydrated";
 import { setStatus } from "./actions";
 import { STATUSES, openOnly, type Row } from "./stats";
 
@@ -107,8 +108,7 @@ export function ApplicationsTable({ rows }: Props) {
   const [status, setStatusFilter] = useState<string>("all");
   const [sort, setSort] = useState<(typeof SORTS)[number]["key"]>("newest");
   const [picked, setPicked] = useState<string | null>(null);
-  const [live, setLive] = useState(false);
-  useEffect(() => setLive(true), []);
+  const live = useHydrated();
 
   const scored = useMemo(
     () => rows.map((r) => ({ row: r, ...completeness(r) })),
