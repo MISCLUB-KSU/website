@@ -146,14 +146,23 @@ type TextAreaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
   label: string;
   error?: string;
   hint?: React.ReactNode;
+  required?: boolean;
   optional?: boolean;
 };
 
+/**
+ * ⚠️ **`required` يُمرَّر للعنوان وللحقل معًا.** كان ينزل في `...rest`
+ * إلى `<textarea>` وحده — فيمنع الإرسالَ ولا يظهر له نجمةٌ في العنوان،
+ * بخلاف `TextField` و`multi-select`. فالطالب يُمنع من إرسال حقلٍ لم
+ * يُخبَر أنه مطلوب. أصاب هذا «لماذا اخترت هذي الرغبات؟» وأسئلةَ القادة
+ * الطويلة كلَّها.
+ */
 export function TextArea({
   id,
   label,
   error,
   hint,
+  required,
   optional,
   className = "",
   ...rest
@@ -161,12 +170,13 @@ export function TextArea({
   const hintId = `${id}-hint`;
   return (
     <div>
-      <Label htmlFor={id} optional={optional}>
+      <Label htmlFor={id} required={required} optional={optional}>
         {label}
       </Label>
       <textarea
         id={id}
         name={id}
+        required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={error || hint ? hintId : undefined}
         className={`${BASE} min-h-[110px] resize-y leading-relaxed ${error ? INVALID : ""} ${className}`}
