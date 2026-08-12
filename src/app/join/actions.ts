@@ -9,8 +9,10 @@ import {
   type RegistrationInput,
   type RegistrationState,
 } from "@/lib/registration";
-import { findDirectTarget } from "@/content/preferences";
+import { findDirectTarget, findPreference } from "@/content/preferences";
 import { ANSWER_SEP } from "@/content/questions";
+import { sendMail } from "@/lib/email/client";
+import { applicationReceived } from "@/lib/email/templates";
 import {
   ANSWER_FILES_PREFIX,
   CV_BUCKET,
@@ -220,6 +222,28 @@ export async function submitRegistration(
       message:
         "تعذّر إرسال الطلب — بياناتك محفوظة في الصفحة. حاول مرة أخرى بعد قليل.",
     };
+  }
+
+  /* ⚠️ **بعد الحفظ، ولا يُنتظر منه شيء.** بريدُ التأكيد لطفٌ لا شرطُ قبول:
+     الطلبُ في القاعدة فعلًا، وإسقاطُ «وصل طلبك» لأن مزوّد البريد تعثّر
+     يجعل الطالب يعيد التقديم على طلبٍ وصل — فيُردّ بـ«سبق أن قدّمت».
+     و`sendMail` لا يرمي أصلًا (انظر `email/client.ts`)، وهذا حزامٌ ثانٍ. */
+  try {
+    await sendMail(
+      applicationReceived({
+        fullName: parsed.data.fullName,
+        email: parsed.data.email,
+        choices: [
+          parsed.data.choice1,
+          parsed.data.choice2,
+          parsed.data.choice3,
+        ]
+          .filter(Boolean)
+          .map((value) => findPreference(value)?.fullLabel ?? value),
+      }),
+    );
+  } catch (error) {
+    console.error("[registration] وصل الطلب ولم يُرسَل بريد التأكيد", error);
   }
 
   return {

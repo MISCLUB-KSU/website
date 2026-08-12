@@ -10,8 +10,20 @@ import {
 } from "@/content/questions";
 import { isolateLatin } from "@/lib/bidi";
 import { useHydrated } from "@/lib/use-hydrated";
-import { setStatus } from "./actions";
+import { notifyDecision, setStatus } from "./actions";
 import { STATUSES, openOnly, type Row } from "./stats";
+
+/**
+ * الحالاتُ التي يُراسَل عليها الطالب — نسخةُ العميل من `NOTIFIABLE`.
+ *
+ * ⚠️ **لا يُستورَد من `email/templates.ts`:** ذاك ملفٌّ `server-only`
+ * ويجرّ معه عميلَ Resend إلى حزمة المتصفّح — أو يكسر البناء.
+ */
+const NOTIFIABLE_STATUSES: readonly string[] = [
+  "accepted",
+  "rejected",
+  "referred",
+];
 
 /**
  * الطلبات — **ملفُّ مراجعةٍ لا قائمة**.
@@ -931,6 +943,88 @@ function StatusPicker({ row, dark }: { row: Row; dark?: boolean }) {
           className={`mt-s2 text-[0.8rem] ${dark ? "text-snow" : "text-danger"}`}
         >
           {error}
+        </p>
+      )}
+
+      <NotifyButton row={row} dark={dark} />
+    </div>
+  );
+}
+
+/**
+ * إرسالُ النتيجة إلى الطالب — **خطوتان لا واحدة**.
+ *
+ * ⚠️ **البريدُ لا يُسحب.** ضغطةٌ واحدةٌ خاطئة على «رفض» ترسل رفضًا لطالبٍ
+ * لم يُرفض؛ فالضغطة الأولى تُسلّح والثانية تُرسل، والنصُّ يقول لمن يُرسَل
+ * وبأي قرار — لا «إرسال» غفلًا.
+ *
+ * ولا يظهر أصلًا قبل ضبط القرار: `new` و`reviewing` لا نتيجةَ فيهما.
+ */
+function NotifyButton({ row, dark }: { row: Row; dark?: boolean }) {
+  const [pending, start] = useTransition();
+  const [armed, setArmed] = useState(false);
+  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const decision = STATUSES.find((s) => s.key === row.status);
+  if (!NOTIFIABLE_STATUSES.includes(row.status)) return null;
+
+  return (
+    <div className="mt-s4 border-t pt-s3" style={{ borderColor: dark ? "rgba(255,255,255,.14)" : "var(--line)" }}>
+      <div className="flex flex-wrap items-center gap-x-s3 gap-y-s2">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => {
+            if (!armed) {
+              setArmed(true);
+              setNote(null);
+              return;
+            }
+            start(async () => {
+              const res = await notifyDecision(row.id);
+              setArmed(false);
+              setNote({ ok: res.ok, text: res.message || "تعذّر الإرسال" });
+            });
+          }}
+          className={`inline-flex min-h-11 lg:min-h-10 items-center gap-x-s2 rounded-xl border px-s4 text-[0.82rem] font-semibold transition-opacity ${
+            pending ? "opacity-50" : "opacity-85 hover:opacity-100"
+          }`}
+          style={{
+            borderColor: armed
+              ? "color-mix(in oklab, var(--danger) 60%, transparent)"
+              : dark
+                ? "rgba(255,255,255,.28)"
+                : "var(--line-strong)",
+            background: armed
+              ? "color-mix(in oklab, var(--danger) 14%, transparent)"
+              : "transparent",
+          }}
+        >
+          {pending
+            ? "جارٍ الإرسال…"
+            : armed
+              ? `تأكيد: أرسل «${decision?.label ?? row.status}» إلى ${row.email}`
+              : "أرسل النتيجة للطالب"}
+        </button>
+
+        {armed && !pending && (
+          <button
+            type="button"
+            onClick={() => setArmed(false)}
+            className="min-h-11 lg:min-h-10 px-s2 text-[0.8rem] underline underline-offset-4 opacity-70"
+          >
+            تراجع
+          </button>
+        )}
+      </div>
+
+      {note && (
+        <p
+          role="status"
+          className={`mt-s2 text-[0.8rem] ${note.ok ? (dark ? "text-snow" : "text-success") : dark ? "text-snow" : "text-danger"}`}
+        >
+          {note.ok ? "✓ " : ""}
+          {note.text}
         </p>
       )}
     </div>
