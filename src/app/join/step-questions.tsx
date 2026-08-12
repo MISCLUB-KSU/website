@@ -9,11 +9,12 @@ import {
   TextArea,
   TextField,
 } from "@/components/ui/field";
-import { findPreference } from "@/content/preferences";
+import { questionBlocks } from "@/content/preferences";
 import {
   ANSWER_MAX,
   answerName,
   asOption,
+  exclusiveValues,
   isVisible,
   optionValues,
   splitAnswer,
@@ -21,6 +22,7 @@ import {
 } from "@/content/questions";
 import { isolateLatin } from "@/lib/bidi";
 import {
+  ANSWER_FILE_ACCEPT,
   CLUB_EXPERIENCE,
   CLUB_EXPERIENCE_MAX,
   CLUB_EXPERIENCE_YES,
@@ -37,7 +39,21 @@ import { StepPanel } from "./step-panel";
  * أسئلة لا تظهر لها كتلة أصلًا.
  */
 
-const SLOT_NAMES = ["الرغبة الأولى", "الرغبة الثانية", "الرغبة الثالثة"] as const;
+const SLOT_ORDINALS = ["الأولى", "الثانية", "الثالثة"] as const;
+
+/**
+ * عنوانُ كتلةِ الأسئلة بترتيب رغباتها.
+ *
+ * ⚠️ **المثنّى لفظٌ لا عطف.** كتلةُ اللجنة تخصّ أكثرَ من رغبة، و«الرغبة
+ * الأولى والرغبة الثانية» عربيّةٌ ركيكة — والصواب «الرغبتان الأولى
+ * والثانية». نفس قاعدة `seatsLabel` أدناه.
+ */
+function slotsLabel(slots: readonly number[]): string {
+  const names = slots.map((slot) => SLOT_ORDINALS[slot] ?? "");
+  if (names.length === 1) return `الرغبة ${names[0]}`;
+  if (names.length === 2) return `الرغبتان ${names[0]} و${names[1]}`;
+  return `الرغبات ${names.join(" و")}`;
+}
 
 /**
  * معرّف صالح لسمة `id`.
@@ -63,6 +79,7 @@ function domId(name: string): string {
 }
 
 type AnswerFieldProps = {
+  /** مفتاح الكتلة — قيمةُ الرغبة، أو مفتاحُ اللجنة لأسئلتها المشتركة */
   choice: string;
   question: CustomQuestion;
   values: Record<string, string>;
@@ -95,8 +112,37 @@ function AnswerField({
   /* ⚠️ **الاختيار المتعدّد مربّعاتٌ لا قائمةٌ متعدّدة.** قائمة `multiple`
      تخفي خياراتها خلف تمرير، ولمسُها على الجوّال يحتاج `Ctrl` لا وجود له.
      والمربّعات كلُّها ظاهرة، وكلٌّ هدفٌ مستقلّ. */
+  /* ⚠️ **لا `{...shared}` هنا: فيه `defaultValue`، وحقلُ الملفّ لا يقبلها**
+     — المتصفّح يمنع ضبط قيمة حقل ملفّ برمجيًّا، وReact ترمي عليها. ولهذا
+     أيضًا لا يُعاد المرفقُ بعد خطأ في حقلٍ آخر: يعيد الطالب اختيارَه.
+     وهذا مقبولٌ ما دام السؤال اختياريًّا — وسؤالٌ مطلوبٌ من نوع ملفّ
+     يحتاج تفكيرًا آخر قبل أن يُكتب. */
+  if (question.type === "file") {
+    return (
+      <FileField
+        id={domId(name)}
+        name={name}
+        label={question.label}
+        accept={ANSWER_FILE_ACCEPT}
+        required={question.required}
+        optional={!question.required}
+        error={e[name]}
+        hint={
+          <>
+            {question.hint ? `${question.hint} ` : null}
+            <span dir="ltr">PDF</span> أو صورة، حتى <span dir="ltr">5</span>{" "}
+            ميجابايت.
+          </>
+        }
+      />
+    );
+  }
+
   if (question.type === "multi-select") {
     const options = optionValues(question.options);
+    /* خيارُ النفي لا يجتمع مع غيره — انظر `exclusive` في `questions.ts` */
+    const exclusives = new Set(exclusiveValues(question.options));
+    const negated = picked.some((p) => exclusives.has(p));
     const other = picked.find((p) => !options.includes(p)) ?? "";
     return (
       <fieldset className="flex flex-col gap-s2">
@@ -131,13 +177,18 @@ function AnswerField({
                   name={name}
                   value={option}
                   checked={on}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    if (!event.target.checked) {
+                      onPick(picked.filter((p) => p !== option));
+                      return;
+                    }
+                    /* «لا يوجد» يمسح ما قبله، وأيُّ خيارٍ حقيقيّ يمسحه */
                     onPick(
-                      event.target.checked
-                        ? [...picked, option]
-                        : picked.filter((p) => p !== option),
-                    )
-                  }
+                      exclusives.has(option)
+                        ? [option]
+                        : [...picked.filter((p) => !exclusives.has(p)), option],
+                    );
+                  }}
                   className="size-4 shrink-0 accent-accent"
                 />
                 {option}
@@ -146,7 +197,9 @@ function AnswerField({
           })}
         </div>
 
-        {question.allowOther && (
+        {/* حقل «أخرى» يُرفع مع خيار النفي — والمرفوع لا يُرسل، فلا يصل
+            إلى القائد «لا يوجد» ومعها التزامٌ مكتوب */}
+        {question.allowOther && !negated && (
           <TextField
             id={domId(`${name}__other`)}
             name={`${name}__other`}
@@ -504,28 +557,23 @@ export function StepQuestions({
         className="text-start"
       />
 
-      {choices.map((choice, slot) => {
-        const preference = choice ? findPreference(choice) : undefined;
-        if (!preference?.questions?.length) return null;
+      {questionBlocks(choices).map((block) => (
+        <fieldset
+          key={block.key}
+          className="flex flex-col gap-s5 border border-line bg-bg-raised p-s4"
+        >
+          <legend className="px-s2 text-[0.82rem] font-semibold text-fg-muted">
+            {slotsLabel(block.slots)}: {isolateLatin(block.title)}
+          </legend>
 
-        return (
-          <fieldset
-            key={choice}
-            className="flex flex-col gap-s5 border border-line bg-bg-raised p-s4"
-          >
-            <legend className="px-s2 text-[0.82rem] font-semibold text-fg-muted">
-              {SLOT_NAMES[slot]}: {isolateLatin(preference.fullLabel)}
-            </legend>
-
-            <QuestionSet
-              choice={choice}
-              questions={preference.questions}
-              values={v}
-              errors={e}
-            />
-          </fieldset>
-        );
-      })}
+          <QuestionSet
+            choice={block.key}
+            questions={block.questions}
+            values={v}
+            errors={e}
+          />
+        </fieldset>
+      ))}
 
       <CheckField
         /* الموافقة تبقى معلّمة بعد خطأ في حقل آخر — الطالب وافق فعلًا،

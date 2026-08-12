@@ -1,13 +1,14 @@
 import { z } from "zod";
 import {
   PREFERENCE_VALUES,
-  findPreference,
   isCommitteeValue,
+  questionBlocks,
 } from "@/content/preferences";
 import {
   ANSWER_MAX,
   ANSWER_SEP,
   answerName,
+  exclusiveValues,
   isVisible,
   optionValues,
 } from "@/content/questions";
@@ -199,6 +200,23 @@ export function validateCvFile(file: unknown): string | undefined {
     return "الصيغ المقبولة: PDF أو PNG أو JPG";
   }
   return undefined;
+}
+
+/**
+ * مرفقُ سؤالِ قائد — نموذجُ عملٍ يُرفع داخل أسئلة الرغبة.
+ *
+ * ⚠️ **الحدُّ والصيغُ نفسُها المقبولة في السيرة الذاتية، ومقصودٌ ذلك:**
+ * المرفقان ينزلان في المستودع الخاصّ نفسه، وحدودُ المستودع في Supabase
+ * تُضبط عليه لا على الحقل. فحدٌّ أوسع هنا يمرّ من الفحص ويُردّ عند الرفع —
+ * أي بعد أن يكون الطلب قد وصل، فيقرأ الطالب «وصل طلبك» وملفُّه لم يصل.
+ */
+export const ANSWER_FILE_MAX_BYTES = CV_MAX_BYTES;
+export const ANSWER_FILE_TYPES = CV_TYPES;
+export const ANSWER_FILE_ACCEPT = CV_ACCEPT;
+
+/** فحص مرفق السؤال — يعيد رسالة الخطأ أو `undefined` */
+export function validateAnswerFile(file: unknown): string | undefined {
+  return validateCvFile(file);
 }
 
 /* ── الروابط ──────────────────────────────────────────────────────────── */
@@ -629,28 +647,58 @@ export function stepOfField(name: string): number {
  * خارج `zod` لأن الأسئلة نفسها بيانات لا مخطّط: تتغيّر بتغيّر رغبات الطالب،
  * ولا تُعرف أسماء حقولها قبل قراءة اختياره.
  */
+export type AnswersResult = {
+  /** الإجاباتُ النصّية — تُدرَج مع الصفّ كما هي */
+  answers: Record<string, string>;
+  errors: Record<string, string>;
+  /**
+   * المرفقاتُ المقبولة بأسماء حقولها.
+   *
+   * ⚠️ **لا تدخل `answers` هنا.** مسارُ الملفّ في المستودع مبنيٌّ على معرّف
+   * الصفّ، والمعرّف لا يُعرف قبل الإدراج — فالرفعُ بعده ثم يُرقَّع العمود.
+   * انظر `saveApplication` في `join/actions.ts`.
+   */
+  files: Record<string, File>;
+};
+
 export function validateAnswers(
   choices: readonly string[],
   readAll: (name: string) => readonly string[],
-): { answers: Record<string, string>; errors: Record<string, string> } {
+  readFile: (name: string) => unknown,
+): AnswersResult {
   const answers: Record<string, string> = {};
   const errors: Record<string, string> = {};
+  const files: Record<string, File> = {};
 
-  for (const choice of choices) {
-    const preference = findPreference(choice);
-    if (!preference?.questions) continue;
-
-    /* إجاباتُ هذا الخيار وحده — التفرّع يشير داخله لا عبر الخيارات */
+  /* ⚠️ **`questionBlocks` لا المرورُ على الرغبات.** أسئلةُ اللجنة تُسأل
+     مرّةً مهما تعدّدت وحداتُها في الرغبات، والنموذجُ يرسمها من الدالّة
+     نفسها — فلو مررنا هنا على الرغبات لطلبنا إجابةً بمفتاحٍ لا يُرسَل. */
+  for (const block of questionBlocks(choices)) {
+    /* إجاباتُ هذي الكتلة وحدها — التفرّع يشير داخلها لا عبرها */
     const answerOf = (questionId: string) =>
-      answers[answerName(choice, questionId)] ?? "";
+      answers[answerName(block.key, questionId)] ?? "";
 
-    for (const question of preference.questions) {
-      const name = answerName(choice, question.id);
+    for (const question of block.questions) {
+      const name = answerName(block.key, question.id);
 
       /* ⚠️ **السؤال المخفيّ لا يُطلب ولا تُحفظ إجابته.** والترتيب مهمّ:
          `isVisible` يقرأ من `answers` التي مُلئت في هذي الحلقة نفسها،
          فالسؤال الحاكم لا بدّ أن يسبق المشروطَ به في المصفوفة. */
       if (!isVisible(question, answerOf)) continue;
+
+      /* المرفقُ مسارٌ يُكتب بعد الإدراج — فيُفحص هنا ويُنحّى جانبًا */
+      if (question.type === "file") {
+        const file = readFile(name);
+        const bad = validateAnswerFile(file);
+        if (bad) {
+          errors[name] = bad;
+        } else if (file instanceof File && file.size > 0) {
+          files[name] = file;
+        } else if (question.required) {
+          errors[name] = "أرفق ملفًا للمتابعة";
+        }
+        continue;
+      }
 
       const values =
         question.type === "multi-select"
@@ -687,12 +735,23 @@ export function validateAnswers(
         const stray = values.filter(
           (v) => !allowed.has(v) && !(question.allowOther && values.at(-1) === v),
         );
-        if (stray.length > 0) errors[name] = "اختر إجابة من القائمة";
+        if (stray.length > 0) {
+          errors[name] = "اختر إجابة من القائمة";
+          continue;
+        }
+
+        /* ⚠️ **الحصرُ يُفحص هنا لا في المتصفّح وحده.** الواجهة تمسح ما قبل
+           «لا يوجد»، ومن يرسل النموذجَ بلا جافاسكربت — أو يزوّره — يمرّر
+           «لا يوجد» و«تدريب» معًا فيقرأ القائدُ إجابةً تنقض نفسها. */
+        const negations = new Set(exclusiveValues(question.options));
+        if (values.length > 1 && values.some((v) => negations.has(v))) {
+          errors[name] = "اخترت «لا ينطبق» مع إجابةٍ أخرى — اختر أحدهما";
+        }
       }
     }
   }
 
-  return { answers, errors };
+  return { answers, errors, files };
 }
 
 /* ── حالة النموذج ─────────────────────────────────────────────────────── */

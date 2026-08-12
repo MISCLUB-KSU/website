@@ -2,8 +2,13 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 
-import { findPreference } from "@/content/preferences";
-import { answerName, splitAnswer } from "@/content/questions";
+import { findPreference, questionBlocks } from "@/content/preferences";
+import {
+  answerName,
+  splitAnswer,
+  type QuestionType,
+} from "@/content/questions";
+import { isolateLatin } from "@/lib/bidi";
 import { setStatus } from "./actions";
 import { STATUSES, openOnly, type Row } from "./stats";
 
@@ -79,10 +84,14 @@ function completeness(row: Row): { items: Item[]; pct: number } {
     { label: "معرض أعمال", ok: !!row.portfolio, weight: 15 },
     { label: "لينكدإن", ok: !!row.linkedin, weight: 10 },
   ];
-  if (asked.length > 0) {
+  /* ⚠️ **المطلوبةُ وحدها تُحسب.** السؤال الاختياريُّ يُخزَّن بقيمةٍ فارغة
+     لمن تركه، فحسبُ الجميع كان يهبط بدرجة كل من لم يملأ حقلًا لم يُطلب
+     منه — وهو نقضُ قاعدة «من لم يُسأل لا يُخصم» المكتوبة أعلاه. */
+  const requiredAsked = asked.filter((a) => a.required);
+  if (requiredAsked.length > 0) {
     items.push({
       label: "أجوبة القادة",
-      ok: asked.every((a) => a.value.trim().length > 0),
+      ok: requiredAsked.every((a) => a.value.trim().length > 0),
       weight: 20,
     });
   }
@@ -650,7 +659,7 @@ function Dossier({
                       <p className="text-fg-muted text-[0.72rem]">
                         {a.label ? (
                           <>
-                            <PreferenceName value={a.choice} /> — {a.label}
+                            {isolateLatin(a.title ?? "")} — {a.label}
                           </>
                         ) : (
                           <>
@@ -665,6 +674,27 @@ function Dossier({
                           ملتصقًا: الفاصل سطرٌ جديد، وعرضُه خامًا يجعل
                           «القيادة تنظيم الفعاليات» تُقرأ إجابةً واحدة. */}
                       {(() => {
+                        /* ⚠️ **المرفقُ مسارٌ في المستودع لا نصٌّ يُقرأ.**
+                           عرضُه خامًا يكشف بنية التخزين ولا يفتح شيئًا —
+                           فيُعرض زرَّ تنزيلٍ يمرّ من `/admin/answer` حيث
+                           يُفحص النطاق ثم يُوقَّع الرابط لدقيقة. */
+                        if (a.type === "file") {
+                          return a.value ? (
+                            <a
+                              href={`/admin/answer/${row.id}?key=${encodeURIComponent(a.key)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-accent mt-s1 inline-flex min-h-9 items-center text-[0.86rem] font-semibold underline underline-offset-4"
+                            >
+                              افتح المرفق
+                            </a>
+                          ) : (
+                            <p className="text-fg-muted mt-s1 text-[0.86rem]">
+                              بلا مرفق
+                            </p>
+                          );
+                        }
+
                         const parts = splitAnswer(a.value);
                         if (parts.length === 0)
                           return (
@@ -967,31 +997,51 @@ function PreferenceName({ value }: { value: string }) {
   );
 }
 
-type Asked = { key: string; choice: string; label: string | null; value: string };
+type Asked = {
+  key: string;
+  /** الجهة التي سُئل عنها — رغبةٌ أو لجنةٌ تشترك فيها وحداتُها */
+  title: string | null;
+  label: string | null;
+  type: QuestionType | null;
+  required: boolean;
+  value: string;
+};
 
 /**
  * ردُّ الإجابات إلى أسئلتها.
  *
  * ⚠️ لا يُشقّ المفتاح نصًّا — قيمة الرغبة نفسها تحمل `:` و`/`. بل يُبنى
- * بـ`answerName` لكل سؤالٍ في رغبات الطالب الثلاث ثم يُبحث عنه. وما بقي من
- * مفاتيح بلا سؤال يُعرض معلَّمًا لا يُسقط.
+ * بـ`answerName` لكل سؤالٍ في كتل الطالب ثم يُبحث عنه. وما بقي من مفاتيح
+ * بلا سؤال يُعرض معلَّمًا لا يُسقط.
+ *
+ * ⚠️ **`questionBlocks` لا المرورُ على الرغبات الثلاث.** أسئلةُ اللجنة
+ * تُخزَّن بمفتاح اللجنة لا بمفتاح الوحدة، فالمرورُ على الرغبات يبني
+ * مفاتيحَ لا وجود لها في `answers` — فتسقط الأجوبةُ كلُّها إلى ذيل
+ * «سؤالٌ لم يعد معرَّفًا».
  */
 function askedQuestions(row: Row): Asked[] {
   const answers = row.answers ?? {};
   const out: Asked[] = [];
   const seen = new Set<string>();
 
-  for (const choice of [row.choice1, row.choice2, row.choice3]) {
-    for (const q of findPreference(choice)?.questions ?? []) {
-      const key = answerName(choice, q.id);
+  for (const block of questionBlocks([row.choice1, row.choice2, row.choice3])) {
+    for (const q of block.questions) {
+      const key = answerName(block.key, q.id);
       if (seen.has(key) || !(key in answers)) continue;
       seen.add(key);
-      out.push({ key, choice, label: q.label, value: answers[key] });
+      out.push({
+        key,
+        title: block.title,
+        label: q.label,
+        type: q.type,
+        required: !!q.required,
+        value: answers[key],
+      });
     }
   }
   for (const [key, value] of Object.entries(answers)) {
     if (seen.has(key)) continue;
-    out.push({ key, choice: "", label: null, value });
+    out.push({ key, title: null, label: null, type: null, required: false, value });
   }
   return out;
 }

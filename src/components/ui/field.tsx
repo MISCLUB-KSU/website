@@ -373,6 +373,7 @@ type FileFieldProps = React.InputHTMLAttributes<HTMLInputElement> & {
   label: string;
   error?: string;
   hint?: React.ReactNode;
+  required?: boolean;
   optional?: boolean;
 };
 
@@ -381,12 +382,15 @@ type FileFieldProps = React.InputHTMLAttributes<HTMLInputElement> & {
  *
  * زرّ الاختيار يُنسَّق عبر `file:` لا يُستبدل بزرّ مزيّف فوق حقل مخفي —
  * الحقل الأصلي يعمل بلوحة المفاتيح وقارئ الشاشة، والمزيّف يكسر الاثنين.
+ *
+ * ⚠️ `required` يُمرَّر للعنوان وللحقل — كما في `TextArea`، وللسبب نفسه.
  */
 export function FileField({
   id,
   label,
   error,
   hint,
+  required,
   optional,
   className = "",
   ...rest
@@ -394,13 +398,14 @@ export function FileField({
   const hintId = `${id}-hint`;
   return (
     <div>
-      <Label htmlFor={id} optional={optional}>
+      <Label htmlFor={id} required={required} optional={optional}>
         {label}
       </Label>
       <input
         id={id}
         name={id}
         type="file"
+        required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={error || hint ? hintId : undefined}
         className={

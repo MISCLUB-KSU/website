@@ -17,6 +17,25 @@ import type { CustomQuestion } from "./questions";
 /** لجنة (أو وحدة داخلها) في مقابل مشروع أو مبادرة */
 export type PreferenceKind = "committee" | "project";
 
+/**
+ * أسئلةٌ يشترك فيها أكثرُ من رغبة — **تُسأل مرّةً واحدة**.
+ *
+ * ⚠️ **وُلدت من اللجنة الإعلامية.** أسئلة قائدها عن مجالات الإعلام عمومًا،
+ * فمن يختار وحدتين منها كان يُسأل الخمسةَ مرّتين — والإجاباتُ تُخزَّن لكلِّ
+ * رغبةٍ على حدة. فصارت أسئلةُ اللجنة تُخزَّن بمفتاح اللجنة (`key`) لا
+ * بمفتاح الوحدة، والنموذجُ والخادمُ يتخطّيان المفتاحَ المرئيَّ مرّتين.
+ *
+ * أسئلةُ الوحدة نفسِها تبقى في `questions` وتُسأل لكل رغبةٍ على حدة —
+ * فوحدتان مختلفتان قد يريد قائدُ كلٍّ منهما جوابًا يخصّه.
+ */
+export type SharedQuestions = {
+  /** المفتاح الذي تُخزَّن به الإجابات بدل قيمة الرغبة — `committee:media` */
+  key: string;
+  /** عنوان الكتلة في النموذج — اسم اللجنة */
+  title: string;
+  questions: readonly CustomQuestion[];
+};
+
 export type Preference = {
   /** القيمة المرسلة في النموذج — انظر صيغتها في `committeeValue` أدناه */
   value: string;
@@ -28,7 +47,10 @@ export type Preference = {
   /** عنوان المجموعة في القائمة المنسدلة */
   group: string;
   description: string;
+  /** أسئلة هذي الرغبة وحدها — تُسأل لكل رغبةٍ على حدة */
   questions?: readonly CustomQuestion[];
+  /** أسئلة اللجنة التي تتبعها — تُسأل مرّةً واحدة مهما تعدّدت وحداتُها */
+  shared?: SharedQuestions;
   /** تقبل رابطَ تقديمٍ مباشر — انظر `directLink` في `projects.ts` */
   directLink?: boolean;
 };
@@ -70,6 +92,15 @@ export const COMMITTEE_PREFERENCES: readonly Preference[] = COMMITTEES.flatMap(
           group: committee.name,
           description: unit.description,
           questions: unit.questions,
+          /* أسئلة اللجنة تنزل على كل وحدةٍ فيها بمفتاح اللجنة — فمن اختار
+             وحدتين منها يُسأل مرّةً. انظر `SharedQuestions` أعلاه. */
+          shared: committee.questions?.length
+            ? {
+                key: committeeValue(committee),
+                title: committee.name,
+                questions: committee.questions,
+              }
+            : undefined,
         }))
       : [
           {
@@ -127,6 +158,83 @@ export const PREFERENCES: readonly Preference[] = [
 export const PREFERENCE_VALUES: readonly string[] = PREFERENCES.map(
   (preference) => preference.value,
 );
+
+/* ── كتل الأسئلة ────────────────────────────────────────────────────────── */
+
+/**
+ * كتلةُ أسئلةٍ واحدة في نموذج التقديم.
+ *
+ * ⚠️ **مصدرٌ واحد للنموذج وللخادم وللوحة.** الثلاثة كانت تمرّ على الرغبات
+ * الثلاث كلٌّ بحلقته، فلو تخطّى أحدُها مفتاحًا مكرّرًا دون الآخرين لعرض
+ * النموذجُ سؤالًا لا يتحقّق منه الخادم، أو تحقّق من سؤالٍ لم يُعرض. فالبناء
+ * هنا مرّةً، والثلاثة تقرأ منه.
+ */
+export type QuestionBlock = {
+  /** المفتاح الذي تُبنى منه أسماء الحقول — `answerName(key, questionId)` */
+  key: string;
+  /** اسم الجهة — «اللجنة الإعلامية — وحدة التصميم» أو «اللجنة الإعلامية» */
+  title: string;
+  /** ترتيبُ الرغبات التي جلبت هذي الكتلة — أكثرُ من واحدةٍ للمشتركة */
+  slots: readonly number[];
+  /** كتلةُ لجنةٍ تشترك فيها وحداتُها — تُسأل مرّةً */
+  shared: boolean;
+  questions: readonly CustomQuestion[];
+};
+
+/**
+ * كتلُ الأسئلة لرغباتٍ مختارة، بترتيب العرض وبلا تكرار.
+ *
+ * كتلةُ اللجنة تظهر عند **أوّل** وحدةٍ منها تُختار، وتحمل ترتيبَ كل وحدةٍ
+ * تبعتها — فالطالب يقرأ أن هذي أسئلةُ رغبتيه الأولى والثالثة معًا.
+ */
+export function questionBlocks(
+  choices: readonly string[],
+): readonly QuestionBlock[] {
+  const picked = choices.map((choice) =>
+    choice ? findPreference(choice) : undefined,
+  );
+
+  /* مرورٌ أوّل يجمع ترتيبَ كل رغبةٍ تحت مفتاح لجنتها، فتكتمل `slots` قبل
+     أن تُبنى الكتلة — لا تُدفع إلى مصفوفةٍ مُخرَجة أصلًا (تعديلٌ بعد البناء) */
+  const slotsByKey = new Map<string, number[]>();
+  picked.forEach((preference, slot) => {
+    const key = preference?.shared?.questions.length
+      ? preference.shared.key
+      : undefined;
+    if (key) slotsByKey.set(key, [...(slotsByKey.get(key) ?? []), slot]);
+  });
+
+  const blocks: QuestionBlock[] = [];
+  const emitted = new Set<string>();
+
+  picked.forEach((preference, slot) => {
+    if (!preference) return;
+
+    const shared = preference.shared;
+    if (shared?.questions.length && !emitted.has(shared.key)) {
+      emitted.add(shared.key);
+      blocks.push({
+        key: shared.key,
+        title: shared.title,
+        slots: slotsByKey.get(shared.key) ?? [slot],
+        shared: true,
+        questions: shared.questions,
+      });
+    }
+
+    if (preference.questions?.length) {
+      blocks.push({
+        key: preference.value,
+        title: preference.fullLabel,
+        slots: [slot],
+        shared: false,
+        questions: preference.questions,
+      });
+    }
+  });
+
+  return blocks;
+}
 
 const BY_VALUE = new Map(PREFERENCES.map((p) => [p.value, p]));
 

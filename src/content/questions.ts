@@ -18,7 +18,15 @@ export type QuestionType =
   | "select"
   | "multi-select"
   /** اختيارٌ مفرد ببطاقاتٍ تعرض تفاصيل كل خيار — للمناصب ونحوها */
-  | "choice-cards";
+  | "choice-cards"
+  /**
+   * مرفقٌ يرفعه الطالب — نموذجُ عملٍ ونحوه.
+   *
+   * ⚠️ **الإجابة المخزَّنة مسارُ الملفّ في المستودع لا اسمَه ولا محتواه.**
+   * ولا يُعرف المسار قبل إدراج الصفّ، فالرفع يقع **بعد** الإدراج ثم
+   * يُرقَّع `answers` — انظر `saveApplication` في `join/actions.ts`.
+   */
+  | "file";
 
 /**
  * خيارٌ **موصوف** لا مجرّد قيمة.
@@ -33,7 +41,25 @@ export type QuestionOption = {
   details?: readonly string[];
   /** عدد المقاعد المتاحة — يُذكر صراحةً فالطالب يقدّر فرصته */
   seats?: number;
+  /**
+   * خيارُ نفيٍ لا يجتمع مع غيره — «لا يوجد»، «لم أعمل في أيٍّ منها».
+   *
+   * ⚠️ **وُلد مع جعل السؤال مطلوبًا.** المطلوبُ بلا خيارِ نفيٍ يحبس من لا
+   * ينطبق عليه شيء؛ وخيارُ النفي بلا حصرٍ يسمح بـ«لا يوجد» و«تدريب» معًا
+   * فيقرأ القائدُ إجابةً تناقض نفسها. الحصرُ يُطبَّق في الواجهة **وعلى
+   * الخادم** — الواجهة راحةٌ لا حارس.
+   */
+  exclusive?: boolean;
 };
+
+/** الخياراتُ الحصرية وحدها — للواجهة وللتحقّق */
+export function exclusiveValues(
+  options: readonly (string | QuestionOption)[] | undefined,
+): string[] {
+  return (options ?? [])
+    .filter((o): o is QuestionOption => typeof o !== "string" && !!o.exclusive)
+    .map((o) => o.value);
+}
 
 /** القيم وحدها — للتحقّق ولمطابقة ما وصل من النموذج */
 export function optionValues(

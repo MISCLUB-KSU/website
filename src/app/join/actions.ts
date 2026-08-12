@@ -10,7 +10,12 @@ import {
   type RegistrationState,
 } from "@/lib/registration";
 import { findDirectTarget } from "@/content/preferences";
-import { CV_BUCKET, createAdminClient } from "@/lib/supabase/admin";
+import { ANSWER_SEP } from "@/content/questions";
+import {
+  ANSWER_FILES_PREFIX,
+  CV_BUCKET,
+  createAdminClient,
+} from "@/lib/supabase/admin";
 
 /**
  * استقبال طلب العضوية.
@@ -35,6 +40,11 @@ const ECHOED = [
   "choice2",
   "choice3",
   "why",
+  /* ⚠️ **الخبرة السابقة وتفاصيلها كانتا ساقطتين من القائمة.** من أخطأ في
+     حقلٍ آخر كان يرجع فيجد سؤال الخبرة فارغًا وتفاصيلَه ممحوّةً — ثم يُخطَّأ
+     على تركه إيّاه. وهو حقلٌ يُكتب فيه سطرٌ كامل، فمحوُه ليس هيّنًا. */
+  "clubExperience",
+  "clubExperienceDetails",
   "heardFrom",
   "portfolio",
   "linkedin",
@@ -56,10 +66,17 @@ function echo(formData: FormData): Record<string, string> {
     const value = formData.get(key);
     if (typeof value === "string") out[key] = value;
   }
-  for (const [key, value] of formData.entries()) {
-    if (key.startsWith(ANSWER_PREFIX) && typeof value === "string") {
-      out[key] = value;
-    }
+
+  /* ⚠️ **الاختيار المتعدّد يُجمع بالفاصل لا يُدهس بآخر قيمة.** المرورُ على
+     `entries` يعطي صفًّا لكل مربّعٍ مؤشَّر بالاسم نفسه، وإسنادٌ مباشرٌ يبقي
+     الأخيرَ وحده — فمن أشّر ثلاثةً وأخطأ في حقلٍ بعيد كان يرجع فيجد واحدًا.
+     و`splitAnswer` في الواجهة يشقّه بـ`ANSWER_SEP` نفسِه. */
+  for (const key of new Set(formData.keys())) {
+    if (!key.startsWith(ANSWER_PREFIX)) continue;
+    out[key] = formData
+      .getAll(key)
+      .filter((value): value is string => typeof value === "string")
+      .join(ANSWER_SEP);
   }
   return out;
 }
@@ -103,6 +120,13 @@ export async function submitRegistration(
     choice2: text(formData, "choice2"),
     choice3: text(formData, "choice3"),
     why: text(formData, "why"),
+    /* ⚠️ **كانا ساقطين من هنا — والنموذجُ كلُّه لا يُرسَل بسببهما.**
+       `clubExperience` حقلٌ مطلوبٌ في المخطّط (`z.enum`)، وغيابُه عن كائن
+       `safeParse` يجعله `undefined` في **كلِّ** طلب — فيُردّ كلُّ متقدّمٍ
+       بخطأ «أخبرنا: هل سبق أن شاركت…» مهما أجاب. لا يُنزع أحدُهما عن
+       الآخر: `refineFinal` يقرأ التفاصيل بحسب الجواب. */
+    clubExperience: text(formData, "clubExperience"),
+    clubExperienceDetails: text(formData, "clubExperienceDetails"),
     heardFrom: text(formData, "heardFrom"),
     portfolio: text(formData, "portfolio"),
     linkedin: text(formData, "linkedin"),
@@ -145,6 +169,7 @@ export async function submitRegistration(
     /* ⚠️ **`getAll` لا `get`.** الاختيار المتعدّد يرسل قيمةً لكل مربّعٍ
        مؤشَّر بالاسم نفسه، و`get` يعيد الأولى فتضيع البقيّة صامتةً. */
     (name) => formData.getAll(name).map((v) => (typeof v === "string" ? v : "")),
+    (name) => formData.get(name),
   );
   Object.assign(errors, answers.errors);
 
@@ -167,6 +192,7 @@ export async function submitRegistration(
   try {
     await saveApplication(parsed.data, {
       answers: answers.answers,
+      answerFiles: answers.files,
       cv: formData.get("cv"),
       mode,
     });
@@ -216,6 +242,8 @@ function isDuplicate(error: unknown): boolean {
 type Attachments = {
   /** إجابات أسئلة القادة — المفتاح `q__<الرغبة>__<معرّف السؤال>` */
   answers: Record<string, string>;
+  /** مرفقاتُ أسئلة القادة بأسماء حقولها — تُرفع بعد الإدراج */
+  answerFiles: Record<string, File>;
   /** المرفق كما وصل — `File` أو `null` إن لم يرفع الطالب شيئًا */
   cv: FormDataEntryValue | null;
   /** `open` نموذجٌ بثلاث رغبات · `direct` رابطٌ لجهةٍ واحدة */
@@ -284,6 +312,8 @@ async function saveApplication(
     throw new Error("تعذّر حفظ الطلب");
   }
 
+  await uploadAnswerFiles(supabase, row.id, attachments);
+
   const cv = attachments.cv;
   if (!(cv instanceof File) || cv.size === 0) return;
 
@@ -313,6 +343,64 @@ async function saveApplication(
     console.error("[registration] رُفعت السيرة ولم يُربط مسارها", {
       id: row.id,
       path,
+      error: link.error.message,
+    });
+  }
+}
+
+/**
+ * رفعُ مرفقات أسئلة القادة، ثم كتابةُ مساراتها في `answers`.
+ *
+ * ⚠️ **المسار من معرّف الصفّ وترتيبٍ عدديّ لا من اسم الحقل.** اسم الحقل
+ * يحمل قيمةَ الرغبة بنقطتيها وشرطتها المائلة، وتنقيتُها لمفتاح مستودعٍ
+ * تُسقط الفرقَ بين قيمتين مختلفتين فيدهس مرفقٌ مرفقًا. والمسارُ لا يُقرأ
+ * عكسًا أصلًا: اللوحة تقرأ القيمة المخزَّنة في `answers`، لا تشتقّ الاسم
+ * من المسار.
+ *
+ * ⚠️ **وتحديثٌ واحدٌ لا واحدٌ لكل ملفّ.** `answers` عمود `jsonb` كامل،
+ * فكتابتُه مرّتين متتاليتين تدهس الثانيةُ الأولى.
+ *
+ * وفشلُ الرفع لا يُسقط الطلب — نفس قاعدة السيرة الذاتية أعلاه.
+ */
+async function uploadAnswerFiles(
+  supabase: ReturnType<typeof createAdminClient>,
+  id: string,
+  attachments: Attachments,
+): Promise<void> {
+  const entries = Object.entries(attachments.answerFiles);
+  if (entries.length === 0) return;
+
+  const paths: Record<string, string> = {};
+
+  for (const [index, [name, file]] of entries.entries()) {
+    const extension = file.name.split(".").pop()?.toLowerCase() ?? "bin";
+    const path = `${ANSWER_FILES_PREFIX}/${id}/${index}.${extension}`;
+
+    const upload = await supabase.storage
+      .from(CV_BUCKET)
+      .upload(path, file, { contentType: file.type, upsert: true });
+
+    if (upload.error) {
+      console.error("[registration] وصل الطلب ولم يُرفع مرفق سؤال", {
+        id,
+        name,
+        error: upload.error.message,
+      });
+      continue;
+    }
+    paths[name] = path;
+  }
+
+  if (Object.keys(paths).length === 0) return;
+
+  const link = await supabase
+    .from("applications")
+    .update({ answers: { ...attachments.answers, ...paths } })
+    .eq("id", id);
+
+  if (link.error) {
+    console.error("[registration] رُفعت مرفقات الأسئلة ولم تُربط مساراتها", {
+      id,
       error: link.error.message,
     });
   }
