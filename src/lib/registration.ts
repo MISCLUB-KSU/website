@@ -205,18 +205,62 @@ export function validateCvFile(file: unknown): string | undefined {
 /**
  * مرفقُ سؤالِ قائد — نموذجُ عملٍ يُرفع داخل أسئلة الرغبة.
  *
- * ⚠️ **الحدُّ والصيغُ نفسُها المقبولة في السيرة الذاتية، ومقصودٌ ذلك:**
- * المرفقان ينزلان في المستودع الخاصّ نفسه، وحدودُ المستودع في Supabase
- * تُضبط عليه لا على الحقل. فحدٌّ أوسع هنا يمرّ من الفحص ويُردّ عند الرفع —
- * أي بعد أن يكون الطلب قد وصل، فيقرأ الطالب «وصل طلبك» وملفُّه لم يصل.
+ * ⚠️ **ميجابايتان لا خمسة — والفرق ميزانيةٌ لا ذوق.** كلُّ المرفقات تصعد في
+ * **جسمِ طلبٍ واحد**، وسقفُ الجسم في `next.config.ts` واحدٌ للجميع. فحين
+ * كان هذا الحدّ خمسةً كالسيرة الذاتية، كان الطالب الذي يرفع سيرةً ٥ ميجا
+ * ونموذجَ عملٍ ٥ ميجا يتجاوز السقف — فيردّه `Next` بـ**500 خام** قبل أن
+ * تعمل شيفرتُنا أصلًا، فلا يرى رسالةً عربيّةً تقول له ما العطل.
+ * (مقيسٌ لا مفترَض: ٥+٥ = 500 · ٥ وحدها = «وصل طلبك».)
+ *
+ * وميجابايتان تسع بوسترًا أو صورةً أو صفحةَ PDF بأريحيّة. والسيرةُ تبقى
+ * خمسةً لأنها قد تكون معرضَ أعمالٍ من صفحات.
+ *
+ * والصيغُ نفسُها المقبولة في السيرة: المرفقان ينزلان المستودعَ الخاصّ نفسه،
+ * وحدودُ المستودع في Supabase تُضبط عليه لا على الحقل.
  */
-export const ANSWER_FILE_MAX_BYTES = CV_MAX_BYTES;
+export const ANSWER_FILE_MAX_BYTES = 2 * 1024 * 1024;
 export const ANSWER_FILE_TYPES = CV_TYPES;
 export const ANSWER_FILE_ACCEPT = CV_ACCEPT;
 
+/**
+ * أقصى عددِ مرفقاتِ أسئلةٍ في طلبٍ واحد — ثلاثُ رغباتٍ لكلٍّ مرفقٌ واحد.
+ * يُبنى عليه سقفُ الجسم، فإن زاد سؤالُ ملفٍّ رابعٌ وجب رفعُ السقف معه.
+ */
+export const MAX_ANSWER_FILES = 3;
+
+/**
+ * ميزانيةُ الرفع في الطلب الواحد — يقرأها المتصفّح ليمنع التجاوز **قبل**
+ * الإرسال، ويُبنى عليها `bodySizeLimit` في `next.config.ts`.
+ *
+ * ⚠️ **الفحصُ في المتصفّح وحده، ولا مفرّ.** التجاوزُ يردّه `Next` في طبقةٍ
+ * سابقةٍ لشيفرتنا، فلا موضعَ على الخادم نكتب فيه رسالةً للطالب. ومن عطّل
+ * الجافاسكربت ورفع ملفّين كبيرين سيرى عطلًا عامًّا — وهو احتمالٌ نادرٌ
+ * مذكورٌ هنا صراحةً لا مسكوتٌ عنه.
+ */
+export const UPLOAD_BUDGET_BYTES =
+  CV_MAX_BYTES + MAX_ANSWER_FILES * ANSWER_FILE_MAX_BYTES;
+
 /** فحص مرفق السؤال — يعيد رسالة الخطأ أو `undefined` */
 export function validateAnswerFile(file: unknown): string | undefined {
-  return validateCvFile(file);
+  if (!(file instanceof File) || file.size === 0) return undefined;
+  if (file.size > ANSWER_FILE_MAX_BYTES) {
+    return "حجم المرفق أكبر من 2 ميجابايت — اضغطه أو ضع رابطًا بدلًا عنه";
+  }
+  if (!(ANSWER_FILE_TYPES as readonly string[]).includes(file.type)) {
+    return "الصيغ المقبولة: PDF أو PNG أو JPG";
+  }
+  return undefined;
+}
+
+/**
+ * مجموعُ ما اختاره الطالب من ملفّات — يُفحص قبل الإرسال.
+ * يعيد رسالةَ خطأ إن تجاوز الميزانية، و`undefined` إن كان ضمنها.
+ */
+export function validateUploadTotal(files: readonly File[]): string | undefined {
+  const total = files.reduce((sum, file) => sum + file.size, 0);
+  if (total <= UPLOAD_BUDGET_BYTES) return undefined;
+  const mb = Math.round(UPLOAD_BUDGET_BYTES / (1024 * 1024));
+  return `مجموع الملفات المرفقة أكبر من ${mb} ميجابايت — احذف أحدها أو اضغطه`;
 }
 
 /* ── الروابط ──────────────────────────────────────────────────────────── */

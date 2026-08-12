@@ -8,6 +8,7 @@ import {
   STEP_SCHEMAS,
   emptyState,
   stepOfField,
+  validateUploadTotal,
   type RegistrationState,
 } from "@/lib/registration";
 import { submitRegistration } from "./actions";
@@ -185,6 +186,33 @@ export function RegistrationForm({
     setLive((current) => ({ ...current, [field.name]: field.value }));
   }
 
+  /**
+   * حارسُ ميزانية الرفع — **آخرُ موضعٍ يُمكن فيه مخاطبةُ الطالب**.
+   *
+   * ⚠️ مجموعُ المرفقات إن تجاوز الميزانية ردّه `Next` بـ500 خام في طبقةٍ
+   * سابقةٍ لشيفرة الخادم، فلا رسالةَ عربيّةً تصل الطالب من هناك. فالفحصُ
+   * هنا قبل أن يُرسَل شيء، والرسالةُ تقول له ما يفعل.
+   *
+   * يُفحص المجموعُ لا كلُّ ملفٍّ على حدة: الملفُّ المفرد يفحصه الخادم
+   * ويردّ برسالةٍ في مكانه، والمجموعُ وحده هو ما لا يصل إليه.
+   */
+  function overBudget(): string | undefined {
+    const form = formRef.current;
+    if (!form) return undefined;
+    const files = [...new FormData(form).values()].filter(
+      (value): value is File => value instanceof File && value.size > 0,
+    );
+    return validateUploadTotal(files);
+  }
+
+  function guardSubmit(event: React.FormEvent<HTMLFormElement>) {
+    const tooBig = overBudget();
+    if (!tooBig) return;
+    event.preventDefault();
+    setClientErrors({ cv: tooBig });
+    setStep(LAST_STEP);
+  }
+
   function chooseAt(slot: number, value: string) {
     setChoices((current) =>
       current.map((existing, index) => (index === slot ? value : existing)),
@@ -235,6 +263,7 @@ export function RegistrationForm({
         ref={formRef}
         action={formAction}
         onChange={captureLive}
+        onSubmit={guardSubmit}
         noValidate
         className="grid items-start gap-s6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-s7"
       >

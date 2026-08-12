@@ -23,6 +23,7 @@ import {
 import { isolateLatin } from "@/lib/bidi";
 import {
   ANSWER_FILE_ACCEPT,
+  ANSWER_FILE_MAX_BYTES,
   CLUB_EXPERIENCE,
   CLUB_EXPERIENCE_MAX,
   CLUB_EXPERIENCE_YES,
@@ -130,7 +131,10 @@ function AnswerField({
         hint={
           <>
             {question.hint ? `${question.hint} ` : null}
-            <span dir="ltr">PDF</span> أو صورة، حتى <span dir="ltr">5</span>{" "}
+            {/* ⚠️ الرقم مشتقٌّ لا مكتوب: كان «٥» ثابتًا فبقي كاذبًا حين
+                نزل الحدُّ إلى ٢ — والطالب يصدّق ما يقرأ تحت الحقل. */}
+            <span dir="ltr">PDF</span> أو صورة، حتى{" "}
+            <span dir="ltr">{ANSWER_FILE_MAX_BYTES / (1024 * 1024)}</span>{" "}
             ميجابايت.
           </>
         }
