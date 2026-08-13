@@ -32,7 +32,10 @@ export const ABOUT_SECTION: NavSection = {
   children: [
     { label: "نبذة عن النادي", href: "/about" },
     { label: "اللجان", href: "/committees" },
-    { label: "الشراكات", href: "/about/partnerships" },
+    /* ⚠️ **«الشراكات» نُزعت — الصفحة مرفوعةٌ مؤقّتًا (١٢ أغسطس ٢٠٢٦).**
+       الصفحة تبقى تُخدَم بوجهة «قريبًا» لمن وصل من رابطٍ قديم، لكنها لا
+       تُعلَن: نفس ما جرى بالهيكل القيادي. تعود مع الصفحة — انظر قائمة
+       الاسترجاع في رأس `app/about/partnerships/page.tsx`. */
   ],
 };
 

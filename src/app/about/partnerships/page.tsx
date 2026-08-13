@@ -2,148 +2,81 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Mark } from "@/components/site/mark";
-import { PageHeader } from "@/components/site/page-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
-import { PARTNERS, PARTNERSHIP_TRACKS } from "@/content/about";
-import { ABOUT_SECTION } from "@/content/navigation";
+
+/**
+ * الشراكات — **مرفوعةٌ بقرار حسام (١٢ أغسطس ٢٠٢٦).**
+ *
+ * ⚠️ **الصفحة تبقى وتُخدَم — لا تُحذف ولا تُعاد توجيهًا.** من وصل من رابطٍ
+ * قديم يجد وجهةً واضحة لا 404. نفس مبدأ `about/structure/page.tsx`
+ * و`projects/page.tsx`.
+ *
+ * ⚠️ **ورابطُ التنقّل نُزع** من `ABOUT_SECTION.children` ومن `contact.ts`
+ * ومن `sitemap.ts` — لا يُدعى الزائر إلى صفحةِ انتظار.
+ *
+ * ── ما يجب أن يُعكَس عند العودة إليها ────────────────────────────────────
+ *
+ * الشيفرة الكاملة محفوظةٌ في `7b57d24` (آخر نسخةٍ عاملة):
+ *   ١) أعِد جسمَ الصفحة من `7b57d24:src/app/about/partnerships/page.tsx`
+ *   ٢) انزع `robots: noindex` أدناه
+ *   ٣) أعِد سطر `‎/about/partnerships` في `sitemap.ts`
+ *   ٤) أعِد السطر في `ABOUT_SECTION.children` في `content/navigation.ts`
+ *   ٥) أعِد قناة «الشراكات» في `content/contact.ts`
+ *
+ * ⚠️ **وبيانات `content/about.ts` لم تُمسّ ولا تُمسّ.** ومنها ما **زال
+ * معروضًا في مكانٍ آخر**، فلا يُظنّ أنها ماتت برفع هذي الصفحة:
+ *   · `PARTNERS` (جاهز · علم · مزن) تُعرض في **`/achievements`** تحت
+ *     «شراكات اكتملت» — عبر `DELIVERED_PARTNERSHIPS` في `achievements.ts`.
+ *   · `ALL_PARTNERS` (شعارات الشركاء) تُعرض في الصفحة الرئيسية.
+ *   · `PARTNERSHIP_TRACKS` وحدها هي التي بقيت بلا مستهلك — وتبقى للعودة.
+ *
+ * ⚠️ **فرفعُ هذي الصفحة لا يُخفي أسماء الشركاء عن الموقع.** إن كان
+ * المقصود إخفاءهم فالموضعان أعلاه هما المقصودان — يُرفع لحسام.
+ */
 
 export const metadata: Metadata = {
   title: "الشراكات",
-  description:
-    "كيف تُبنى الشراكة مع نادي نظم المعلومات الإدارية، ومسارات التعاون المتاحة للجهات.",
+  description: "صفحة شراكات نادي نظم المعلومات الإدارية — قيد التجهيز.",
   alternates: { canonical: "/about/partnerships" },
+  /* تُحجب عن الفهرسة ما دامت مرفوعة، فلا تُعرض في نتائج البحث صفحةُ انتظار */
+  robots: { index: false, follow: true },
 };
 
-/**
- * الشراكات.
- *
- * الصفحة تخدم الراعي لا الطالب، فتبدأ بما يهمّه: ماذا تعني الشراكة عمليًا.
- *
- * قائمة الشركاء تُعرض فقط إن كانت مؤكَّدة. الحالة الفارغة تقول الحقيقة —
- * أن القائمة لم تُعلن بعد — ولا تُملأ بأرقام «جهات قيد التواصل»: التواصل
- * ليس شراكة، وعرضه كشراكة ادّعاء يكلّف مصداقية النادي عند أول تدقيق.
- */
 export default function PartnershipsPage() {
   return (
     <>
       <SiteHeader />
 
-      <main>
-        <PageHeader
-          id="partnerships"
-          title="الشراكات"
-          lede="النادي يبحث عن جهات تفتح لطلابه بابًا حقيقيًا على العمل — لا شعارًا يُعرض في ملصق."
-          siblings={ABOUT_SECTION.children}
-          currentHref="/about/partnerships"
-        />
+      <main
+        id="main"
+        className="mx-auto flex w-full max-w-3xl flex-col items-center px-s4 py-s9 text-center sm:px-s7"
+      >
+        <Mark decorative className="w-full max-w-sm text-mark" />
 
-        <div className="mx-auto max-w-6xl px-s4 py-s8 sm:px-s7">
-          <section aria-labelledby="tracks-heading">
-            <h2
-              id="tracks-heading"
-              className="font-display text-2xl font-semibold"
-            >
-              مسارات التعاون
-            </h2>
-            <p className="mt-s2 max-w-measure text-fg-muted">
-              ثلاثة مسارات، ويمكن الجمع بينها.
-            </p>
+        <h1 className="font-display mt-s8 text-3xl font-bold text-fg sm:text-4xl">
+          قريبًا
+        </h1>
 
-            <ul className="mt-s6 grid gap-s4 sm:grid-cols-3">
-              {PARTNERSHIP_TRACKS.map((track) => (
-                <li
-                  key={track.title}
-                  className="rake grid grid-rows-[auto_1fr] gap-s3 bg-bg-raised p-s5 shadow-[inset_0_0_0_1px_var(--border)]"
-                >
-                  <h3 className="font-display text-lg font-semibold">
-                    {track.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-fg-muted">
-                    {track.body}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </section>
+        <p className="text-fg-muted mt-s4 max-w-[42ch] text-lead leading-relaxed">
+          نجهّز صفحة الشراكات. قريبًا.
+        </p>
 
-          <section className="mt-s8" aria-labelledby="partners-heading">
-            <h2
-              id="partners-heading"
-              className="font-display text-2xl font-semibold"
-            >
-              الشركاء
-            </h2>
-
-            {PARTNERS.length > 0 ? (
-              <ul className="mt-s6 grid gap-s4 sm:grid-cols-2 lg:grid-cols-3">
-                {PARTNERS.map((partner) => (
-                  <li
-                    key={partner.name}
-                    className="rake grid gap-s2 bg-bg-raised p-s5 shadow-[inset_0_0_0_1px_var(--border)]"
-                  >
-                    <h3 className="font-display text-lg font-semibold">
-                      {partner.name}
-                    </h3>
-                    <p className="text-sm leading-relaxed text-fg-muted">
-                      {/* ⚠️ **بلا `isolateLatin` عمدًا — وقياسًا لا اجتهادًا.**
-                        نصُّ الإسهام ينتهي بمقطعٍ لاتينيّ تليه نقطة
-                        («…لمعرض LearnX.»). والعزل يغلق الصندوق قبل النقطة،
-                        فتصير النقطةُ محايدًا في سياقٍ عربيّ فتُرسم **يمين**
-                        الاسم لا يساره: قِيس فقفزت من 263 إلى 212→216، أي
-                        بين «لمعرض» و«LearnX». وبلا عزلٍ تلتصق النقطة بالمقطع
-                        اللاتينيّ نفسه فتُرسم في موضعها الصحيح.
-                        القاعدة: العزل يصلح حين يكتنف العربيُّ اللاتينيَّ من
-                        الجهتين، ويضرّ حين تليه علامةُ ترقيمٍ خِتاميّة. */}
-                      {partner.contribution}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="rake mt-s6 grid justify-items-center gap-s3 bg-bg-sunken px-s5 py-s7 text-center">
-                <Mark decorative className="w-24 text-line-strong" />
-                <p className="max-w-[46ch] font-semibold">
-                  قائمة الشركاء لم تُعلن بعد.
-                </p>
-                <p className="max-w-[46ch] text-sm text-fg-muted">
-                  تُنشر هنا الجهات التي اكتملت شراكتها فقط — لا الجهات قيد
-                  التواصل.
-                </p>
-              </div>
-            )}
-          </section>
-
-          <section
-            className="rake mt-s8 grid gap-s4 bg-bg-sunken p-s6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
-            aria-labelledby="contact-heading"
+        {/* مخرجان لا طريقٌ مسدود — والأوّل لجنةُ الشراكات نفسُها، فمن جاء
+            يسأل عن التعاون يجد من يكلّمه لا صفحةً صامتة. */}
+        <div className="mt-s8 flex flex-wrap items-center justify-center gap-s4">
+          <Link
+            href="/contact"
+            className="rake rake-sm rake-interactive bg-accent text-accent-fg inline-flex min-h-11 items-center px-s6 text-sm font-semibold transition-colors"
           >
-            <div>
-              <h2
-                id="contact-heading"
-                className="font-display text-2xl font-semibold"
-              >
-                جهة تريد التعاون؟
-              </h2>
-              <p className="mt-s2 max-w-measure text-fg-muted">
-                لجنة العلاقات العامة والشراكات هي نقطة الاتصال، وتحتها وحدة
-                مخصّصة للرعايات والشراكات.
-              </p>
-            </div>
-            {/* ⚠️ كان يشير إلى `/about/structure`، وتلك صارت **الهيكل
-                القيادي** (من يقود) لا وصفَ نطاق اللجنة. ونصُّ الرابط يَعِد
-                بالتعريف باللجنة، فمكانُه صفحتُها. */}
-            <Link
-              href="/committees/public-relations"
-              className="inline-flex min-h-11 items-center gap-s2 font-medium text-accent underline decoration-line-control underline-offset-4 transition-colors hover:text-accent-hover hover:decoration-current"
-            >
-              <span
-                aria-hidden
-                className="mis-slant inline-block h-3.5 w-1 bg-current"
-              />
-              تعرّف على اللجنة
-            </Link>
-          </section>
+            تواصل معنا
+          </Link>
+          <Link
+            href="/about"
+            className="text-fg hover:text-accent inline-flex min-h-11 items-center text-sm font-semibold underline-offset-4 transition-colors hover:underline"
+          >
+            نبذة عن النادي
+          </Link>
         </div>
       </main>
 
