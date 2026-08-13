@@ -89,7 +89,11 @@ export function FaqCard({
   return (
     <li
       id={id}
-      className={`grid content-start gap-s3 scroll-mt-28 rounded-4xl border border-border-quiet bg-bg-raised p-s6 ${className}`}
+      /* ⚠️ **الحشو 20px على الجوّال و32 فوقه.** كان 32 على كل مقاس، فبقي
+         للسؤال 253px من 375 — ثلثا الشاشة — فتكسّر عنوانه أربعة أسطر
+         متعرّجة. والعلّةُ في العمود لا في نمط لفّ العنوان (قِيست الأنماط
+         الثلاثة فكانت `balance` أفضلَها). */
+      className={`grid content-start gap-s3 scroll-mt-28 rounded-4xl border border-border-quiet bg-bg-raised p-5 sm:p-s6 ${className}`}
     >
       <h3 className="flex items-start gap-s3 font-display text-lg font-bold leading-snug text-accent">
         <Dot />
