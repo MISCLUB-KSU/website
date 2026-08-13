@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Mark } from "@/components/site/mark";
+import { LiveMark } from "@/components/site/live-mark";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
+import { PROJECTS } from "@/content/projects";
+import { ProjectsTeaser } from "./teaser";
 
 /**
  * صفحة المشاريع — **مغلقةٌ مؤقّتًا بقرار حسام (١٠ أغسطس ٢٠٢٦).**
@@ -52,14 +54,14 @@ export default function ProjectsPage() {
 
       <main
         id="main"
-        className="mx-auto flex w-full max-w-3xl flex-col items-center px-s4 py-s9 text-center sm:px-s7"
+        className="mx-auto flex w-full max-w-3xl flex-col items-center px-s4 pt-s9 pb-s7 text-center sm:px-s7"
       >
-        {/* العلامة هي بطلُ الصفحة — عاريةً بلا صندوقٍ خلفها، بمقاسٍ يملأ
-            الشاشة على الجوّال. و`--mark` دورٌ ينقلب مع الوضع: كحليّةٌ
-            نهارًا وثلجيّةٌ ليلًا. */}
-        <Mark decorative className="w-full max-w-sm text-mark" />
+        {/* العلامة هي بطلُ الصفحة — حيّةٌ كما في صفحة الهيكل الإداري:
+            أضلاعُها تُطفأ وتشتعل موجةً. و`--mark` دورٌ ينقلب مع الوضع:
+            كحليّةٌ نهارًا وثلجيّةٌ ليلًا. */}
+        <LiveMark />
 
-        <h1 className="font-display mt-s8 text-3xl font-bold text-fg sm:text-4xl">
+        <h1 className="font-display mt-s7 text-4xl font-bold text-fg sm:text-5xl">
           ترقّبونا
         </h1>
 
@@ -75,8 +77,15 @@ export default function ProjectsPage() {
             فبقي ما يعنيه وحده: **ماذا يحدث، ومتى.** والقاعدة الخارجة من
             الجولة: كلُّ جملةٍ تصف حالةً راهنة تحتاج مصدرًا في المستودع
             أو تُحذف — والصفحة تكفيها جملةٌ واحدة ومخرجان. */}
+        {/* ⚠️ **العددُ أُضيف والقاعدةُ محفوظة.** «ستّة» ليس وصفَ حالةٍ بلا
+            سند — هو `PROJECTS.length` نفسُه، مقروءًا من `projects.ts`. فلو
+            زاد مشروعٌ أو نقص تغيّر الرقمُ معه، ولا يكذب السطر. */}
         <p className="text-fg-muted mt-s4 max-w-[42ch] text-lead leading-relaxed">
-          نجهّز صفحاتِ مشاريعنا. قريبًا.
+          نجهّز صفحاتِ مشاريعنا الـ
+          <span dir="ltr" className="tabular-nums">
+            {PROJECTS.length}
+          </span>
+          . قريبًا.
         </p>
 
         {/* مخرجان لا طريقٌ مسدود: من جاء يسأل عن مشروعٍ يجد أين يسأل، ومن
@@ -95,6 +104,8 @@ export default function ProjectsPage() {
             اسأل عن مشروع
           </Link>
         </div>
+
+        <ProjectsTeaser />
       </main>
 
       <SiteFooter />

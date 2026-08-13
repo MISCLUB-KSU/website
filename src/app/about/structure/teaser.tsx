@@ -1,8 +1,4 @@
-"use client";
-
-import "./teaser.css";
-
-import { MARK_POINTS, MARK_VIEWBOX } from "@/lib/geometry.generated";
+import "@/components/site/teaser.css";
 
 /**
  * تشويقُ الهيكل الإداري — **هيكلٌ يتشكّل مطموسًا**.
@@ -142,27 +138,3 @@ export function StructureTeaser() {
  * والتنفّسُ موجةٌ تمرّ على الأضلاع بالترتيب — لا وميضٌ متزامن: المتزامنُ
  * يقرأ إنذارًا، والمتتابعُ يقرأ نبضًا.
  */
-export function LiveMark() {
-  return (
-    <svg
-      viewBox={MARK_VIEWBOX}
-      /* ⚠️ **عرضٌ صريح لا `w-full`.** العلامةُ ابنٌ في عمودٍ مرنٍ بمحاذاةٍ
-         وسطى فلا يتمدّد، و`width: 100%` من أبٍ يتقلّص إلى محتواه يساوي
-         صفرًا — فتختفي وهي مرسومة. */
-      className="text-mark block h-auto"
-      style={{ width: "13rem", maxWidth: "60vw" }}
-      fill="currentColor"
-      role="img"
-      aria-label="نادي نظم المعلومات الإدارية"
-    >
-      {MARK_POINTS.map((points, i) => (
-        <polygon
-          key={points}
-          className="tz-blade"
-          style={{ ["--i" as string]: i }}
-          points={points}
-        />
-      ))}
-    </svg>
-  );
-}

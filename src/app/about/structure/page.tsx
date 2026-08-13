@@ -6,7 +6,8 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { SOCIAL_LINKS } from "@/content/about";
 import { ABOUT_SECTION } from "@/content/navigation";
-import { LiveMark, StructureTeaser } from "./teaser";
+import { LiveMark } from "@/components/site/live-mark";
+import { StructureTeaser } from "./teaser";
 
 /**
  * الهيكل الإداري — **صفحةُ ترقّبٍ مُعلَنة (١٢ أغسطس ٢٠٢٦).**
