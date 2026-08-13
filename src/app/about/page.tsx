@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { PageHeader } from "@/components/site/page-header";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -110,9 +111,16 @@ export default function AboutPage() {
                 </div>
               </dl>
 
-              {/* ⚠️ نُزع رابطُ «الهيكل القيادي» — الصفحة مرفوعةٌ مؤقّتًا
-                  (١١ أغسطس ٢٠٢٦). يعود مع الصفحة؛ الخطواتُ الستّ في رأس
-                  `app/about/structure/page.tsx`. */}
+              <Link
+                href="/about/structure"
+                className="mt-s5 inline-flex min-h-11 items-center gap-s2 font-medium text-accent underline decoration-line-control underline-offset-4 transition-colors hover:text-accent-hover hover:decoration-current"
+              >
+                <span
+                  aria-hidden
+                  className="mis-slant inline-block h-3.5 w-1 bg-current"
+                />
+                اطّلع على الهيكل الإداري
+              </Link>
             </aside>
           </div>
         </div>

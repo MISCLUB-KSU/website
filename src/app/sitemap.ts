@@ -49,6 +49,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
        تُعاد هذي السطور عند الفتح. */
 
     page("/about", 0.7),
+    page("/about/structure", 0.6),
     /* ⚠️ «الشراكات» خارج الخريطة — مرفوعةٌ مؤقّتًا و`noindex` (١٢ أغسطس).
        نفس قاعدة المشاريع أعلاه: ما لا يُفهرس لا يُدرَج. */
 
