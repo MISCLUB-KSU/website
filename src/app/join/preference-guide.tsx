@@ -71,7 +71,7 @@ export function PreferenceGuide() {
                     يتعرّف على لجنته هنا قبل أن يقرأ اسمها */}
                 <h3 className="flex items-center gap-s2 font-display text-[0.95rem] font-semibold text-fg">
                   <CommitteeMark
-                    shape={committee.mark}
+                    icon={committee.mark}
                     className="size-5 shrink-0 text-accent"
                   />
                   {committee.name}

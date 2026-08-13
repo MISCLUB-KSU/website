@@ -22,22 +22,21 @@ export type Unit = {
 };
 
 /**
- * إيقاع علامة اللجنة — ثلاث ضربات بزاوية الشعار تفترق بارتفاعاتها.
- * تُرسم في `committee-mark.tsx`، والاسم هنا دلالة لا هندسة.
+ * أيقونة اللجنة — تُرسم في `committee-mark.tsx`.
+ *
+ * ⚠️ **الاسمُ بالرسم لا بالمهمّة** (`camera` لا `media`): اللجنةُ يتغيّر
+ * اسمُها ونطاقُها بين الفصول، والأيقونةُ لا تتغيّر بتغيّرهما — ومن يضيف
+ * لجنةً يختار رسمًا موجودًا لا يخترع اسمًا جديدًا للمعنى نفسه.
+ *
  * ⚠️ إضافة إلى نظام الهوية تنتظر اعتماد الرئاسة.
  */
-export type CommitteeMarkShape =
-  | "ascending"
-  | "descending"
-  | "flat"
-  | "valley"
-  | "peak";
+export type MarkIcon = "partners" | "member" | "wallet" | "camera";
 
 export type Committee = {
   slug: string;
   name: string;
   description: string;
-  mark: CommitteeMarkShape;
+  mark: MarkIcon;
   /** لجان بإشراف الرئاسة مباشرة لا تتبع نائب الرئيس */
   reportsToPresidency?: boolean;
   /** بعض اللجان تعمل ككتلة واحدة بلا وحدات فرعية */
@@ -131,7 +130,7 @@ export const COMMITTEES: readonly Committee[] = [
   {
     slug: "public-relations",
     name: "لجنة العلاقات العامة والشراكات",
-    mark: "descending",
+    mark: "partners",
     description:
       "تبني علاقات النادي مع الجهات الخارجية والرعاة، وتنظّم تواصله الداخلي.",
     reportsToPresidency: true,
@@ -159,7 +158,7 @@ export const COMMITTEES: readonly Committee[] = [
   {
     slug: "human-resources",
     name: "لجنة الموارد البشرية",
-    mark: "flat",
+    mark: "member",
     description:
       "إدارة الأعضاء والمتطوعين، ومتابعة ساعاتهم، وتنظيم عمليات التسجيل.",
     units: [],
@@ -167,7 +166,7 @@ export const COMMITTEES: readonly Committee[] = [
   {
     slug: "finance-operations",
     name: "لجنة الموارد المالية والتنظيمية",
-    mark: "valley",
+    mark: "wallet",
     description:
       "تنظيم الشؤون الإدارية والمالية، وتوثيق أعمال النادي وتقاريره.",
     units: [
@@ -194,7 +193,7 @@ export const COMMITTEES: readonly Committee[] = [
   {
     slug: "media",
     name: "اللجنة الإعلامية",
-    mark: "peak",
+    mark: "camera",
     description:
       "تُبرز صورة النادي وتنشر أخباره وأنشطته عبر المحتوى البصري والتسويقي.",
     questions: MEDIA_QUESTIONS,

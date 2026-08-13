@@ -46,7 +46,7 @@ export default function CommitteesPage() {
                   {/* علامة اللجنة — تتكرّر في صفحتها وفي نموذج التقديم،
                       فيتعرّف الطالب عليها قبل أن يقرأ اسمها */}
                   <CommitteeMark
-                    shape={committee.mark}
+                    icon={committee.mark}
                     className="size-6 text-accent"
                   />
                   <h2 className="font-display text-lg font-semibold">
