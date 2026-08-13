@@ -142,3 +142,47 @@
     animation: none;
   }
 }
+
+/* ==========================================================================
+   سلّمُ ألوان بطاقات المشاريع.
+
+   ⚠️ **بديلٌ مؤقّتٌ حتى تصل ألوانُ المشاريع الرسمية** — `accent` فارغٌ في
+   الستّة، و`projects.ts` يقول إنها تُملأ من هويّة كل مشروع. واختيارُ ستّةِ
+   ألوانٍ قرارُ هويّةٍ لا قرارُ شيفرة، فالسلّمُ هنا مشتقٌّ من أزرق النادي
+   الثلاثة لا مخترعٌ عليه.
+
+   ⚠️ **وينقلب مع الوضع — وهذا سببُ وجوده هنا لا في TSX.** سلّمٌ واحدٌ
+   يفشل حتمًا في أحد الوضعين: المتدرّجُ نحو الغامق يذوب في الليل، والمتدرّج
+   نحو الفاتح يذوب في النهار. فالنهارُ ينزل `deep → sky`، والليلُ يصعد
+   `sky → snow`.
+   ========================================================================== */
+
+:root {
+  --tz-1: var(--color-deep);
+  --tz-2: color-mix(in oklab, var(--color-deep) 55%, var(--color-primary));
+  --tz-3: var(--color-primary);
+  --tz-4: color-mix(in oklab, var(--color-primary) 62%, var(--color-sky));
+  --tz-5: color-mix(in oklab, var(--color-primary) 28%, var(--color-sky));
+  --tz-6: var(--color-sky);
+}
+
+/* التوأمان يطابقان آلية الثيم في `globals.css` حرفًا بحرف */
+:root[data-theme="dark"] {
+  --tz-1: var(--color-sky);
+  --tz-2: color-mix(in oklab, var(--color-sky) 78%, var(--color-snow));
+  --tz-3: color-mix(in oklab, var(--color-sky) 55%, var(--color-snow));
+  --tz-4: color-mix(in oklab, var(--color-primary) 45%, var(--color-sky));
+  --tz-5: color-mix(in oklab, var(--color-primary) 72%, var(--color-sky));
+  --tz-6: var(--color-primary);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --tz-1: var(--color-sky);
+    --tz-2: color-mix(in oklab, var(--color-sky) 78%, var(--color-snow));
+    --tz-3: color-mix(in oklab, var(--color-sky) 55%, var(--color-snow));
+    --tz-4: color-mix(in oklab, var(--color-primary) 45%, var(--color-sky));
+    --tz-5: color-mix(in oklab, var(--color-primary) 72%, var(--color-sky));
+    --tz-6: var(--color-primary);
+  }
+}

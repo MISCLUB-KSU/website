@@ -1,3 +1,5 @@
+import { PROJECTS } from "@/content/projects";
+
 import "@/components/site/teaser.css";
 
 /**
@@ -15,6 +17,31 @@ import "@/components/site/teaser.css";
  * ⚠️ **وعرضُ الأشرطة يختلف بين البطاقات عمدًا** — ستّةُ أسطرٍ متساوية
  * تُقرأ شبكةً هندسيّة لا محتوًى ينتظر.
  */
+
+/**
+ * لونُ كل بطاقة.
+ *
+ * ⚠️ **يُقرأ من `project.accent` أوّلًا** — فيوم تصل ألوانُ المشاريع
+ * الرسمية يكفي سطرٌ في `projects.ts` ولا يُمسّ هذا الملفّ.
+ *
+ * ⚠️ **والبديلُ سلّمٌ مشتقٌّ لا ألوانٌ مخترعة.** `accent` فارغٌ في
+ * المشاريع الستّة كلِّها، ونصُّ `projects.ts`: «القيم لم تُعتمد بعد —
+ * تُملأ من الهوية الرسمية لكل مشروع». واختيارُ ستّةِ ألوانٍ لستّة مشاريع
+ * قرارُ هويّةٍ لا قرارُ شيفرة. فالبديلُ ستُّ درجاتٍ **من أزرق النادي
+ * الثلاثة نفسِها** (`deep · primary · sky`) بـ`color-mix` — تتفرّق
+ * البطاقاتُ بالعين ولا تُخترع هويّة.
+ */
+const RAMP = [
+  "var(--tz-1)",
+  "var(--tz-2)",
+  "var(--tz-3)",
+  "var(--tz-4)",
+  "var(--tz-5)",
+  "var(--tz-6)",
+] as const;
+
+/** لونُ المشروع إن وصل، وإلّا درجتُه من السلّم */
+const tone = (i: number) => PROJECTS[i]?.accent ?? RAMP[i] ?? RAMP[0];
 
 const W = 720;
 const H = 250;
@@ -37,7 +64,7 @@ export function ProjectsTeaser() {
     <div className="pointer-events-none relative mt-s6 w-full max-w-3xl" aria-hidden>
       <svg
         viewBox={`0 0 ${W} ${H}`}
-        className="text-accent block h-auto w-full"
+        className="block h-auto w-full"
         style={{
           /* الطمسُ هو التشويق: يُرى الشكلُ ولا يُقرأ */
           filter: "blur(2.2px)",
@@ -51,7 +78,8 @@ export function ProjectsTeaser() {
           <g
             key={card.i}
             className="tz-node"
-            style={{ ["--i" as string]: card.i }}
+            /* اللون على المجموعة، فترثه أشكالُها الأربعة بـ`currentColor` */
+            style={{ ["--i" as string]: card.i, color: tone(card.i) }}
           >
             {/* جسمُ البطاقة */}
             <rect
@@ -61,7 +89,7 @@ export function ProjectsTeaser() {
               height={CARD.h}
               rx="6"
               fill="currentColor"
-              opacity={0.14}
+              opacity={0.24}
             />
             {/* موضعُ الشعار */}
             <rect
@@ -71,7 +99,7 @@ export function ProjectsTeaser() {
               height="28"
               rx="6"
               fill="currentColor"
-              opacity={0.3}
+              opacity={0.5}
             />
             {/* موضعُ الاسم — يتنفّس */}
             <rect
@@ -92,7 +120,7 @@ export function ProjectsTeaser() {
               height="7"
               rx="3.5"
               fill="currentColor"
-              opacity={0.22}
+              opacity={0.34}
             />
           </g>
         ))}
