@@ -111,7 +111,9 @@ export function SiteFooter() {
         {/* شريط سفلي عادي: علامة صغيرة وسطر تعريف فوق فاصل رفيع.
             التوقيع العملاق أُزيل بطلب مباشر — كان يأخذ ٤٠٠px من ارتفاع
             التذييل، وهذا وزنٌ لا يحتمله تذييل موقع نادٍ. */}
-        <div className="mt-s7 flex flex-wrap items-center justify-between gap-s3 border-t border-snow/15 py-s5">
+        {/* `mis-safe-bottom` تحلّ محلّ `pb` من `py-s5`: مؤشّرُ الأسفل على
+            الآيفون يمرّ فوق هذا الصفّ بعد `viewport-fit=cover`. */}
+        <div className="mis-safe-bottom mt-s7 flex flex-wrap items-center justify-between gap-s3 border-t border-snow/15 pt-s5">
           {/* ═══ محطّة الرحلة الأخيرة — على العلامة الصغيرة نفسها ═══
               أضلاع الشعار تجتمع هنا وتنتهي رحلتها. والمرساة **علامةُ
               الكولوفون القائمة** لا كتلةٌ جديدة: الرحلة تبلغ قاع الصفحة

@@ -236,3 +236,15 @@ export function findCommittee(slug: string): Committee | undefined {
 export const COMMITTEES_WITHOUT_UNITS = COMMITTEES.filter(
   (committee) => committee.units.length === 0,
 );
+
+/**
+ * الوحدات المستقبِلة للطلبات — يوازي `OPEN_PROJECTS` في `projects.ts`.
+ *
+ * ⚠️ **وُجد لأن الواجهة كانت تكذب.** كانت الرئيسية تحسب حالة التقديم من
+ * `OPEN_PROJECTS` وحدها، والمشاريع الستّة مغلقة — فتقول لكل زائر «التقديم
+ * مغلق حاليًا» بينما **تسع وحداتِ لجانٍ مفتوحة** ونموذجُ التقديم يقبلها.
+ * أي أن الصفحة تردّ الطالب على الباب وهو مفتوح.
+ */
+export const OPEN_UNITS = COMMITTEES.flatMap((committee) =>
+  committee.units.filter((unit) => unit.isOpen),
+);

@@ -80,6 +80,13 @@ export function RegistrationForm({
   /* خطأ المتصفح يعلو خطأ الخادم: الأحدث هو ما يعالجه الطالب الآن */
   const errors = { ...state.errors, ...clientErrors };
 
+  /* عدّادٌ لا مرجع: كتلة `lastState` أدناه تطلب النقل **أثناء العرض**،
+     والكتابة في مرجعٍ هناك ممنوعة (`react-hooks/refs`) — بخلاف الحالة، وهي
+     النمط الذي تستعمله الكتلة نفسها. والعدّاد لا قيمةَ له في ذاته: تغيّرُه
+     هو الإشارة، فيعمل المؤثّر ولو تكرّرت الأخطاء نفسُها ضغطةً بعد ضغطة.
+     ⚠️ ويُعرَّف **قبل** الكتلة — `const` في منطقة الموت الزمنيّ يرمي. */
+  const [errorFocusNonce, setErrorFocusNonce] = useState(0);
+
   /* ردّ الخادم يقود إلى أول خطوة فيها خطأ — لا يُترك الطالب في خطوة سليمة
      ورسالةٌ تقول إن ثمة خطأً في مكان لا يراه.
 
@@ -94,6 +101,9 @@ export function RegistrationForm({
     if (fields.length > 0) {
       setClientErrors({});
       setStep(Math.min(...fields.map(stepOfField)));
+      /* وردُّ الخادم مثلُه: قد تقع أخطاؤه في الخطوة المعروضة نفسِها فلا
+         تتبدّل، فيبقى الطالب حيث هو ولا يرى ما رُفض. */
+      setErrorFocusNonce((n) => n + 1);
     }
   }
 
@@ -109,6 +119,52 @@ export function RegistrationForm({
       ?.querySelector<HTMLElement>("[data-active] [data-step-heading]")
       ?.focus();
   }, [step]);
+
+  /**
+   * ⚠️ **الرسالةُ وحدها لا تكفي — على الجوّال خاصّةً.**
+   *
+   * كان الضغط على «التالي» بحقولٍ ناقصة يضع الأخطاء في الشجرة **ولا يحرّك
+   * شيئًا**: قِيس على 375×812 أن ستّةً من سبعة أخطاءٍ تقع **فوق الشاشة**
+   * (‑677px إلى ‑41px)، والتركيز يبقى على `body`، والتمرير يتحرّك 61px.
+   * فالطالب يضغط ويرى أن **لا شيء حدث** — ويغادر.
+   *
+   * فيُنقل التركيز إلى أوّل حقلٍ أخطأ: يُمرَّر إليه، ويُنطق عنوانُه ورسالتُه
+   * (`aria-describedby` يشير إلى الرسالة نفسها)، وتُفتح لوحةُ المفاتيح على
+   * الحقل الذي ينقصه جوابٌ لا على أوّل الصفحة.
+   *
+   * **الترتيب من الـDOM لا من قائمةٍ موازية:** `querySelector` يردّ أوّل
+   * مطابقٍ في ترتيب المستند، وهو ترتيبُ العين نفسُه — فلا تُصان قائمةٌ
+   * ثانيةٌ تتخلّف عن الحقول يوم يُضاف حقل.
+   */
+  useEffect(() => {
+    if (errorFocusNonce === 0) return;
+    const form = formRef.current;
+    if (!form) return;
+
+    /* داخل الخطوة المعروضة وحدها — اللوحات الثلاث كلّها في الشجرة */
+    const scope = form.querySelector<HTMLElement>("[data-active]") ?? form;
+    const invalid = scope.querySelector<HTMLElement>('[aria-invalid="true"]');
+    if (!invalid) return;
+
+    /* الحاملُ للحالة ليس دائمًا ما يُركَّز عليه: مجموعةُ الخيارات تحملها على
+       `<fieldset>` وهو لا يقبل تركيزًا، والقائمةُ المحسَّنة تحملها على
+       `<select>` مخفيٍّ وزرُّها **شقيقُه** لا ابنُه. فيُؤخذ الوعاء ثم أوّلُ
+       ما يقبل التركيز فيه — يستوي الثلاثة بلا حالاتٍ خاصّة. */
+    const group = invalid.closest<HTMLElement>("div,fieldset") ?? invalid;
+    /* `[data-error-focus]` أوّلًا: بعضُ الخطوات لا حقلَ فيها يُركَّز عليه —
+       خانات الرغبات عرضٌ لا إدخال — فتضع مرساةً صريحة على رسالتها. */
+    const target =
+      group.querySelector<HTMLElement>("[data-error-focus]") ??
+      group.querySelector<HTMLElement>(
+        'input:not([type="hidden"]):not([tabindex="-1"]), select:not([tabindex="-1"]), textarea, button',
+      ) ??
+      invalid;
+
+    /* التمرير أوّلًا ليقع الحقل في وسط الشاشة ورسالتُه تحته ظاهرة، ثم
+       التركيز بلا تمريرٍ ثانٍ يزحزح ما ضُبط. */
+    group.scrollIntoView({ block: "center" });
+    target.focus({ preventScroll: true });
+  }, [errorFocusNonce]);
 
   function validateStep(index: number): boolean {
     const form = formRef.current;
@@ -137,7 +193,11 @@ export function RegistrationForm({
   }
 
   function goNext() {
-    if (!validateStep(step)) return;
+    if (!validateStep(step)) {
+      /* الخطوة لم تتبدّل، فمؤثّر `[step]` لا يعمل — والطلبُ يُرفع هنا */
+      setErrorFocusNonce((n) => n + 1);
+      return;
+    }
     setStep((current) => {
       const next = current + 1;
       return Math.min(
@@ -217,6 +277,27 @@ export function RegistrationForm({
     setChoices((current) =>
       current.map((existing, index) => (index === slot ? value : existing)),
     );
+    /**
+     * ⚠️ **الخطأ يُمسح فور التصحيح — وإلّا ناقض الشاشةَ نفسَها.**
+     *
+     * أخطاء الخطوة تُحسب عند «التالي» وتبقى حتى الضغطة التالية. فمن أخطأ
+     * ثم أكمل رغباته الثلاث كان يرى — مقيسًا — الخاناتِ الثلاثَ مملوءةً
+     * و**حدَّين أحمرين ورسالة «اختر رغبتك»** فوقها. رسالةٌ تكذب على من
+     * أصلح خطأه، وهي أسوأُ من غيابها: تُشكّكه فيما فعل.
+     *
+     * وتُمسح رموزُ الرغبات وحدَها لا الخريطةُ كلُّها — أخطاءُ حقولٍ أخرى
+     * في الخطوة نفسِها لم تُصلَّح بهذي النقرة.
+     */
+    setClientErrors((current) => {
+      if (!current.choice1 && !current.choice2 && !current.choice3) {
+        return current;
+      }
+      const { choice1, choice2, choice3, ...rest } = current;
+      void choice1;
+      void choice2;
+      void choice3;
+      return rest;
+    });
   }
 
   if (state.ok) {
@@ -341,7 +422,22 @@ export function RegistrationForm({
             errors={errors}
           />
 
-          <div className="flex flex-wrap items-center gap-s4 border-t border-line pt-s5">
+          {/* ⚠️ **ملتصقٌ بالأسفل على الجوّال وحده.**
+              النموذج **٢٫٤ شاشة** على 375×812، و«التالي» عرضُه 80px عند
+              y=1635 — أي أن الطالب يمرّر إلى القاع في كل خطوة ليتقدّم.
+              وبعد إصلاح نقلِ التركيز إلى أوّل خطأ صار يُرفع إلى وسط النموذج
+              ثم يعود يمرّر إلى القاع مرّةً أخرى ليضغط. فيبقى الزرّ في مدى
+              الإبهام دائمًا.
+              `-mx-5 px-5` لأنّ `<main>` يحشو 20px: الشريط يمتدّ حافّةً إلى
+              حافّة ويبقى محتواه على محاذاة النموذج. و`bg-bg` مصمتة وإلّا
+              مرّت الحقول تحته فاختلط النصّان. و`lg:static` — الحاسب كما هو. */}
+          {/* ⚠️ **بلا `-mx-5 px-5`** — جرّبتُها لتمتدّ الحافّةَ إلى الحافّة
+              فأفاضت الصفحة عند تكبير النصّ 200% (قِيس 402px في 375): الهامش
+              السالب `1.25rem` يتضاعف مع الخطّ، وأبوه `min-width: auto` ينمو
+              ليسعه، فيتغذّى أحدهما من الآخر. والحدّان الجانبيان أرضيةُ صفحةٍ
+              أصلًا، فبقاؤه داخل صندوق المحتوى لا يُرى فرقًا ويثبت عند أي
+              مقاس. أُدخل هذا العطل مع الشريط وأُمسك في الفحص. */}
+          <div className="mis-safe-bottom sticky bottom-0 z-10 flex min-w-0 flex-wrap items-center gap-s4 border-t border-line bg-bg pt-s5 [&>*]:min-w-0 lg:static lg:pb-0">
             <div className="js-only flex flex-wrap gap-s3">
               {step > 0 && (
                 <Button type="button" variant="secondary" onClick={goBack}>

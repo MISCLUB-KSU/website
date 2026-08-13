@@ -66,6 +66,30 @@ export function StepPreferences({
   const hasCommittee = choices.some((value) => value && isCommitteeValue(value));
   const rankOf = (value: string) => choices.indexOf(value);
 
+  /**
+   * الرسالة المنطوقة عن الرغبات — تُشتقّ من أخطاء الخانات الثلاث كلِّها.
+   *
+   * ⚠️ **العدُّ من `choices` لا من عدد الأخطاء.** المخطّط يضيف خطأً للخانة
+   * الفارغة **وللمكرَّرة** أيضًا، فعدُّ الأخطاء يقول «ينقصك واحدة» لمن
+   * اختار ثلاثًا فيها تكرار — وهو غلط. فالنقصُ يُحسب من القيم نفسِها،
+   * وما ليس نقصًا (تكرارٌ أو شرطُ اللجنة) تُنقل رسالتُه كما كتبها المخطّط.
+   */
+  const slotErrors = [e.choice1, e.choice2, e.choice3];
+  const missing = choices.filter((value) => !value).length;
+  /* ⚠️ الرقم يُعزل `dir="ltr"` — قاعدةُ المستودع لكل رقمٍ لاتينيّ في نصٍّ
+     عربيّ. مفردًا قد يمرّ، لكن الاستثناء يُنسى فيُكسَر يوم يصير عددًا. */
+  const choiceError: React.ReactNode = !slotErrors.some(Boolean)
+    ? undefined
+    : missing > 0
+      ? [
+          "ينقصك ",
+          <span key="n" dir="ltr" className="tabular-nums">
+            {missing}
+          </span>,
+          " من ثلاث رغبات — الخانات الناقصة معلَّمة بالأحمر.",
+        ]
+      : slotErrors.find(Boolean);
+
   /* نقرةٌ واحدة تكفي: تُسنِد الشاغر التالي، أو تسحب وتُصعِّد ما بعده. */
   function toggle(value: string) {
     const at = rankOf(value);
@@ -100,40 +124,75 @@ export function StepPreferences({
           تكرارٌ لهذا الصندوق. */}
 
       {/* ══ شريط ما اخترته ══════════════════════════════════════════════ */}
-      <div className="flex flex-col gap-s3">
+      <div
+        className="flex flex-col gap-s3"
+        aria-invalid={choiceError ? true : undefined}
+      >
         <h3 className="font-display text-[0.95rem] font-semibold text-fg">
           رغباتك الثلاث
         </h3>
 
+        {/* ⚠️ **الخانة تحمل خطأها — وهذا كان عطلًا صامتًا يوقف الطالب.**
+            كان المعروض هنا `e.choice1` وحدها، والبطاقاتُ تحلّ محلّ القوائم
+            المنسدلة بعد الترطيب — والقوائمُ هي التي كانت تعرض خطأَي
+            `choice2` و`choice3`. فتذهب معها، ولا يبقى لهما موضعٌ يظهران فيه.
+            والنتيجة مقيسةٌ ثلاث مرّات: مَن اختار **رغبةً أو رغبتين** يضغط
+            «التالي» فلا ينتقل، و**صفرُ رسالة وصفرُ `aria-invalid` والتركيز
+            لا يتحرّك** — طريقٌ مسدودٌ بلا تفسير. ومَن اختار صفرًا كان يرى
+            رسالةً، فيبدو النموذج سليمًا عند الفحص بنموذجٍ فارغ.
+            والآن كلُّ خانةٍ تحمل رسالتَها في مكانها — حيث ينظر الطالب. */}
         <ol className="grid gap-s2 sm:grid-cols-3">
           {RANKS.map((rank, slot) => {
             const value = choices[slot] ?? "";
             const picked = value
               ? PREFERENCES.find((p) => p.value === value)
               : undefined;
+            const slotError = e[`choice${slot + 1}`];
             return (
               <li
                 key={rank}
                 className="flex min-h-[4.25rem] flex-col justify-center border px-s3 py-s2"
                 style={{
-                  borderColor: picked ? RANK_TINT[slot] : "var(--line)",
+                  borderColor: slotError
+                    ? "var(--danger)"
+                    : picked
+                      ? RANK_TINT[slot]
+                      : "var(--line)",
                   background: picked
                     ? `color-mix(in oklab, ${RANK_TINT[slot]} 10%, transparent)`
                     : undefined,
                 }}
               >
                 <span className="text-[0.72rem] text-fg-muted">{rank}</span>
-                <span className="text-[0.86rem] font-semibold text-fg">
-                  {picked ? isolateLatin(picked.fullLabel) : "— لم تُختَر بعد"}
+                <span
+                  className={`text-[0.86rem] font-semibold ${slotError ? "text-danger" : "text-fg"}`}
+                >
+                  {picked
+                    ? isolateLatin(picked.fullLabel)
+                    : (slotError ?? "— لم تُختَر بعد")}
                 </span>
               </li>
             );
           })}
         </ol>
 
-        {e.choice1 && (
-          <p role="alert" className="text-[0.84rem] text-danger">
-            {e.choice1}
+        {/* ⚠️ **إعلانٌ واحد لا ثلاثة.** `role="alert"` على كل خانةٍ يجعل
+            قارئ الشاشة ينطق ثلاث رسائل متزاحمة. فواحدةٌ تلخّص، والتفصيلُ
+            في الخانات أعلاه. و`aria-invalid` و`tabIndex` عليها هما ما
+            يجدهما نقلُ التركيز إلى أوّل خطأ في `registration-form.tsx` —
+            بدونهما يبقى البحث عن `[aria-invalid="true"]` بلا نتيجة. */}
+        {/* ⚠️ `aria-invalid` على الغلاف لا على الرسالة: دورُ `alert` لا يدعمها
+            (مواصفة ARIA، ويرفضها المدقّق). والغلافُ عنصرٌ عامٌّ يقبلها،
+            فيجدها نقلُ التركيز. و`data-error-focus` هي المرساة التي يركّز
+            عليها — لا يوجد هنا حقلٌ يُركَّز عليه، الخانات عرضٌ لا إدخال. */}
+        {choiceError && (
+          <p
+            role="alert"
+            tabIndex={-1}
+            data-error-focus
+            className="text-[0.84rem] text-danger outline-none"
+          >
+            {choiceError}
           </p>
         )}
 
@@ -250,9 +309,22 @@ function CardGroup({
                   : undefined
               }
             >
-              <span className="flex items-start justify-between gap-x-s3">
+              {/* ⚠️ **`anywhere` لا `break-word` — والفرق هو كلُّ الحكاية.**
+                  قِيس عند تكبير النصّ 200%: بطاقاتُ المشاريع تُخرج الصفحة
+                  إلى **404px** في 375 (مخالفة WCAG 1.4.4)، والسببُ اسمٌ
+                  لاتينيٌّ لا ينكسر — «InterMission» — وبطاقتُه عنصرُ شبكةٍ
+                  `min-width: auto` فلا ينزل تحت عرض محتواه الأدنى.
+                  و`overflow-wrap: break-word` **لا تُغيّر ذلك العرض الأدنى**
+                  بالمواصفة — تكسر السطر بصريًّا والحسابُ يبقى على الكلمة
+                  كاملة، فيبقى الفيض. و`anywhere` وحدها تدخل في حساب
+                  `min-content`، وهي المطلوبة هنا.
+                  وتُكتب خاصّيةً صريحة لا صنفًا مختصرًا: أسماءُ أدوات
+                  `overflow-wrap` تبدّلت بين إصداري Tailwind، وقِيس أن
+                  `break-words` أعطت `overflow-wrap: normal` — أي صنفٌ سقط
+                  صامتًا. ولا تكسر إلا حين لا يتّسع، فالمقاسُ الطبيعيّ كما هو. */}
+              <span className="flex min-w-0 items-start justify-between gap-x-s3">
                 <span className="min-w-0">
-                  <span className="block text-[0.94rem] font-semibold text-fg">
+                  <span className="block text-[0.94rem] font-semibold text-fg [overflow-wrap:anywhere]">
                     {isolateLatin(item.label)}
                   </span>
                   {/* ⚠️ **اللجنة الأمّ وحدها، لا عنوانُ المجموعة.**

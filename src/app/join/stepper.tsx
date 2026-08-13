@@ -19,8 +19,12 @@ type StepperProps = {
 };
 
 export function Stepper({ current, onGoTo }: StepperProps) {
+  /* ⚠️ `max-lg:mb-0`: الهامش هنا كان يفصل الشريطَ عن **عنوان الخطوة**،
+     والعنوان صار `sr-only` على الجوّال (انظر `step-panel.tsx`). فبقاؤه
+     يترك فجوةً مقيسة 74px بلا شيءٍ تفصله. وفجوةُ شبكة النموذج (32px)
+     تكفي وحدها. والحاسبُ يرى العنوان فيبقى الهامش له. */
   return (
-    <nav aria-label="خطوات الطلب" className="mb-s7">
+    <nav aria-label="خطوات الطلب" className="mb-s7 max-lg:mb-0">
       <p className="sr-only">
         الخطوة <span dir="ltr">{current + 1}</span> من{" "}
         <span dir="ltr">{STEPS.length}</span>: {STEPS[current].title}

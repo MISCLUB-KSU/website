@@ -1,5 +1,8 @@
+import Link from "next/link";
+
 import { Mark } from "@/components/site/mark";
 import { HeroDrift } from "@/components/site/mobile-motion";
+import { PRIMARY_ACTION } from "@/content/navigation";
 
 /**
  * الواجهة الأولى — «العلامة المحفورة».
@@ -142,6 +145,20 @@ export function Hero({ isOpen }: HeroProps) {
               مجتمع طلابي يحوّل المعرفة إلى خبرة، والأفكار إلى مشاريع، والطموح
               إلى مستقبل مهني أوضح.
             </p>
+            {/* ⚠️ **الجوّال وحده (`lg:hidden`) — تركيبُ الحاسب المعتمد لا يُمَسّ.**
+                قِيس على 375×812: الشاشة الأولى فيها العنوان ثم الفقرة ثم
+                **~٤٠٪ فراغ** قبل العلامة، وأوّلُ نداء فعلٍ داخل المحتوى عند
+                y=4177. والزرُّ الوحيد فوق الطيّة هو زرُّ الشريط: عرضُه 105px
+                وموضعُه أعلى الشاشة — أصعبُ منطقة على الإبهام. وهذا الزرّ يقع
+                في الثلث الأوسط حيث تصل اليد، ويملأ فراغًا مقيسًا لا مُقدَّرًا.
+                والميلان `rake` هو نفسُه ميلانُ زرّ الشريط — توقيعٌ واحد لا
+                شكلان لنداءٍ واحد. */}
+            <Link
+              href={PRIMARY_ACTION.href}
+              className="rake rake-sm rake-interactive mt-s6 inline-flex min-h-12 items-center bg-accent px-s6 text-base font-semibold text-accent-fg transition-[background-color,transform,clip-path] hover:bg-accent-hover active:scale-[0.98] motion-reduce:active:scale-100 lg:hidden"
+            >
+              {PRIMARY_ACTION.label}
+            </Link>
           </HeroDrift>
         </div>
       </div>

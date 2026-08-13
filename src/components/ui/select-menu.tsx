@@ -206,13 +206,21 @@ export function SelectMenu({
           aria-expanded={open}
           aria-controls={open ? listId : undefined}
           aria-labelledby={labelId}
+          /* ⚠️ **حالةُ الخطأ هنا في الحدّ الأحمر وحده — لا تصل قارئَ الشاشة.**
+             و`aria-invalid` على `role="button"` مخالفةٌ للمواصفة (ليست من
+             حالاته)، وتصحيحُها يقتضي `role="combobox"` — وهو تبديلُ دورٍ
+             لكلّ قائمةٍ في النموذج، أوسعُ من إصلاحِ عطلٍ. تُرك عمدًا لمراجعةٍ
+             مستقلّة، ونقلُ التركيز لا يعتمد عليه: يجد `<select>` المخفيّ
+             وهو يحملها، ثم يمشي إلى هذا الزرّ. */
           onClick={() =>
             open
               ? setOpen(false)
               : openAt(flat.findIndex((o) => o.value === value))
           }
           onKeyDown={onTriggerKey}
-          className={`bg-bg-raised text-fg flex min-h-[46px] w-full items-center justify-between gap-s3 border-[1.5px] px-3.5 py-3 text-start text-[0.95rem] transition-colors duration-150 disabled:cursor-not-allowed ${
+          /* `text-base` يطابق `BASE` في `field.tsx` — الزرّ يقف في صفٍّ واحد
+             مع حقول النصّ، فاختلافُ 0.8px بينهما يُرى صفًّا مكسورًا. */
+          className={`bg-bg-raised text-fg flex min-h-[46px] w-full items-center justify-between gap-s3 border-[1.5px] px-3.5 py-3 text-start text-base transition-colors duration-150 disabled:cursor-not-allowed ${
             invalid
               ? "border-danger"
               : open

@@ -35,16 +35,29 @@ export function StepPanel({
       aria-labelledby={`step-${index}-title`}
     >
       <header>
+        {/* ⚠️ **`sr-only` على الجوّال لا `hidden` — والفرق ليس تجميليًّا.**
+            العنوان مكرَّر بصريًّا: شريط الخطوات فوقه يعرض «البيانات الشخصية»
+            خطوةً حاليّة، ثم يعيدها عنوانًا للقسم. فيُخفى عن العين على
+            الجوّال وحده.
+            ولا يُنزع من الشجرة أبدًا — ثلاث وظائف تتعلّق به:
+            · `aria-labelledby` على `<section>` يشير إليه، ونزعُه يترك
+              القسم بلا اسم؛
+            · `data-step-heading` مرساةُ التركيز بعد كل انتقال — بدونها
+              يبقى التركيز على زرٍّ اختفى؛
+            · تسلسلُ العناوين h1 ← h2 ينكسر بحذفه.
+            و`sr-only` تُبقي الثلاثة وتُخفي البكسل. */}
         <h2
           id={`step-${index}-title`}
           data-step-heading
           tabIndex={-1}
-          className="font-display text-lg font-semibold text-fg outline-none"
+          className="font-display text-lg font-semibold text-fg outline-none max-lg:sr-only"
         >
           {title}
         </h2>
+        {/* `mt-s2` تفصل الشرحَ عن العنوان فوقه — والعنوان مخفيٌّ على
+            الجوّال، فلا شيءَ تفصله هناك. */}
         {lede && (
-          <p className="mt-s2 max-w-measure text-sm leading-relaxed text-fg-muted">
+          <p className="mt-s2 max-w-measure text-sm leading-relaxed text-fg-muted max-lg:mt-0">
             {lede}
           </p>
         )}

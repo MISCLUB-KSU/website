@@ -67,6 +67,7 @@ export function StepPersonal({
            الأكاديمي» لمن كتب غير ذلك. */
         placeholder="الاسم الأول · اسم الأب · اسم العائلة"
         autoComplete="name"
+        enterKeyHint="next"
       />
 
       {/* قبل الرقم الجامعي لا بعده: طولُ الرقم يتبع الجامعة، فلو سُئل عنها
@@ -104,6 +105,8 @@ export function StepPersonal({
             defaultValue={v.universityOther}
             error={e.universityOther}
             placeholder="جامعة الملك عبدالعزيز"
+            autoComplete="organization"
+            enterKeyHint="next"
           />
         </div>
       )}
@@ -120,6 +123,10 @@ export function StepPersonal({
              جامعة الملك سعود: لا شرط طولٍ هناك، ومثالٌ بطولٍ بعينه يوهم بشرط. */
           placeholder={isHome ? "441234567" : undefined}
           inputMode="numeric"
+          enterKeyHint="next"
+          /* لا رمزَ قياسيًّا لرقمٍ جامعيّ في مواصفة `autocomplete`، والإطفاءُ
+             صريحٌ خيرٌ من تركِه للمتصفح يخمّن فيملأه ببريدٍ أو باسم. */
+          autoComplete="off"
           dir="ltr"
           className="text-start"
         />
@@ -137,6 +144,8 @@ export function StepPersonal({
           }
           placeholder="1012345678"
           inputMode="numeric"
+          enterKeyHint="next"
+          autoComplete="off"
           dir="ltr"
           className="text-start"
         />
@@ -155,7 +164,11 @@ export function StepPersonal({
             </>
           }
           placeholder="0512345678"
+          /* `type="tel"` لا `text`: الدلالة تصل المعينات، و`inputMode` وحدها
+             تبدّل لوحة المفاتيح ولا تقول ما هو الحقل. */
+          type="tel"
           inputMode="tel"
+          enterKeyHint="next"
           dir="ltr"
           className="text-start"
           autoComplete="tel"
@@ -169,6 +182,7 @@ export function StepPersonal({
           error={e.email}
           hint="نرسل نتيجة الطلب عليه."
           placeholder="name@ksu.edu.sa"
+          enterKeyHint="next"
           dir="ltr"
           className="text-start"
           autoComplete="email"

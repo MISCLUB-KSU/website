@@ -28,8 +28,16 @@ import { SelectMenu } from "./select-menu";
  * `#212530` يعطي 1.9:1 — مؤشّرُ تركيزٍ لا يُرى، ومن يتنقّل بالكيبورد يضيع.
  * و`--accent` نهارًا هو `primary` نفسه، فلا شيء يتغيّر في النهار.
  */
+/**
+ * ⚠️ **`text-base` (16px) لا `0.95rem` — والسبب iOS لا الذوق.**
+ * Safari على الجوّال **يكبّر الصفحة تلقائيًا** حين يُلمس حقلٌ خطُّه أصغر من
+ * 16px، ثم لا يعيدها — فيكمل الطالبُ النموذج على صفحةٍ مكبّرة تحتاج تمريرًا
+ * أفقيًّا. قِيست الحقول عند `0.95rem` = **15.2px**: تحت العتبة بـ0.8px،
+ * وأحدَ عشرَ حقلًا في `/join` كلُّها تُطلق التكبير.
+ * والقيمةُ حدُّ سلوكٍ في المتصفح لا اختيارُ مقياس — فلا تُنزَّل مرّةً أخرى.
+ */
 const BASE =
-  "w-full min-h-[46px] bg-bg-raised px-3.5 py-3 text-[0.95rem] text-fg " +
+  "w-full min-h-[46px] bg-bg-raised px-3.5 py-3 text-base text-fg " +
   "border-[1.5px] border-line-field transition-colors duration-150 " +
   /* ⚠️ بلا `/70`: الشفافية ٧٠٪ تنزل بلونٍ مضبوطٍ أصلًا (6.76:1) إلى
      **3.59:1** نهارًا و**3.60:1** ليلًا — تحت عتبة 4.5. والنائبُ نصٌّ
@@ -445,7 +453,17 @@ export function RadioGroup({
 }: RadioGroupProps) {
   const hintId = `${name}-hint`;
   return (
-    <fieldset aria-describedby={error || hint ? hintId : undefined}>
+    /* ⚠️ **`role="radiogroup"` و`aria-invalid` على المجموعة لا على الخيار.**
+       كانت المجموعةُ تحمّر حدودَها ولا تُعلن خطأها البتّة، ونقلُ التركيز إلى
+       أوّل خطأ **يتخطّاها** لأنه يبحث عن `[aria-invalid="true"]`. ووضعُها على
+       كل `<input type=radio>` مخالفٌ للمواصفة — `aria-invalid` ليست من حالات
+       دور `radio` بل من حالات `radiogroup`، ودورُ `<fieldset>` الضمنيّ
+       `group` لا `radiogroup` فيُصرَّح به. */
+    <fieldset
+      role="radiogroup"
+      aria-invalid={error ? true : undefined}
+      aria-describedby={error || hint ? hintId : undefined}
+    >
       <legend className="text-ink-label mb-2 text-sm font-semibold">
         {legend}
         {required && (

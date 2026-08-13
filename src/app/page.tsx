@@ -17,6 +17,7 @@ import {
 } from "@/content/about";
 import { FAQ } from "@/content/faq";
 import { isolateLatin } from "@/lib/bidi";
+import { OPEN_UNITS } from "@/content/committees";
 import { OPEN_PROJECTS } from "@/content/projects";
 import { Drift, InkWords, PillarDeck } from "@/components/site/mobile-motion";
 
@@ -39,7 +40,12 @@ const PARTNER_ROWS = [
  */
 
 export default function HomePage() {
-  const isOpen = OPEN_PROJECTS.length > 0;
+  /* ⚠️ **اللجانُ تُحسب مع المشاريع — وإغفالُها كان يردّ الطلاب.**
+     كان السطر `OPEN_PROJECTS.length > 0` وحدَه، والمشاريع الستّة مغلقة،
+     فتُعلن الواجهة «التقديم مغلق حاليًا» لكلّ زائر — بينما تسعُ وحداتِ
+     لجانٍ مفتوحة والنموذجُ يقبلها فعلًا. الشارةُ تصف بابَ النادي كلَّه،
+     فتُحسب من كلّ ما يُقدَّم عليه. */
+  const isOpen = OPEN_UNITS.length > 0 || OPEN_PROJECTS.length > 0;
 
   return (
     <>
@@ -198,7 +204,12 @@ export default function HomePage() {
               قياسها كلَّ تمريرة فتتبع بطاقاتِها أينما التصقت. */}
           <PillarDeck
             className="grid items-stretch gap-s5 max-lg:gap-s7 md:grid-cols-3"
-            itemClassName="rake rake-interactive flex h-full flex-col bg-bg-raised p-s6 shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-bg-sunken"
+            /* ⚠️ **`min-w-0` — بلا هذا تفيض البطاقات عند تكبير النصّ.**
+               عنصرُ الشبكة `min-width: auto` افتراضًا، أي لا ينزل تحت عرض
+               محتواه الأدنى. قِيس عند 200%: البطاقة **377px** في عمودٍ عرضُه
+               343 — فتفيض 34px يسارًا (اتجاهُ الفيض في RTL)، وهي بقيّةُ
+               التمرير الأفقيّ بعد إصلاح الشريط. */
+            itemClassName="rake rake-interactive flex h-full min-w-0 flex-col bg-bg-raised p-s6 shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-bg-sunken"
             items={PILLARS.map((pillar, index) => (
               <div key={pillar.key} className="flex h-full flex-col">
                 {/* رأس البطاقة: الرقم الضخم يمينًا والعلامة صغيرةً يسارًا.

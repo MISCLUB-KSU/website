@@ -34,7 +34,7 @@ export default function PostsPage() {
           {lead ? (
             <Link
               href={`/posts/${encodeURIComponent(lead.slug)}`}
-              className="rake group grid gap-s5 bg-bg-raised p-s5 text-fg shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-bg-sunken sm:grid-cols-2 sm:items-center sm:p-s6"
+              className="rake group grid gap-s5 bg-bg-raised p-s5 text-fg shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-bg-sunken active:bg-bg-sunken sm:grid-cols-2 sm:items-center sm:p-s6"
             >
               <Image
                 src={lead.image}
@@ -65,7 +65,7 @@ export default function PostsPage() {
                 <li key={post.slug} className="grid">
                   <Link
                     href={`/posts/${encodeURIComponent(post.slug)}`}
-                    className="rake grid h-full grid-rows-[auto_auto_auto_1fr] gap-s3 bg-bg-raised p-s5 text-fg shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-bg-sunken"
+                    className="rake grid h-full grid-rows-[auto_auto_auto_1fr] gap-s3 bg-bg-raised p-s5 text-fg shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-bg-sunken active:bg-bg-sunken"
                   >
                     <Image
                       src={post.image}

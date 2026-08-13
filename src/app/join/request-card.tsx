@@ -169,7 +169,11 @@ export function RequestCard({ values, choices, progress }: RequestCardProps) {
           )}
 
           {picked.length > 0 && (
-            <div className="border-on-ink-quiet/25 flex flex-col gap-s3 border-t pt-s4">
+            /* ⚠️ `min-w-0`: قِيس عند تكبير النصّ 200% أن بطاقة الطلب تُخرج
+               الصفحة إلى **415px** في 375 (مخالفة WCAG 1.4.4). ومصدرُها هذي
+               الكتلة: `min-width: auto` يمنعها من النزول تحت عرض محتواها
+               الأدنى، وعمودُ الرتبة `w-14 shrink-0` يتضاعف معها إلى 112px. */
+            <div className="border-on-ink-quiet/25 flex min-w-0 flex-col gap-s3 border-t pt-s4">
               {choices.map((choice, index) =>
                 choice ? (
                   <motion.div
@@ -181,12 +185,12 @@ export function RequestCard({ values, choices, progress }: RequestCardProps) {
                       ease: [0.2, 0, 0, 1],
                       delay: index * 0.05,
                     }}
-                    className="flex items-baseline gap-s3"
+                    className="flex min-w-0 items-baseline gap-s3"
                   >
                     <span className="text-on-ink-quiet w-14 shrink-0 text-[0.66rem]">
                       {RANKS[index]}
                     </span>
-                    <span className="text-on-ink text-[0.88rem] leading-snug">
+                    <span className="text-on-ink min-w-0 text-[0.88rem] leading-snug [overflow-wrap:anywhere]">
                       {isolateLatin(
                         findPreference(choice)?.fullLabel ?? choice,
                       )}

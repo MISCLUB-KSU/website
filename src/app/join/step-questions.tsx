@@ -149,7 +149,15 @@ function AnswerField({
     const negated = picked.some((p) => exclusives.has(p));
     const other = picked.find((p) => !options.includes(p)) ?? "";
     return (
-      <fieldset className="flex flex-col gap-s2">
+      /* ⚠️ `aria-invalid` على المجموعة — بدونها لا يجدها نقلُ التركيز.
+           رسائلُ هذا الملفّ كلُّها `role="alert"` بلا `aria-invalid`،
+           و`registration-form.tsx` يبحث عن `[aria-invalid="true"]`
+           داخل الخطوة المعروضة. فتظهر الرسالةُ ولا يتحرّك التركيز
+           ولا التمرير — والخطأُ قد يكون خارج الشاشة. */
+      <fieldset
+        className="flex flex-col gap-s2"
+        aria-invalid={e[name] ? true : undefined}
+      >
         <legend className="mb-1 text-sm font-semibold text-fg">
           {question.label}
           {question.required && (
@@ -159,7 +167,10 @@ function AnswerField({
             </span>
           )}
           {!question.required && (
-            <span className="text-xs font-normal text-fg-muted"> (اختياري)</span>
+            <span className="text-xs font-normal text-fg-muted">
+              {" "}
+              (اختياري)
+            </span>
           )}
         </legend>
         {question.hint && (
@@ -173,7 +184,9 @@ function AnswerField({
               <label
                 key={option}
                 className={`flex min-h-11 cursor-pointer items-center gap-x-s3 border px-s3 text-[0.88rem] transition-colors ${
-                  on ? "border-accent bg-accent/10" : "border-line hover:bg-bg-sunken"
+                  on
+                    ? "border-accent bg-accent/10"
+                    : "border-line hover:bg-bg-sunken"
                 }`}
               >
                 <input
@@ -228,7 +241,15 @@ function AnswerField({
      العملَ الذي يناسبه. وهي `radio` حقيقية — تعمل بلا جافاسكربت. */
   if (question.type === "choice-cards") {
     return (
-      <fieldset className="flex flex-col gap-s3">
+      /* ⚠️ `aria-invalid` على المجموعة — بدونها لا يجدها نقلُ التركيز.
+           رسائلُ هذا الملفّ كلُّها `role="alert"` بلا `aria-invalid`،
+           و`registration-form.tsx` يبحث عن `[aria-invalid="true"]`
+           داخل الخطوة المعروضة. فتظهر الرسالةُ ولا يتحرّك التركيز
+           ولا التمرير — والخطأُ قد يكون خارج الشاشة. */
+      <fieldset
+        className="flex flex-col gap-s3"
+        aria-invalid={e[name] ? true : undefined}
+      >
         <legend className="mb-1 text-sm font-semibold text-fg">
           {question.label}
           {question.required && (
@@ -351,7 +372,10 @@ function QuestionSet({
 }) {
   const [picked, setPicked] = useState<Record<string, string[]>>(() =>
     Object.fromEntries(
-      questions.map((q) => [q.id, splitAnswer(v[answerName(choice, q.id)] ?? "")]),
+      questions.map((q) => [
+        q.id,
+        splitAnswer(v[answerName(choice, q.id)] ?? ""),
+      ]),
     ),
   );
 
@@ -407,7 +431,15 @@ function ClubExperience({
 
   return (
     <>
-      <fieldset className="flex flex-col gap-s2">
+      {/* ⚠️ `aria-invalid` على المجموعة — بدونها لا يجدها نقلُ التركيز.
+          رسائلُ هذا الملفّ كلُّها `role="alert"` بلا `aria-invalid`،
+          و`registration-form.tsx` يبحث عن `[aria-invalid="true"]` داخل
+          الخطوة المعروضة. فتظهر الرسالةُ ولا يتحرّك التركيز ولا التمرير —
+          والخطأُ قد يكون خارج الشاشة. */}
+      <fieldset
+        className="flex flex-col gap-s2"
+        aria-invalid={e.clubExperience ? true : undefined}
+      >
         {/* ⚠️ `text-ink-label` لا `text-fg`: هذا عنوانُ حقلٍ في مستوى
             «لماذا اخترت» و«كيف سمعت عنّا» المحيطَين به، فيلبس لباسهما.
             وعناوينُ أسئلة القادة أدناه تبقى `text-fg` — تلك داخل صندوقٍ
@@ -423,8 +455,8 @@ function ClubExperience({
         {/* ⚠️ الطمأنة قبل الخيار لا بعده: من يقرأ السؤال ثم «نعم/لا» مباشرةً
             يقرأ «لا» نقصًا، فيبالغ في «نعم» ويفسد الحقل الذي أُنشئ للفرز. */}
         <p className="text-[0.82rem] text-fg-muted">
-          أي عمل طلابي أو تطوّعي: نادٍ في الجامعة، لجنة، مبادرة، فريق مدرسي.
-          وإن لم يسبق لك — لا يضرّك، وأكثر من ينضمّ إلينا يبدأ من هنا.
+          أي عمل طلابي أو تطوّعي: نادٍ في الجامعة، لجنة، مبادرة، فريق مدرسي. وإن
+          لم يسبق لك — لا يضرّك، وأكثر من ينضمّ إلينا يبدأ من هنا.
         </p>
 
         <div className="grid gap-s2 sm:grid-cols-2">
@@ -434,7 +466,9 @@ function ClubExperience({
               <label
                 key={option}
                 className={`flex min-h-11 cursor-pointer items-center gap-x-s3 border px-s3 text-[0.88rem] transition-colors ${
-                  on ? "border-accent bg-accent/10" : "border-line hover:bg-bg-sunken"
+                  on
+                    ? "border-accent bg-accent/10"
+                    : "border-line hover:bg-bg-sunken"
                 }`}
               >
                 <input
@@ -457,7 +491,6 @@ function ClubExperience({
           </p>
         )}
       </fieldset>
-
       {/* المخفيّ لا يُرسم أصلًا — كما في أسئلة القادة. ولأنه غير مرسوم فهو
           غير مُرسَل، و`refineFinal` لا يطلبه إلا ممّن قال «نعم». */}
       {answer === CLUB_EXPERIENCE_YES && (
@@ -527,8 +560,8 @@ export function StepQuestions({
           error={e.cv}
           hint={
             <>
-              <span dir="ltr">PDF</span> أو صورة، حتى{" "}
-              <span dir="ltr">5</span> ميجابايت.
+              <span dir="ltr">PDF</span> أو صورة، حتى <span dir="ltr">5</span>{" "}
+              ميجابايت.
             </>
           }
         />

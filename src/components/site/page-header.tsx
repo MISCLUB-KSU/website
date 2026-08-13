@@ -50,10 +50,15 @@ export function PageHeader({
                   href={link.href}
                   aria-current={isCurrent ? "page" : undefined}
                   /* الصفحة الحالية تُعرَف بالوزن والنبرة — لا نقطة معلّقة تحتها */
+                  /* ⚠️ **`px-s2` إلزامي — نفس علّة `nav-links.tsx` بالحرف.**
+                     `min-h-11` تضبط الارتفاع وحده، والعرضُ يبقى عرضَ النصّ
+                     الخام: قِيست «اللجان» **34px** — تعبر حدّ WCAG 2.5.8
+                     (24×24) وتسقط دون حدّ أبل (44×44). والحشو على الجهتين
+                     يرفع أقصرَ رابطٍ فوق الحدّ. */
                   className={
                     isCurrent
-                      ? "inline-flex min-h-11 items-center text-sm font-bold text-snow"
-                      : "inline-flex min-h-11 items-center text-sm font-medium text-on-ink-dim transition-colors hover:text-snow"
+                      ? "inline-flex min-h-11 items-center px-s2 text-sm font-bold text-snow"
+                      : "inline-flex min-h-11 items-center px-s2 text-sm font-medium text-on-ink-dim transition-colors hover:text-snow"
                   }
                 >
                   {link.label}

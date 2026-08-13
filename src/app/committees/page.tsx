@@ -41,7 +41,9 @@ export default function CommitteesPage() {
               <li key={committee.slug} className="grid">
                 <Link
                   href={`/committees/${committee.slug}`}
-                  className="rake grid h-full grid-rows-[auto_auto_1fr_auto] gap-s3 bg-bg-raised p-s5 text-fg shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-bg-sunken"
+                  /* `active:` لا `hover:` وحدها — الإصبع لا يمرّ فوق شيء،
+                     فبطاقةٌ بحالة مرورٍ فقط لا تردّ على اللمس أبدًا. */
+                  className="rake grid h-full min-w-0 grid-rows-[auto_auto_1fr_auto] gap-s3 bg-bg-raised p-s5 text-fg shadow-[inset_0_0_0_1px_var(--border)] transition-colors hover:bg-bg-sunken active:bg-bg-sunken"
                 >
                   {/* علامة اللجنة — تتكرّر في صفحتها وفي نموذج التقديم،
                       فيتعرّف الطالب عليها قبل أن يقرأ اسمها */}
@@ -55,7 +57,10 @@ export default function CommitteesPage() {
                   <p className="text-sm leading-relaxed text-fg-muted">
                     {isolateLatin(committee.description)}
                   </p>
-                  <p className="text-xs text-fg-muted">
+                  {/* ⚠️ `text-sm` لا `text-xs`: كان **12px**، وهو دون أدنى
+                      متن في Material (14sp) وأبعدُ عن متن iOS (17pt). والعربية
+                      أحوجُ إلى المقاس من اللاتينية — النقطُ والشدّات تضيع. */}
+                  <p className="text-sm text-fg-muted">
                     {committee.units.length > 0 ? (
                       <>
                         <span dir="ltr" className="tabular-nums">
