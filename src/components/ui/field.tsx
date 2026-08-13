@@ -85,7 +85,7 @@ export function Label({
         </span>
       )}
       {optional && (
-        <span className="text-fg-muted text-xs font-normal"> (اختياري)</span>
+        <span className="text-fg-muted text-[0.875rem] font-normal"> (اختياري)</span>
       )}
     </label>
   );
@@ -101,7 +101,7 @@ export function Hint({ id, error, children }: HintProps) {
       /* role=alert يجعل قارئ الشاشة ينطق الخطأ فور ظهوره */
       {...(error ? { role: "alert" } : {})}
       className={
-        "mt-1.5 text-[0.82rem] leading-relaxed " +
+        "mt-1.5 text-[0.875rem] leading-relaxed " +
         (error ? "text-danger font-medium" : "text-fg-muted")
       }
     >
@@ -419,7 +419,7 @@ export function FileField({
         className={
           `${BASE} cursor-pointer py-2.5 ${error ? INVALID : ""} ` +
           "file:me-3 file:min-h-[30px] file:cursor-pointer file:border-0 " +
-          "file:bg-bg-sunken file:px-3 file:py-1.5 file:text-[0.82rem] " +
+          "file:bg-bg-sunken file:px-3 file:py-1.5 file:text-[0.875rem] " +
           "file:font-semibold file:text-accent " +
           className
         }

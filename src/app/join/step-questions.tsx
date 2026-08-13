@@ -167,14 +167,14 @@ function AnswerField({
             </span>
           )}
           {!question.required && (
-            <span className="text-xs font-normal text-fg-muted">
+            <span className="text-[0.875rem] font-normal text-fg-muted">
               {" "}
               (اختياري)
             </span>
           )}
         </legend>
         {question.hint && (
-          <p className="text-[0.82rem] text-fg-muted">{question.hint}</p>
+          <p className="text-[0.875rem] text-fg-muted">{question.hint}</p>
         )}
 
         <div className="grid gap-s2 sm:grid-cols-2">
@@ -183,7 +183,7 @@ function AnswerField({
             return (
               <label
                 key={option}
-                className={`flex min-h-11 cursor-pointer items-center gap-x-s3 border px-s3 text-[0.88rem] transition-colors ${
+                className={`flex min-h-11 cursor-pointer items-center gap-x-s3 border px-s3 text-[0.95rem] transition-colors ${
                   on
                     ? "border-accent bg-accent/10"
                     : "border-line hover:bg-bg-sunken"
@@ -228,7 +228,7 @@ function AnswerField({
         )}
 
         {e[name] && (
-          <p role="alert" className="text-[0.84rem] text-danger">
+          <p role="alert" className="text-[0.875rem] text-danger">
             {e[name]}
           </p>
         )}
@@ -260,7 +260,7 @@ function AnswerField({
           )}
         </legend>
         {question.hint && (
-          <p className="text-[0.82rem] text-fg-muted">{question.hint}</p>
+          <p className="text-[0.875rem] text-fg-muted">{question.hint}</p>
         )}
 
         <div className="grid gap-s3 sm:grid-cols-2">
@@ -286,11 +286,11 @@ function AnswerField({
                     className="mt-1 size-4 shrink-0 accent-accent"
                   />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[0.92rem] font-semibold text-fg">
+                    <span className="block text-[0.95rem] font-semibold text-fg">
                       {option.value}
                     </span>
                     {option.seats !== undefined && (
-                      <span className="block text-[0.78rem] text-fg-muted">
+                      <span className="block text-[0.875rem] text-fg-muted">
                         {seatsLabel(option.seats)}
                       </span>
                     )}
@@ -298,7 +298,7 @@ function AnswerField({
                 </span>
 
                 {option.details && option.details.length > 0 && (
-                  <ul className="flex list-disc flex-col gap-s1 ps-s6 text-[0.82rem] leading-relaxed text-fg-muted">
+                  <ul className="flex list-disc flex-col gap-s1 ps-s6 text-[0.875rem] leading-relaxed text-fg-muted">
                     {option.details.map((d) => (
                       <li key={d}>{d}</li>
                     ))}
@@ -310,7 +310,7 @@ function AnswerField({
         </div>
 
         {e[name] && (
-          <p role="alert" className="text-[0.84rem] text-danger">
+          <p role="alert" className="text-[0.875rem] text-danger">
             {e[name]}
           </p>
         )}
@@ -454,7 +454,7 @@ function ClubExperience({
 
         {/* ⚠️ الطمأنة قبل الخيار لا بعده: من يقرأ السؤال ثم «نعم/لا» مباشرةً
             يقرأ «لا» نقصًا، فيبالغ في «نعم» ويفسد الحقل الذي أُنشئ للفرز. */}
-        <p className="text-[0.82rem] text-fg-muted">
+        <p className="text-[0.875rem] text-fg-muted">
           أي عمل طلابي أو تطوّعي: نادٍ في الجامعة، لجنة، مبادرة، فريق مدرسي. وإن
           لم يسبق لك — لا يضرّك، وأكثر من ينضمّ إلينا يبدأ من هنا.
         </p>
@@ -465,7 +465,7 @@ function ClubExperience({
             return (
               <label
                 key={option}
-                className={`flex min-h-11 cursor-pointer items-center gap-x-s3 border px-s3 text-[0.88rem] transition-colors ${
+                className={`flex min-h-11 cursor-pointer items-center gap-x-s3 border px-s3 text-[0.95rem] transition-colors ${
                   on
                     ? "border-accent bg-accent/10"
                     : "border-line hover:bg-bg-sunken"
@@ -486,7 +486,7 @@ function ClubExperience({
         </div>
 
         {e.clubExperience && (
-          <p role="alert" className="text-[0.84rem] text-danger">
+          <p role="alert" className="text-[0.875rem] text-danger">
             {e.clubExperience}
           </p>
         )}
@@ -550,7 +550,7 @@ export function StepQuestions({
       <fieldset className="flex flex-col gap-s3">
         <legend className="mb-1 text-sm font-semibold text-fg">
           السيرة الذاتية أو معرض الأعمال
-          <span className="text-xs font-normal text-fg-muted"> (اختياري)</span>
+          <span className="text-[0.875rem] font-normal text-fg-muted"> (اختياري)</span>
         </legend>
 
         <FileField
@@ -566,7 +566,7 @@ export function StepQuestions({
           }
         />
 
-        <p className="text-[0.8rem] text-fg-muted">أو ضع رابطًا بدلًا عنه:</p>
+        <p className="text-[0.875rem] text-fg-muted">أو ضع رابطًا بدلًا عنه:</p>
 
         <TextField
           id="portfolio"
@@ -599,7 +599,7 @@ export function StepQuestions({
           key={block.key}
           className="flex flex-col gap-s5 border border-line bg-bg-raised p-s4"
         >
-          <legend className="px-s2 text-[0.82rem] font-semibold text-fg-muted">
+          <legend className="px-s2 text-[0.875rem] font-semibold text-fg-muted">
             {slotsLabel(block.slots)}: {isolateLatin(block.title)}
           </legend>
 
@@ -626,12 +626,24 @@ export function StepQuestions({
               {" "}
               *
             </span>
-            <span className="mt-0.5 block text-[0.84rem] text-fg-muted">
+            <span className="mt-0.5 block text-[0.875rem] text-fg-muted">
               وأتعهّد بصحة البيانات المُدخلة.
             </span>
           </>
         }
       />
+
+      {/* ⚠️ **سطرُ الطمأنة هنا على الجوّال، وفي شريط الإرسال على الحاسب.**
+          كان في الشريط الملتصق وحده فيلتفّ سطرًا ثانيًا: «السابق» 91.5px
+          و«أرسل الطلب» 123.3px والسطر 191.1px بفاصلَين = 437.9px في 335px
+          متاحة. فيصير الشريط **164.6px = ٢٠٪ من شاشة 375×812** مقيمًا فوق
+          كلّ تمريرةٍ في الخطوة الأخيرة، بينما هو 99px في الخطوتين قبلها.
+          وموضعُه بعد «أوافق» يبقيه ملاصقًا للإرسال في ترتيب القراءة، وهو
+          طمأنةٌ تُقرأ مرّةً لا شارةٌ تلزم البقاء. والحاسب لا يتغيّر: نسخةُ
+          الشريط `hidden lg:block` وهذه `lg:hidden`، فلا تظهران معًا. */}
+      <p className="text-[0.875rem] text-fg-muted lg:hidden">
+        تصلك النتيجة على بريدك خلال أسبوع.
+      </p>
     </StepPanel>
   );
 }

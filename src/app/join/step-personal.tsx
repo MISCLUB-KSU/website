@@ -88,7 +88,7 @@ export function StepPersonal({
         <div className="flex flex-col gap-s3">
           {/* التعليمات فوق الحقل — شرطٌ يُقرأ قبل الكتابة لا بعد الرفض */}
           <div className="border-s-2 border-accent bg-bg-sunken px-s4 py-s3">
-            <p className="text-[0.84rem] leading-relaxed text-fg-muted">
+            <p className="text-[0.875rem] leading-relaxed text-fg-muted">
               اكتب اسم الجامعة{" "}
               <strong className="font-semibold text-fg">كاملًا ورسميًا</strong>{" "}
               و<strong className="font-semibold text-fg">بالعربية</strong>.
@@ -221,7 +221,7 @@ export function StepPersonal({
         <div className="flex flex-col gap-s3">
           {/* التعليمات فوق الحقل — شرطٌ يُقرأ قبل الكتابة لا بعد الرفض */}
           <div className="border-s-2 border-accent bg-bg-sunken px-s4 py-s3">
-            <p className="text-[0.84rem] leading-relaxed text-fg-muted">
+            <p className="text-[0.875rem] leading-relaxed text-fg-muted">
               اكتب اسم التخصص{" "}
               <strong className="font-semibold text-fg">كاملًا ورسميًا</strong>{" "}
               كما هو مكتوب في اسم قسمك، و

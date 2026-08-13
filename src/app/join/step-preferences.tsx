@@ -163,9 +163,9 @@ export function StepPreferences({
                     : undefined,
                 }}
               >
-                <span className="text-[0.72rem] text-fg-muted">{rank}</span>
+                <span className="text-[0.875rem] text-fg-muted">{rank}</span>
                 <span
-                  className={`text-[0.86rem] font-semibold ${slotError ? "text-danger" : "text-fg"}`}
+                  className={`text-[0.95rem] font-semibold ${slotError ? "text-danger" : "text-fg"}`}
                 >
                   {picked
                     ? isolateLatin(picked.fullLabel)
@@ -190,7 +190,7 @@ export function StepPreferences({
             role="alert"
             tabIndex={-1}
             data-error-focus
-            className="text-[0.84rem] text-danger outline-none"
+            className="text-[0.875rem] text-danger outline-none"
           >
             {choiceError}
           </p>
@@ -199,7 +199,7 @@ export function StepPreferences({
         {complete && !hasCommittee && (
           <p
             role="alert"
-            className="border-s-2 border-warning bg-warning/8 px-s4 py-s3 text-[0.84rem] leading-relaxed text-warning"
+            className="border-s-2 border-warning bg-warning/8 px-s4 py-s3 text-[0.875rem] leading-relaxed text-warning"
           >
             رغباتك الثلاث مشاريع ومبادرات. بدّل واحدة منها بلجنة أو وحدة داخلها
             لتتمكّن من المتابعة — اللجنة هي بابك إلى المشروع.
@@ -230,7 +230,7 @@ export function StepPreferences({
       {/* ══ بديلُ انقطاع السكربت ═══════════════════════════════════════ */}
       {!live && (
       <div className="flex flex-col gap-s5">
-        <p className="text-[0.84rem] text-fg-muted">
+        <p className="text-[0.875rem] text-fg-muted">
           اختر رغباتك الثلاث من القوائم:
         </p>
         {SLOTS.map((slotLabel, slot) => (
@@ -285,7 +285,7 @@ function CardGroup({
   return (
     <section>
       <h3 className="font-display text-[1rem] font-bold text-fg">{title}</h3>
-      <p className="mt-1 mb-s4 text-[0.84rem] text-fg-muted">{note}</p>
+      <p className="mt-1 mb-s4 text-[0.875rem] text-fg-muted">{note}</p>
 
       <div className="grid gap-s3 sm:grid-cols-2">
         {items.map((item) => {
@@ -324,7 +324,7 @@ function CardGroup({
                   صامتًا. ولا تكسر إلا حين لا يتّسع، فالمقاسُ الطبيعيّ كما هو. */}
               <span className="flex min-w-0 items-start justify-between gap-x-s3">
                 <span className="min-w-0">
-                  <span className="block text-[0.94rem] font-semibold text-fg [overflow-wrap:anywhere]">
+                  <span className="block text-[0.95rem] font-semibold text-fg [overflow-wrap:anywhere]">
                     {isolateLatin(item.label)}
                   </span>
                   {/* ⚠️ **اللجنة الأمّ وحدها، لا عنوانُ المجموعة.**
@@ -333,7 +333,7 @@ function CardGroup({
                       لا يعني المتقدّم شيئًا. والفارق أن الوحدة وحدها
                       `fullLabel` فيها غير `label`. */}
                   {item.fullLabel !== item.label && (
-                    <span className="block text-[0.76rem] text-fg-muted">
+                    <span className="block text-[0.875rem] text-fg-muted">
                       {isolateLatin(item.group)}
                     </span>
                   )}
@@ -342,7 +342,7 @@ function CardGroup({
                 {/* ⚠️ الرتبة **نصٌّ لا لونٌ وحده** — من لا يميّز الأزرق
                     الداكن من الفاتح يقرأ «الرغبة الثانية». */}
                 <span
-                  className="shrink-0 px-s3 py-s1 text-[0.72rem] font-semibold"
+                  className="shrink-0 px-s3 py-s1 text-[0.875rem] font-semibold"
                   style={
                     on
                       ? { background: RANK_TINT[rank], color: "var(--snow)" }
@@ -356,7 +356,7 @@ function CardGroup({
                 </span>
               </span>
 
-              <span className="text-[0.84rem] leading-relaxed text-fg-muted">
+              <span className="text-[0.875rem] leading-relaxed text-fg-muted">
                 {item.description}
               </span>
             </button>

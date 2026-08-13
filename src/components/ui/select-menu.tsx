@@ -270,7 +270,7 @@ export function SelectMenu({
             {groups.map((group) => (
               <li key={group.label || "__flat"}>
                 {group.label && (
-                  <p className="text-fg-muted px-3.5 pt-3 pb-1.5 text-[0.72rem] font-semibold">
+                  <p className="text-fg-muted px-3.5 pt-3 pb-1.5 text-[0.875rem] font-semibold">
                     {group.label}
                   </p>
                 )}
@@ -287,7 +287,7 @@ export function SelectMenu({
                         aria-disabled={option.disabled || undefined}
                         onPointerEnter={() => index >= 0 && setActive(index)}
                         onClick={() => !option.disabled && commit(option)}
-                        className={`flex min-h-11 cursor-pointer items-center gap-s3 px-3.5 text-[0.92rem] ${
+                        className={`flex min-h-11 cursor-pointer items-center gap-s3 px-3.5 text-[0.95rem] ${
                           option.disabled
                             ? "text-fg-muted/60 cursor-not-allowed"
                             : isActive

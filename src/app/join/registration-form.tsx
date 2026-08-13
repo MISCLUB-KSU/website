@@ -356,7 +356,7 @@ export function RegistrationForm({
           )}
 
           {lockedTo && (
-            <p className="border-s-2 border-accent bg-bg-sunken px-s4 py-s3 text-[0.9rem]">
+            <p className="border-s-2 border-accent bg-bg-sunken px-s4 py-s3 text-[0.95rem]">
               تقدّم على{" "}
               <strong className="font-semibold">
                 {lockedLabel ?? lockedTo}
@@ -367,12 +367,12 @@ export function RegistrationForm({
           {state.message && (
             <div
               role="alert"
-              className="border border-danger/35 bg-danger/8 px-5 py-4 text-[0.93rem] text-danger"
+              className="border border-danger/35 bg-danger/8 px-5 py-4 text-[0.95rem] text-danger"
             >
               {state.message}
               {/* المتصفح لا يحتفظ بالمرفق بعد ردّ الخادم — يُقال صراحةً
                 بدل أن يرسل الطالب طلبه ثانيةً بلا سيرة ذاتية وهو لا يدري */}
-              <span className="mt-1 block text-[0.84rem]">
+              <span className="mt-1 block text-[0.875rem]">
                 إن كنت أرفقت ملفًا، أعد اختياره قبل الإرسال.
               </span>
             </div>
@@ -437,7 +437,10 @@ export function RegistrationForm({
               ليسعه، فيتغذّى أحدهما من الآخر. والحدّان الجانبيان أرضيةُ صفحةٍ
               أصلًا، فبقاؤه داخل صندوق المحتوى لا يُرى فرقًا ويثبت عند أي
               مقاس. أُدخل هذا العطل مع الشريط وأُمسك في الفحص. */}
-          <div className="mis-safe-bottom sticky bottom-0 z-10 flex min-w-0 flex-wrap items-center gap-s4 border-t border-line bg-bg pt-s5 [&>*]:min-w-0 lg:static lg:pb-0">
+          {/* `mis-safe-bottom-mobile` لا `mis-safe-bottom`: الثانيةُ خارج
+              طبقات Tailwind فتغلب `lg:pb-0` ويبقى الحشو على الحاسب.
+              التعليل كاملًا عند تعريفها في `globals.css`. */}
+          <div className="mis-safe-bottom-mobile sticky bottom-0 z-10 flex min-w-0 flex-wrap items-center gap-s4 border-t border-line bg-bg pt-s5 [&>*]:min-w-0 lg:static">
             <div className="js-only flex flex-wrap gap-s3">
               {step > 0 && (
                 <Button type="button" variant="secondary" onClick={goBack}>
@@ -464,7 +467,9 @@ export function RegistrationForm({
                   "أرسل الطلب"
                 )}
               </Button>
-              <p className="text-[0.84rem] text-fg-muted">
+              {/* نسخةُ الحاسب وحدها — والجوّال يقرؤها أسفل «أوافق» في
+                  `step-questions.tsx`، وثمّ تعليلُ الفصل بالأرقام. */}
+              <p className="hidden text-[0.875rem] text-fg-muted lg:block">
                 تصلك النتيجة على بريدك خلال أسبوع.
               </p>
             </div>

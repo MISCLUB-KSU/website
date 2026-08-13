@@ -724,6 +724,20 @@ details[open] > summary .mis-menu-bars {
   padding-bottom: max(var(--s5), env(safe-area-inset-bottom));
 }
 
+/* ⚠️ **نسخةٌ للجوّال وحده — لأن `lg:pb-0` لا تغلب الصنف أعلاه.** هذي
+   الأصناف مكتوبةٌ خارج طبقات Tailwind، والمُطبَّق خارج الطبقات يعلو كلَّ
+   ما فيها مهما كانت النوعية. فشريطُ الإرسال في `registration-form.tsx`
+   كُتب له `mis-safe-bottom … lg:pb-0` فبقي حشوُه 24px على الحاسب بعد أن
+   كان صفرًا — مقيسٌ في المتصفّح على 1280. وهو العطل نفسُه الذي أوقع
+   `.alu-marquee` مع `max-lg:hidden`: صنفٌ عاديّ يبتلع أداةً.
+   والمنطقةُ الآمنة لا تعني الحاسب أصلًا، فحصرُها في الجوّال هو الصواب
+   لا حيلةُ التغلّب بـ`!important`. */
+@media (max-width: 1023px) {
+  .mis-safe-bottom-mobile {
+    padding-bottom: max(var(--s5), env(safe-area-inset-bottom));
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .mis-menu-panel {
     animation: mis-menu-in 180ms var(--ease);
