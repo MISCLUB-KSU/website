@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Mark } from "@/components/site/mark";
 import { PageHeader } from "@/components/site/page-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { SOCIAL_LINKS } from "@/content/about";
 import { ABOUT_SECTION } from "@/content/navigation";
+import { LiveMark, StructureTeaser } from "./teaser";
 
 /**
  * الهيكل الإداري — **صفحةُ ترقّبٍ مُعلَنة (١٢ أغسطس ٢٠٢٦).**
@@ -54,22 +54,23 @@ export default function StructurePage() {
           currentHref="/about/structure"
         />
 
-        <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-s4 py-s9 text-center sm:px-s7">
-          <Mark decorative className="w-full max-w-xs text-mark" />
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-s4 pt-s9 pb-s7 text-center sm:px-s7">
+          <LiveMark />
 
-          <h2 className="font-display mt-s8 text-3xl font-bold text-fg sm:text-4xl">
+          <h2 className="font-display mt-s7 text-4xl font-bold text-fg sm:text-5xl">
             ترقّبوا الإعلان
           </h2>
 
           <p className="text-fg-muted mt-s4 max-w-[44ch] text-lead leading-relaxed">
-            يُعلَن الهيكل الإداري للنادي في حسابنا على{" "}
+            يُعلَن الهيكل الإداري للنادي — رئاسته ولجانه ووحداته — في حسابنا
+            على{" "}
             <span dir="ltr" lang="en">
               X
             </span>
             . تابعنا حتى لا يفوتك.
           </p>
 
-          <div className="mt-s8 flex flex-wrap items-center justify-center gap-s4">
+          <div className="mt-s7 flex flex-wrap items-center justify-center gap-s4">
             {/* ⚠️ `rel="noopener noreferrer"` مع `target="_blank"`: الصفحةُ
                 المفتوحة تصل إلى `window.opener` بدونهما. */}
             {X && (
@@ -92,6 +93,8 @@ export default function StructurePage() {
               تصفّح اللجان
             </Link>
           </div>
+
+          <StructureTeaser />
         </div>
       </main>
 

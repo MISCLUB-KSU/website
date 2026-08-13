@@ -1,0 +1,126 @@
+/* ==========================================================================
+   تشويقُ الهيكل الإداري — حركةُ الخلفية المطموسة.
+
+   ⚠️ **CSS لا `motion` — لأن الخلفيةَ زخرفيّةٌ خالصة.** لا حالةَ React فيها
+   ولا تفاعل، فلا داعيَ لحملِ مكتبةٍ لأجلها؛ وتعمل بلا جافاسكربت أصلًا.
+
+   ⚠️ **ولا تُصدَّق لوحةُ المعاينة في الحركة.** ساعةُ المستند فيها تتجمّد:
+   `getAnimations()[0].currentTime` يبقى صفرًا بعد ثوانٍ، والحالةُ المحسوبة
+   تبقى عند بداية الإطار — فتُقرأ حركةٌ سليمةٌ عطلًا. والفحصُ الصحيح تقديمُ
+   الساعة يدويًّا (`a.currentTime = 2000`) ثم قياسُ المحسوب. بهذا فُحصت
+   هذي: العقدُ الأربعَ عشرةَ تبلغ `opacity: 1` و`matrix(1,0,0,1,0,0)`،
+   والخطُّ يبلغ `stroke-dashoffset: 0`.
+
+   ⚠️ **والحركةُ تُطفأ بالوسائط لا بجافاسكربت** — فتصل الحالةُ النهائية
+   مرسومةً لمن طلب تقليل الحركة، بلا انتظار ترطيب.
+   ========================================================================== */
+
+/* العقدة: تنمو من مركزها. `--i` فهرسُها، يُمرَّر من JSX */
+.tz-node {
+  opacity: 0;
+  transform: scaleY(0.25);
+  /* ⚠️ `fill-box` لازم: بدونه يقيس المتصفّح الأصلَ من صندوق الـ`svg` كلِّه
+     فتنزلق العقدُ البعيدة عن المركز بدل أن تنمو في مكانها. */
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: tz-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: calc(0.12s + var(--i, 0) * 0.045s);
+}
+
+@keyframes tz-in {
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+/* الشريطُ الداخليّ يتنفّس — يوحي بسطرِ اسمٍ محجوب */
+.tz-bar {
+  animation: tz-breathe 2.6s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 0.12s);
+}
+
+@keyframes tz-breathe {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* الوصلات تُرسم — يعتمد على `pathLength="1"` على العنصر نفسه */
+.tz-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: tz-draw 0.9s ease-out 0.1s forwards;
+}
+
+@keyframes tz-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tz-node {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  .tz-bar {
+    opacity: 0.42;
+    animation: none;
+  }
+  .tz-line {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   العلامة الحيّة — أضلاعُها الستّة تنزل ثم تتنفّس.
+
+   ⚠️ **لا شفافيةَ في الحالة الابتدائية — والشعارُ لا يُخفى بحال.** أوّلُ
+   بناءٍ بدأها `opacity: 0` بحركةِ `motion`، فكانت تختفي تمامًا لو تعثّر
+   الترطيبُ أو عُطّل الجافاسكربت — وهي أبرزُ ما في الصفحة. فصارت الحركةُ
+   **إزاحةً وحدها** في الدخول، والشفافيةُ في التنفّس المتكرّر لا تنزل إلى
+   الصفر أبدًا.
+
+   ⚠️ **والتنفّسُ موجةٌ لا وميضٌ متزامن:** المتزامنُ يُقرأ إنذارًا،
+   والمتتابعُ يُقرأ نبضًا.
+   ========================================================================== */
+
+.tz-blade {
+  transform: translateY(24px);
+  transform-box: fill-box;
+  animation:
+    tz-blade-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+    tz-blade-breathe 4.2s ease-in-out 1.1s infinite;
+  animation-delay: calc(var(--i, 0) * 0.075s), calc(1.1s + var(--i, 0) * 0.075s);
+}
+
+@keyframes tz-blade-in {
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes tz-blade-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  45% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tz-blade {
+    transform: none;
+    opacity: 1;
+    animation: none;
+  }
+}
