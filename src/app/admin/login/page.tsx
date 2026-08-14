@@ -39,47 +39,53 @@ export default function AdminLoginPage() {
           والرسمُ صُحّح إلى «الإدارة» بالهمزة كبقيّة الموقع، واللفظُ كما
           طُلب. وهو يسمّي **من يدخل** لا الفعل: اللوحةُ واحدةٌ يقصّها RLS،
           يدخلها الإدارةُ وقادةُ اللجان والوحدات والمشاريع. */}
-      <h1 className="text-fg mb-3 text-2xl font-bold sm:text-3xl">
-        دخول معالي القادة والإدارة
-      </h1>
-      <p className="text-fg-muted mb-s6 leading-relaxed">
-        اكتب بريدك ويصلك رابط دخول. الرابط لمرّةٍ واحدة وينتهي بعدها.
-      </p>
-
-      <form action={action} className="flex flex-col gap-s5" noValidate>
-        <TextField
-          id="email"
-          label="بريدك"
-          required
-          type="email"
-          placeholder="name@ksu.edu.sa"
-          dir="ltr"
-          className="text-start"
-        />
-
-        <Button type="submit" disabled={pending} aria-busy={pending}>
-          {pending ? (
-            <>
-              <BusyMark /> جارٍ الإرسال…
-            </>
-          ) : (
-            "أرسل رابط الدخول"
-          )}
-        </Button>
-      </form>
-
-      {state.message && (
-        <p
-          role="status"
-          className={`mt-s5 border-s-2 px-s4 py-s3 text-[0.9rem] leading-relaxed ${
-            state.ok
-              ? "border-success bg-success/8 text-success"
-              : "border-danger bg-danger/8 text-danger"
-          }`}
-        >
-          {state.message}
+      {/* ⚠️ **لوحٌ لا نصٌّ عارٍ.** كانت الحقول تطفو مباشرةً على أرضية
+          `/admin`، فتُقرأ الصفحة ناقصةً على شاشةٍ واسعة: عمودٌ 448px في
+          1512px وحوله فراغ. و`.panel` رمزُ هذي اللوحة نفسِه — معرَّفٌ في
+          `admin.css` وله نظيرٌ ليليّ — فالعلاج من النظام لا من خارجه. */}
+      <div className="panel p-s6">
+        <h1 className="text-fg mb-3 text-2xl font-bold sm:text-3xl">
+          دخول معالي القادة والإدارة
+        </h1>
+        <p className="text-fg-muted mb-s6 leading-relaxed">
+          اكتب بريدك ويصلك رابط دخول. الرابط لمرّةٍ واحدة وينتهي بعدها.
         </p>
-      )}
+
+        <form action={action} className="flex flex-col gap-s5" noValidate>
+          <TextField
+            id="email"
+            label="بريدك"
+            required
+            type="email"
+            placeholder="name@ksu.edu.sa"
+            dir="ltr"
+            className="text-start"
+          />
+
+          <Button type="submit" disabled={pending} aria-busy={pending}>
+            {pending ? (
+              <>
+                <BusyMark /> جارٍ الإرسال…
+              </>
+            ) : (
+              "أرسل رابط الدخول"
+            )}
+          </Button>
+        </form>
+
+        {state.message && (
+          <p
+            role="status"
+            className={`mt-s5 border-s-2 px-s4 py-s3 text-[0.9rem] leading-relaxed ${
+              state.ok
+                ? "border-success bg-success/8 text-success"
+                : "border-danger bg-danger/8 text-danger"
+            }`}
+          >
+            {state.message}
+          </p>
+        )}
+      </div>
     </main>
   );
 }
