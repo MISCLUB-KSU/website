@@ -27,9 +27,9 @@ import {
   CLUB_EXPERIENCE,
   CLUB_EXPERIENCE_MAX,
   CLUB_EXPERIENCE_NO,
-  CLUB_EXPERIENCE_YES,
   CLUB_NEWCOMER_MAX,
   CV_ACCEPT,
+  hasClubExperience,
   HEARD_FROM,
 } from "@/lib/registration";
 import { StepPanel } from "./step-panel";
@@ -108,6 +108,7 @@ function AnswerField({
     defaultValue: v[name],
     error: e[name],
     hint: question.hint,
+    placeholder: question.placeholder,
     required: question.required,
     optional: !question.required,
   };
@@ -461,7 +462,10 @@ function ClubExperience({
           لم يسبق لك — لا يضرّك، وأكثر من ينضمّ إلينا يبدأ من هنا.
         </p>
 
-        <div className="grid gap-s2 sm:grid-cols-2">
+        {/* ⚠️ عمودٌ واحد لا عمودان: «نعم» صارت خيارين بنصوصٍ طويلة («نعم،
+            في أكثر من تجربة»)، وعمودان يقصّانها أو يتركان الثالث وحيدًا في
+            صفّ — وكلاهما يُقرأ خللًا لا تصميمًا. */}
+        <div className="grid gap-s2">
           {CLUB_EXPERIENCE.map((option) => {
             const on = answer === option;
             return (
@@ -495,7 +499,7 @@ function ClubExperience({
       </fieldset>
       {/* المخفيّ لا يُرسم أصلًا — كما في أسئلة القادة. ولأنه غير مرسوم فهو
           غير مُرسَل، و`refineFinal` لا يطلبه إلا ممّن قال «نعم». */}
-      {answer === CLUB_EXPERIENCE_YES && (
+      {hasClubExperience(answer) && (
         <TextArea
           id="clubExperienceDetails"
           label="أي جهة؟ وما كان دورك فيها؟"

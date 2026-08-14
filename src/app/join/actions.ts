@@ -1,7 +1,8 @@
 "use server";
 
 import {
-  CLUB_EXPERIENCE_YES,
+  CLUB_EXPERIENCE_CODES,
+  hasClubExperience,
   emptyState,
   registrationSchema,
   validateAnswers,
@@ -131,6 +132,14 @@ export async function submitRegistration(
        الآخر: `refineFinal` يقرأ التفاصيل بحسب الجواب. */
     clubExperience: text(formData, "clubExperience"),
     clubExperienceDetails: text(formData, "clubExperienceDetails"),
+    /* ⚠️ **وهذان سقطا السقطة نفسَها ساعةَ أُضيفا.** غيابُهما عن الكائن
+       يجعلهما `undefined` في كل طلب، و`refineFinal` يقيس طولهما — فيردّ
+       **كلَّ من قال «لا»** برسالة «اكتب تصوّرك» مهما كتب. ولم يظهر في
+       الفحص لأن الاختبار تركهما فارغين عمدًا، فبدا الردُّ صحيحًا وهو
+       يقع على المملوء أيضًا. المصيدة نفسها التي أوقعت `clubExperience`
+       أعلاه — والدرس: كلُّ حقلٍ يُضاف يُضاف هنا في اللحظة نفسِها. */
+    clubPerception: text(formData, "clubPerception"),
+    clubExpectation: text(formData, "clubExpectation"),
     heardFrom: text(formData, "heardFrom"),
     portfolio: text(formData, "portfolio"),
     linkedin: text(formData, "linkedin"),
@@ -316,20 +325,23 @@ async function saveApplication(
       /* ⚠️ **بوليان في القاعدة ونصٌّ في النموذج.** اللوحة تفرز على العمود،
          ومقارنةُ نصٍّ عربيّ حرفًا بحرف تكسر بمسافةٍ زائدة أو همزةٍ مختلفة.
          والتفاصيل `null` لمن قال «لا» — لا سلسلةً فارغة تُقرأ إجابةً خاوية. */
-      has_club_experience: data.clubExperience === CLUB_EXPERIENCE_YES,
-      club_experience:
-        data.clubExperience === CLUB_EXPERIENCE_YES
-          ? data.clubExperienceDetails
-          : null,
+      has_club_experience: hasClubExperience(data.clubExperience),
+      /* ⚠️ **والدرجة عمودٌ مستقلّ.** البوليان يجيب «هل له خبرة» ولا يفرّق
+         بين تجربةٍ وأكثر — وهو فرقٌ طلبه الوركفلو صراحةً. فيُحفظ رمزًا
+         لاتينيًّا (`multiple`/`single`/`none`) لا نصًّا عربيًّا. */
+      club_experience_level: CLUB_EXPERIENCE_CODES[data.clubExperience],
+      club_experience: hasClubExperience(data.clubExperience)
+        ? data.clubExperienceDetails
+        : null,
       /* ومقابلُهما لمن قال «لا» — `null` لمن قال «نعم»، بالمنطق نفسِه:
          الحقلُ الذي لم يُعرض لا يُحفظ سلسلةً فارغة تُقرأ إجابةً خاوية.
          والقاعدة تفرض هذا التقابل بقيدٍ صريح، فلا يُخالَف من هنا. */
       club_perception:
-        data.clubExperience === CLUB_EXPERIENCE_YES
+        hasClubExperience(data.clubExperience)
           ? null
           : data.clubPerception,
       club_expectation:
-        data.clubExperience === CLUB_EXPERIENCE_YES
+        hasClubExperience(data.clubExperience)
           ? null
           : data.clubExpectation,
       answers: attachments.answers,

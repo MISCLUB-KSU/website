@@ -153,12 +153,31 @@ export const HEARD_FROM = [
  * والقيمتان عربيّتان ليقرأهما الطالب كما هما، وتُحوَّلان `boolean` عند
  * الحفظ: الفرزُ في اللوحة يحتاج عمودًا يُفرز عليه لا نصًّا يُقارن حرفًا بحرف.
  */
-export const CLUB_EXPERIENCE_YES = "نعم";
+export const CLUB_EXPERIENCE_MORE = "نعم، في أكثر من تجربة";
+export const CLUB_EXPERIENCE_ONE = "نعم، في تجربة واحدة";
 export const CLUB_EXPERIENCE_NO = "لا";
 export const CLUB_EXPERIENCE = [
-  CLUB_EXPERIENCE_YES,
+  CLUB_EXPERIENCE_MORE,
+  CLUB_EXPERIENCE_ONE,
   CLUB_EXPERIENCE_NO,
 ] as const;
+
+/**
+ * ⚠️ **رمزٌ لاتينيّ في القاعدة ونصٌّ عربيّ في النموذج.** الخياراتُ عربيّةٌ
+ * ليقرأها الطالب كما هي، والمخزَّنُ `multiple` / `single` / `none` — فتعديلُ
+ * صيغةِ الخيار يومًا لا يكسر صفًّا محفوظًا، والفرزُ لا يقارن نصًّا عربيًّا
+ * حرفًا بحرف فيسقط بمسافةٍ زائدة أو همزةٍ مختلفة.
+ */
+export const CLUB_EXPERIENCE_CODES = {
+  [CLUB_EXPERIENCE_MORE]: "multiple",
+  [CLUB_EXPERIENCE_ONE]: "single",
+  [CLUB_EXPERIENCE_NO]: "none",
+} as const;
+
+/** له خبرةٌ سابقة — أيًّا كان عددُها. يجمع «أكثر من تجربة» و«تجربة واحدة» */
+export function hasClubExperience(value: string | undefined): boolean {
+  return value === CLUB_EXPERIENCE_MORE || value === CLUB_EXPERIENCE_ONE;
+}
 
 /** حدُّ التفاصيل — جهةٌ ودورٌ ومدّة، لا سيرةٌ ذاتية ثانية */
 export const CLUB_EXPERIENCE_MAX = 400;
@@ -579,7 +598,7 @@ type FinalValues = {
  * متقاربان، فلا يشتري أحدٌ راحتَه بجوابٍ غير صادق.
  */
 function refineFinal(v: FinalValues, ctx: z.RefinementCtx): void {
-  if (v.clubExperience === CLUB_EXPERIENCE_YES) {
+  if (hasClubExperience(v.clubExperience)) {
     if ((v.clubExperienceDetails ?? "").trim().length < CLUB_EXPERIENCE_MIN) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
