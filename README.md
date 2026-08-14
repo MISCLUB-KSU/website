@@ -1,191 +1,194 @@
-# موقع نادي نظم المعلومات الإدارية — جامعة الملك سعود
+# MIS Club — King Saud University
 
-<div dir="rtl">
+The official website of the Management Information Systems Club: information
+pages, a three-step membership application, and a review dashboard behind a
+login.
 
-الموقع الرسمي للنادي: صفحاتٌ تعريفية، ونظامُ تقديمٍ للعضوية بثلاث خطوات،
-ولوحةُ فرزٍ للطلبات خلف تسجيل دخول.
+**Production:** <https://misclubksu.com>
 
-**الإنتاج:** <https://misclubksu.com>
-
-> هذا الملفّ **مدخلُ من يطوّر الموقع بعدنا**. الشيفرة نفسُها موثَّقةٌ بغزارة
-> بالعربية — كلُّ قرارٍ غير بديهيّ مكتوبٌ تعليلُه فوق الكود مباشرةً. فإن
-> استغربتَ سطرًا، اقرأ ما فوقه قبل أن تغيّره: أكثرُه مكتوبٌ بعد عطلٍ وقعنا
-> فيه فعلًا.
+> This file is the entry point for whoever maintains this site next. The code
+> itself is heavily documented **in Arabic** — every non-obvious decision has
+> its reasoning written directly above it. So if a line looks strange, read the
+> comment above it before changing it: most of them were written after a bug we
+> actually hit.
 
 ---
 
-## التقنيات
+## Stack
 
-| الطبقة | الأداة |
+| Layer | Tool |
 |---|---|
-| الإطار | Next.js 16 (App Router) · React 19 · TypeScript |
-| التنسيق | Tailwind v4 + رموزٌ في `src/app/globals.css` |
-| البيانات والدخول | Supabase (Postgres + Auth + Storage) |
-| البريد | Resend |
-| التحقّق | Zod — مخطّطٌ **واحد** يشترك فيه المتصفّح والخادم |
-| الحركة | Motion · وthree.js في موضعٍ واحد |
+| Framework | Next.js 16 (App Router) · React 19 · TypeScript |
+| Styling | Tailwind v4 + design tokens in `src/app/globals.css` |
+| Data & auth | Supabase (Postgres + Auth + Storage) |
+| Email | Resend |
+| Validation | Zod — **one** schema shared by browser and server |
+| Motion | Motion, plus three.js in a single place |
 
 ---
 
-## التشغيل محليًّا
+## Running locally
 
-يلزم **Node 20 أو أحدث** (مُجرَّبٌ على 24).
+Requires **Node 20 or newer** (tested on 24).
 
 ```bash
 npm install
-cp .env.example .env.local   # ثم املأ القيم
+cp .env.example .env.local   # then fill in the values
 npm run dev                  # http://localhost:3000
 ```
 
-الموقع العامّ يعمل بلا أي متغيّر بيئة. الذي يحتاجها: صفحة `/join` (الحفظ)
-و`/admin` (الدخول والفرز).
+The public site runs with no environment variables at all. What needs them:
+`/join` (saving applications) and `/admin` (login and review).
 
-### متغيّرات البيئة
+### Environment variables
 
-| المتغيّر | لماذا | بدونه |
+| Variable | Why | Without it |
 |---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | عنوان المشروع | لا يُحفظ طلب ولا يُفتح `/admin` |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | المفتاح العلنيّ | كسابقه |
-| `SUPABASE_SERVICE_ROLE_KEY` | يتجاوز `RLS` — لرفع المرفقات وتوقيع روابطها | لا تُرفع سيرةٌ ذاتية |
-| `RESEND_API_KEY` | بريدُ تأكيدِ الطلب وبريدُ النتيجة | **لا شيء يسقط** — يُسجَّل تحذير ولا يُرسَل بريد |
-| `RESEND_FROM` | المرسِل، على نطاقٍ موثَّقٍ في Resend | يُرفض الإرسال |
+| `NEXT_PUBLIC_SUPABASE_URL` | Project endpoint | No application is saved, `/admin` won't open |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public key | Same as above |
+| `SUPABASE_SERVICE_ROLE_KEY` | Bypasses RLS — uploads attachments and signs their URLs | CV uploads fail |
+| `RESEND_API_KEY` | Application-received and result emails | **Nothing breaks** — a warning is logged, no mail is sent |
+| `RESEND_FROM` | Sender, on a domain verified in Resend | Sending is rejected |
 
-> ⚠️ `SUPABASE_SERVICE_ROLE_KEY` يتجاوز كلّ سياسات الأمان. لا يوضع في أي
-> متغيّرٍ يبدأ بـ`NEXT_PUBLIC_` ولا يُرفع إلى git. و`.env.local` مُتجاهَل.
+> ⚠️ `SUPABASE_SERVICE_ROLE_KEY` bypasses every security policy. Never put it in
+> a `NEXT_PUBLIC_` variable and never commit it. `.env.local` is gitignored.
 
 ---
 
-## أين يقع كلُّ شيء
+## Where everything lives
 
 ```
 src/
-├── app/            المسارات (App Router)
-│   ├── join/       نموذج التقديم — ثلاث خطوات في نموذجٍ واحد
-│   ├── admin/      لوحة الفرز، خلف تسجيل دخول ونظامٍ بصريّ مستقلّ
-│   └── globals.css الرموز والأصناف العامّة
-├── components/     ui/ أوّليّات · site/ أقسام الصفحات · leadership/ مشهد الهيكل
-├── content/        ⬅ محتوى الموقع كلُّه، ملفّات TypeScript
-├── lib/            الأدوات: التحقّق · Supabase · البريد · العزل ثنائيّ الاتجاه
-└── middleware.ts   تجديد جلسة الإدارة وحراسة /admin
+├── app/            Routes (App Router)
+│   ├── join/       Application form — three steps in a single <form>
+│   ├── admin/      Review dashboard, behind login, with its own visual system
+│   └── globals.css Design tokens and global classes
+├── components/     ui/ primitives · site/ page sections · leadership/ org-chart scene
+├── content/        ⬅ ALL site content, as TypeScript files
+├── lib/            Validation · Supabase · email · bidirectional-text isolation
+└── middleware.ts   Refreshes the admin session, guards /admin
 ```
 
-### المسارات
+### Routes
 
-| عامّ | محميّ |
+| Public | Protected |
 |---|---|
-| `/` · `/about` · `/about/structure` · `/about/partnerships` | `/admin` — لوحة الفرز |
-| `/committees` · `/committees/[slug]` | `/admin/login` — طلب رابط الدخول |
+| `/` · `/about` · `/about/structure` · `/about/partnerships` | `/admin` — review dashboard |
+| `/committees` · `/committees/[slug]` | `/admin/login` — request a login link |
 | `/projects` · `/projects/[slug]` | |
 | `/achievements` · `/posts` · `/posts/[slug]` | |
 | `/faq` · `/contact` | |
-| `/join` · `/join/[...to]` — تقديمٌ مباشر لجهةٍ بعينها | |
+| `/join` · `/join/[...to]` — apply directly to one team | |
 
 ---
 
-## تعديل المحتوى — أشيعُ مهمّة
+## Editing content — the most common task
 
-**لا يوجد CMS.** المحتوى ملفّاتُ TypeScript في `src/content/`، والصفحات
-تقرأ منها. فتغييرُ نصٍّ أو إضافةُ لجنةٍ = تعديلُ ملفٍّ ثم `commit`.
+**There is no CMS.** Content lives as TypeScript files in `src/content/`, and
+pages read from them. Changing a sentence or adding a committee means editing a
+file and committing it.
 
-| تبي تغيّر | الملفّ |
+| To change | Edit |
 |---|---|
-| اللجان ووحداتها وأسئلةُ قادتها | `committees.ts` |
-| المشاريع والمبادرات | `projects.ts` |
-| الهيكل الإداري | `leadership.ts` · `people.ts` |
-| الأسئلة الشائعة | `faq.ts` |
-| الإنجازات · الخريجون · الإعلانات | `achievements.ts` · `alumni.ts` · `announcements.ts` |
-| القوائم والتذييل | `navigation.ts` |
-| بريد التواصل وحسابات التواصل | `contact.ts` |
-| خيارات التقديم وترتيبُها | `preferences.ts` |
+| Committees, their units, and their leaders' questions | `committees.ts` |
+| Projects and initiatives | `projects.ts` |
+| Org chart | `leadership.ts` · `people.ts` |
+| FAQ | `faq.ts` |
+| Achievements · alumni · announcements | `achievements.ts` · `alumni.ts` · `announcements.ts` |
+| Navigation and footer | `navigation.ts` |
+| Contact email and social accounts | `contact.ts` |
+| Application options and their order | `preferences.ts` |
 
-**فتحُ التقديم وإغلاقُه** بالراية `isOpen` على اللجنة أو الوحدة أو المشروع
-في ملفّها. الواجهة تشتقّ الحالة منها — لا تُكتب في مكانٍ ثانٍ.
+**Opening and closing applications** is the `isOpen` flag on a committee, unit,
+or project in its own file. The UI derives the state from it — it is not written
+anywhere else.
 
 ---
 
-## قاعدة البيانات ولوحة الفرز
+## Database and the review dashboard
 
-**جدولان في Supabase:**
+**Two tables in Supabase:**
 
-| الجدول | فيه |
+| Table | Holds |
 |---|---|
-| `applications` | طلبات الطلاب — ومنها `cv_path` إلى المرفق |
-| `staff` | من يدخل اللوحة، وبريدُه، و**نطاقُ اطّلاعه** |
+| `applications` | Student applications, including `cv_path` pointing at the attachment |
+| `staff` | Who may enter the dashboard, their email, and **what scope they can see** |
 
-**مستودع ملفّات:** `cv` — **خاصّ**، بلا سياسات قراءة. تنزيلُ السيرة يمرّ
-بمسارٍ يتحقّق أوّلًا بجلسة المستخدم، ثم يوقّع رابطًا يسقط بعد دقيقة.
+**Storage bucket:** `cv` — **private**, with no read policies. Downloading a CV
+goes through a route that first authorizes using the user's own session, then
+signs a URL that expires after one minute.
 
-**الدخول برابطٍ يصل البريد** (magic link) بلا كلمة مرور: الصفحة تعرض أرقام
-هويات الطلاب وجوّالاتهم، وكلمةٌ واحدة مشتركة تنتشر في الواتس ولا يُعرف من
-دخل بها. ونزعُ الصلاحية = شطبُ سطرٍ من `staff`.
+**Login is a magic link, no password:** the dashboard shows student national IDs
+and phone numbers, and one shared password spreads through WhatsApp with no way
+to tell who used it. Revoking access is deleting a row from `staff`.
 
-> ⚠️ **حراسة `/admin` في الوسيط راحةٌ لا أمان.** الحاجز الحقيقي سياسات
-> `RLS` في Supabase: من يصل بلا صلاحية يجد صفحةً فارغة لأن الاستعلام يرجع
-> صفرًا. **فلا تُضعِف `RLS` ظنًّا أن الوسيط يكفي.**
+> ⚠️ **The `/admin` guard in the middleware is convenience, not security.** The
+> real boundary is Supabase RLS: anyone reaching it without permission gets an
+> empty page because the query returns nothing. **So do not weaken RLS assuming
+> the middleware is enough.**
 
 ---
 
-## أعرافٌ تعضّ إن خالفتَها
+## Conventions that will bite you
 
-**١. الاتجاه (`RTL`) — أكثرُ عطلٍ تكرارًا هنا.**
-الصفحات `dir="rtl" lang="ar"`. كلُّ نصٍّ لاتينيّ أو رقمٍ أو رمزٍ برمجيّ
-يُغلَّف `dir="ltr" lang="en"` أو يمرّ عبر `isolateLatin` من `@/lib/bidi` —
-وإلّا انعكس بصريًّا أو صارت أرقامُه هنديّة.
+**1. Direction (RTL) — the single most frequent bug here.**
+Pages are `dir="rtl" lang="ar"`. Every Latin string, number, or code identifier
+must be wrapped in `dir="ltr" lang="en"` or passed through `isolateLatin` from
+`@/lib/bidi` — otherwise it renders reversed, or its digits turn Arabic-Indic.
 
-⚠️ ومصيدةٌ دقيقة: الخصائص المنطقية (`ms-*` · `border-s-*`) تتبع اتجاه
-**عنصرها هي** لا اتجاه الصفحة. فعلى عنصرٍ `dir="ltr"` تقع في الجهة المقابلة
-صامتةً.
+⚠️ A subtle trap: logical properties (`ms-*`, `border-s-*`) follow **their own
+element's** direction, not the page's. On an element marked `dir="ltr"` they land
+on the opposite side, silently.
 
-**٢. الألوان رموزٌ تنقلب مع الوضع.** لا تكتب `#hex` في مكوّن. والفحص في
-وضعٍ واحد **يكذب** — عطلٌ كثيرٌ هنا نجح نهارًا مصادفةً وسقط ليلًا. قِس
-التباين في الوضعين.
+**2. Colors are tokens that flip with the theme.** Never write a `#hex` in a
+component. And testing in one theme **lies** — many bugs here passed in light
+mode by accident and failed in dark. Measure contrast in both.
 
-**٣. الميلان توقيعٌ لا خلفية.** لا يُستعمل إلّا في مواضعَ معدودة في الشاشة
-الواحدة.
+**3. The slant is a signature, not a background.** Use it in only a few places
+per screen.
 
-**٤. قبل نسبةِ خللٍ بصريّ إلى التصميم، تأكّد أن الصنف معرَّفٌ أصلًا:**
+**4. Before blaming a visual bug on the design, check the class exists at all:**
 
 ```bash
 grep -E "^\.<name>[[:space:],:{>]" src/app/globals.css
 ```
 
-استرجاعُ المستودع أسقط أصنافًا، والمكوّنات توثّقها على أنها موجودة.
+A repository restore dropped some classes while components still document them
+as present.
 
-**٥. الجوّال أوّلًا.** الموقع بُني للحاسب ثم أُعيد للجوّال، وله طبقةُ حركةٍ
-مستقلّة في `components/site/mobile-motion.tsx` خلف `useIsMobile` — والحاسب
-لا يتغيّر بشعرة معها.
+**5. Mobile first.** The site was built for desktop and then re-done for mobile.
+It has its own motion layer in `components/site/mobile-motion.tsx` behind
+`useIsMobile` — and desktop must not shift by a hair because of it.
 
 ---
 
-## قبل أي commit
+## Before any commit
 
 ```bash
 npx tsc --noEmit && npm run lint
 ```
 
-كلاهما يجب أن يخرج نظيفًا.
+Both must come out clean.
 
 ---
 
-## ثغراتٌ معروفة — لمن يأتي بعدنا
+## Known gaps — for whoever comes next
 
-| الثغرة | الأثر |
+| Gap | Impact |
 |---|---|
-| **مخطّط قاعدة البيانات غير محفوظ في المستودع** | لا يوجد `.sql` ولا migrations. الجداول والسياسات في لوحة Supabase وحدها — فمن يبني بيئةً جديدة **لا يقدر يعيدها من هنا**. أصدِّرها إلى `supabase/migrations/` أوّل فرصة. |
-| **بلا اختبارات** | لا وحدة ولا E2E. التحقّق يدويّ في المتصفّح. |
-| **بلا CI** | `tsc` و`eslint` يُشغَّلان يدويًّا. |
-| **إعدادات النشر غير موثَّقة** | النطاق `misclubksu.com` يعمل، ومكانُ الاستضافة ومتغيّراتُها غير مكتوبةٍ هنا. |
-| **المناطق الآمنة** | `viewport-fit=cover` مُفعَّلة والأصناف موضوعة، ولم تُختبَر على جهازٍ بنتوءٍ حقيقيّ. |
+| **The database schema is not in the repository** | No `.sql`, no migrations. Tables and policies exist only in the Supabase dashboard, so anyone setting up a fresh environment **cannot recreate it from here**. Export it into `supabase/migrations/` at the first opportunity. |
+| **No tests** | Neither unit nor E2E. Verification is manual, in the browser. |
+| **No CI** | `tsc` and `eslint` are run by hand. |
+| **Deployment is undocumented** | The domain `misclubksu.com` works; where it is hosted and which variables are set there are not written down here. |
+| **Safe areas untested** | `viewport-fit=cover` is enabled and the classes are in place, but it has never been checked on a real notched device. |
 
 ---
 
-## عن الأسماء
+## About names
 
-**لا تُكتب أسماءُ أشخاصٍ في أي مادّةٍ ينتجها هذا المشروع** — لا في الصفحات
-ولا في المستندات ولا في بياناتها الوصفية. البديل: الجهة لا الشخص («الفريق
-التقني»، «إدارة النادي»).
+**No personal names appear in anything this project produces** — not in pages,
+not in documents, and not in their metadata. Use the role, not the person: "the
+technical team", "club management".
 
-والسبب ليس تحفّظًا: النادي يبقى بعد تخرّج أعضائه، والمادّة المرتبطة بشخصٍ
-تُقيَّد به.
-
-</div>
+The reason is not secrecy: the club outlives the members who serve in it, and
+material tied to a person gets tied down with them.
