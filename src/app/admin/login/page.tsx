@@ -150,7 +150,11 @@ export default function AdminLoginPage() {
                  فيُلصَق بضغطة بدل التنقّل بين تطبيقين. */
               inputMode="numeric"
               autoComplete="one-time-code"
-              maxLength={6}
+              /* ⚠️ **عشرةٌ لا ستّة.** كان `6` افتراضًا، والرمز الحقيقيّ وصل
+                 **ثمانيةً** — فكان الحقل يقصّ آخر رقمين صامتًا، ويعجز
+                 القائد عن الدخول بلا أن يعرف لماذا. وطولُ الرمز إعدادٌ في
+                 لوحة Supabase (٦–١٠)، فيُفتح المدى كلُّه. */
+              maxLength={10}
               placeholder="123456"
               dir="ltr"
               className="text-start tracking-[0.4em]"
