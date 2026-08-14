@@ -220,6 +220,20 @@ export const CV_ACCEPT = CV_TYPES.join(",");
  * المتصفح يرسل ملفًا فارغًا باسم فارغ حين لا يختار الطالب شيئًا — وهذا
  * ليس خطأً، المرفق اختياري.
  */
+/**
+ * ملفّ المشاريع السابقة — حدُّه حدُّ السيرة الذاتية وصيغُه صيغُها.
+ *
+ * ⚠️ **ويُحسب في `UPLOAD_BUDGET_BYTES`.** المرفقات كلُّها تصعد في جسمِ
+ * طلبٍ واحد، وسقفُ الجسم في `next.config.ts` مشتقٌّ من هذي الميزانية —
+ * فإضافةُ حقلِ رفعٍ بلا زيادةِ السقف تعني أن من يرفع ملفّين يُردّ بـ500
+ * خام قبل أن تعمل شيفرتُنا، فلا يرى رسالةً تقول له ما العطل.
+ */
+export const PROJECTS_MAX_BYTES = CV_MAX_BYTES;
+
+export function validateProjectsFile(file: unknown): string | undefined {
+  return validateCvFile(file);
+}
+
 export function validateCvFile(file: unknown): string | undefined {
   if (!(file instanceof File) || file.size === 0) return undefined;
   if (file.size > CV_MAX_BYTES) {
@@ -267,7 +281,7 @@ export const MAX_ANSWER_FILES = 3;
  * مذكورٌ هنا صراحةً لا مسكوتٌ عنه.
  */
 export const UPLOAD_BUDGET_BYTES =
-  CV_MAX_BYTES + MAX_ANSWER_FILES * ANSWER_FILE_MAX_BYTES;
+  CV_MAX_BYTES + PROJECTS_MAX_BYTES + MAX_ANSWER_FILES * ANSWER_FILE_MAX_BYTES;
 
 /** فحص مرفق السؤال — يعيد رسالة الخطأ أو `undefined` */
 export function validateAnswerFile(file: unknown): string | undefined {

@@ -7,6 +7,7 @@ import {
   registrationSchema,
   validateAnswers,
   validateCvFile,
+  validateProjectsFile,
   type RegistrationInput,
   type RegistrationState,
 } from "@/lib/registration";
@@ -155,6 +156,9 @@ export async function submitRegistration(
   const cvError = validateCvFile(formData.get("cv"));
   if (cvError) errors.cv = cvError;
 
+  const projectsError = validateProjectsFile(formData.get("projectsFile"));
+  if (projectsError) errors.projectsFile = projectsError;
+
   /* أسئلة القادة تتبع الرغبات المختارة، وتُفحص مع بقية الحقول لا بعدها:
      لو انتظرت قبول المخطّط كاملًا لظهرت أخطاؤها في جولة ثانية، فيصلح
      الطالب حقولًا ثم يُفاجأ بأسئلة لم تكن ظاهرة له.
@@ -207,6 +211,7 @@ export async function submitRegistration(
       answers: answers.answers,
       answerFiles: answers.files,
       cv: formData.get("cv"),
+      projectsFile: formData.get("projectsFile"),
       mode,
     });
   } catch (error) {
@@ -281,6 +286,7 @@ type Attachments = {
   answerFiles: Record<string, File>;
   /** المرفق كما وصل — `File` أو `null` إن لم يرفع الطالب شيئًا */
   cv: FormDataEntryValue | null;
+  projectsFile: FormDataEntryValue | null;
   /** `open` نموذجٌ بثلاث رغبات · `direct` رابطٌ لجهةٍ واحدة */
   mode: "open" | "direct";
 };
@@ -363,21 +369,47 @@ async function saveApplication(
 
   await uploadAnswerFiles(supabase, row.id, attachments);
 
-  const cv = attachments.cv;
-  if (!(cv instanceof File) || cv.size === 0) return;
+  await uploadOne(supabase, row.id, attachments.cv, "cv_path", "السيرة");
+  await uploadOne(
+    supabase,
+    row.id,
+    attachments.projectsFile,
+    "projects_path",
+    "ملفّ المشاريع",
+  );
+}
+
+/**
+ * رفعُ مرفقٍ عامٍّ وربطُ مساره بالصفّ.
+ *
+ * ⚠️ **ولا يُرمى خطؤه.** الطلب محفوظٌ قبل هذا السطر، فإسقاطُ العملية كلِّها
+ * لأن ملفًّا لم يصعد يعني أن الطالب يرى «تعذّر الإرسال» وطلبُه في القاعدة —
+ * فيعيد الإرسال ويصطدم بقيد التكرار. فيُسجَّل التحذير ويمضي، والمرفقُ
+ * اختياريٌّ أصلًا.
+ */
+async function uploadOne(
+  supabase: ReturnType<typeof createAdminClient>,
+  id: string,
+  file: FormDataEntryValue | null,
+  column: "cv_path" | "projects_path",
+  label: string,
+): Promise<void> {
+  if (!(file instanceof File) || file.size === 0) return;
 
   /* اسم الملفّ من معرّف الصفّ لا من اسم الطالب: اسمٌ عربيٌّ أو فيه شرطة
-     مائلة يكسر المسار، ومعرّفُ الصفّ يربط الملفّ بصاحبه بلا لبس. */
-  const extension = cv.name.split(".").pop()?.toLowerCase() ?? "bin";
-  const path = `${row.id}.${extension}`;
+     مائلة يكسر المسار، ومعرّفُ الصفّ يربط الملفّ بصاحبه بلا لبس.
+     ⚠️ وسابقةُ العمود تفصل المرفقين: بدونها يكتب الثاني فوق الأول
+     (`upsert: true`) لأن اسمهما معرّفُ الصفّ نفسُه. */
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "bin";
+  const path = `${column === "cv_path" ? "" : "projects/"}${id}.${extension}`;
 
   const upload = await supabase.storage
     .from(CV_BUCKET)
-    .upload(path, cv, { contentType: cv.type, upsert: true });
+    .upload(path, file, { contentType: file.type, upsert: true });
 
   if (upload.error) {
-    console.error("[registration] وصل الطلب ولم تُرفع السيرة", {
-      id: row.id,
+    console.error(`[registration] وصل الطلب ولم يُرفع ${label}`, {
+      id,
       error: upload.error.message,
     });
     return;
@@ -385,12 +417,12 @@ async function saveApplication(
 
   const link = await supabase
     .from("applications")
-    .update({ cv_path: path })
-    .eq("id", row.id);
+    .update({ [column]: path })
+    .eq("id", id);
 
   if (link.error) {
-    console.error("[registration] رُفعت السيرة ولم يُربط مسارها", {
-      id: row.id,
+    console.error(`[registration] رُفع ${label} ولم يُربط مسارُه`, {
+      id,
       path,
       error: link.error.message,
     });

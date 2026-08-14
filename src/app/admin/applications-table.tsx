@@ -749,7 +749,15 @@ function Dossier({
                   href={row.cv_path ? `/admin/cv/${row.id}` : null}
                   label="السيرة الذاتية"
                 />
-                <LinkPill href={row.portfolio} label="معرض الأعمال" external />
+                {/* المشاريع بابان: ملفٌّ مرفوع ورابطٌ منشور — وأحدهما يكفي،
+                    فيُعرضان معًا ويغيب ما لم يُملأ. */}
+                <LinkPill
+                  href={
+                    row.projects_path ? `/admin/cv/${row.id}?kind=projects` : null
+                  }
+                  label="ملفّ المشاريع"
+                />
+                <LinkPill href={row.portfolio} label="رابط الأعمال" external />
                 <LinkPill href={row.linkedin} label="لينكدإن" external />
               </div>
             </Block>

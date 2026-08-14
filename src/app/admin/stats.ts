@@ -32,6 +32,13 @@ export type Row = {
   /** خبرةٌ سابقة في عملٍ طلابيّ أو تطوّعيّ — والتفاصيل `null` لمن لا خبرة له */
   has_club_experience: boolean;
   club_experience: string | null;
+  /** درجتُها: `multiple` · `single` · `none`. `null` في الصفوف السابقة للعمود */
+  club_experience_level: string | null;
+  /** وجوابا من لا خبرة له — `null` لمن له خبرة، بالتقابل نفسِه */
+  club_perception: string | null;
+  club_expectation: string | null;
+  /** ملفّ المشاريع السابقة — والرابط البديل في `portfolio` */
+  projects_path: string | null;
   answers: Record<string, string>;
   portfolio: string | null;
   linkedin: string | null;

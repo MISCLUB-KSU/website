@@ -586,17 +586,25 @@ export function StepQuestions({
         error={e.heardFrom}
       />
 
+      {/* ⚠️ **المشاريع أوّلًا ثم السيرة — بترتيب الوركفلو لا بترتيب البناء.**
+          وهما صندوقان لا صندوق: كانا مجموعين تحت «السيرة الذاتية أو معرض
+          الأعمال» فيقرأهما الطالب بديلين — يرفع أحدهما ويمضي. والوركفلو
+          يريدهما شيئين: نموذجَ عملٍ يدلّ على ما يصنع، وسيرةً تدلّ على أين
+          كان. وكلاهما اختياريّ فلا يُثقل الفصلُ أحدًا. */}
       <fieldset className="flex flex-col gap-s3">
         <legend className="mb-1 text-sm font-semibold text-fg">
-          السيرة الذاتية أو معرض الأعمال
-          <span className="text-[0.875rem] font-normal text-fg-muted"> (اختياري)</span>
+          مشاريعك السابقة
+          <span className="text-[0.875rem] font-normal text-fg-muted">
+            {" "}
+            (اختياري)
+          </span>
         </legend>
 
         <FileField
-          id="cv"
+          id="projectsFile"
           label="ارفع ملفًا"
           accept={CV_ACCEPT}
-          error={e.cv}
+          error={e.projectsFile}
           hint={
             <>
               <span dir="ltr">PDF</span> أو صورة، حتى <span dir="ltr">5</span>{" "}
@@ -609,7 +617,7 @@ export function StepQuestions({
 
         <TextField
           id="portfolio"
-          label="رابط السيرة الذاتية أو معرض الأعمال"
+          label="رابط أعمالك أو معرضها"
           optional
           type="url"
           defaultValue={v.portfolio}
@@ -618,6 +626,33 @@ export function StepQuestions({
           placeholder="https://drive.google.com/…"
           dir="ltr"
           className="text-start"
+        />
+      </fieldset>
+
+      <fieldset className="flex flex-col gap-s3">
+        <legend className="mb-1 text-sm font-semibold text-fg">
+          السيرة الذاتية
+          <span className="text-[0.875rem] font-normal text-fg-muted">
+            {" "}
+            (اختياري)
+          </span>
+        </legend>
+
+        {/* ⚠️ **ولا حقلَ رابطٍ هنا.** `portfolio` واحدٌ في النموذج ومكانُه
+            صندوقُ المشاريع أعلاه — وتكرارُه بالمعرّف نفسِه يجعل `<label for>`
+            يشير إلى عنصرين، فيصير نقرُ الوسم يفتح الحقلَ الخطأ، ويرسل
+            المتصفّح قيمتين لاسمٍ واحد فتصل الأولى وتضيع الثانية. */}
+        <FileField
+          id="cv"
+          label="ارفع ملفًا"
+          accept={CV_ACCEPT}
+          error={e.cv}
+          hint={
+            <>
+              <span dir="ltr">PDF</span> أو صورة، حتى <span dir="ltr">5</span>{" "}
+              ميجابايت.
+            </>
+          }
         />
       </fieldset>
 
