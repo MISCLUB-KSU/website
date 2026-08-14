@@ -55,30 +55,61 @@ export default function OpengraphImage() {
     `<g fill="url(#m)">${polygons}</g></svg>`;
   const markSrc = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 
-  /* زخرفةُ الجهة اليمنى: وهجٌ ناعم وثلاثُ شرائح بزاوية الشعار.
-     تُرسم صورةً واحدة لا عناصرَ متراكبة — كلُّ عنصرٍ مطلقٍ في Satori يزيد
-     كلفة الرسم، وهذي بلا تفاعلٍ ولا معنًى دلاليّ.
+  /* ══ زخرفة الأرضية: موجةٌ وخطُّ ضوءٍ وكتلٌ متوازية ══
+     تُرسم صورةً واحدة تغطّي البطاقة كلَّها لا عناصرَ متراكبة — كلُّ عنصرٍ
+     مطلقٍ في Satori يزيد كلفة الرسم، وهذي بلا تفاعلٍ ولا معنًى دلاليّ.
 
-     ⚠️ **والشفافية منخفضةٌ عمدًا.** أوّل رسمةٍ جعلتها `0.05→0.11` بعرض
-     ٤٢٠px فقرأتها العينُ **أعمدةً** تنازع العلامةَ لا لمسةً خلفها. فضاقت
-     ورقّت وانزاحت إلى الحافّة. */
+     ⚠️ **والميل ليس اختيارًا حرًّا: `SLOPE` مشتقٌّ من الشعار نفسِه.**
+     ضلعُ العلامة ينزل من `(813,0)` إلى `(659.8,339)`، أي إزاحةٌ أفقية
+     مقدارُها `153.2/339 ≈ 0.452` لكل وحدةِ ارتفاع. فكلُّ متوازيةٍ هنا
+     تُبنى بهذا الميل — ولو قُدّرت بالعين لظهر في البطاقة اتجاهان
+     متقاربان لا يتطابقان، وهو أسوأ من اتجاهين مختلفين صراحةً. */
+  const SLOPE = 153.2 / 339;
+  /** متوازيةُ أضلاعٍ بميل الشعار — `x,y` رأسُها الأعلى الأيسر */
+  const slab = (
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    fill: string,
+    o: number,
+  ) =>
+    `<polygon points="${x},${y} ${x + w},${y} ${x + w - SLOPE * h},${y + h} ${x - SLOPE * h},${y + h}" fill="${fill}" opacity="${o}"/>`;
+
   const decor =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 630">` +
-    `<defs><radialGradient id="glow" cx="0.72" cy="0.44" r="0.62">` +
-    `<stop offset="0" stop-color="${SKY}" stop-opacity="0.30"/>` +
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">` +
+    `<defs>` +
+    /* الموجة: أفتحُ ما تكون عند وسطها الأيمن ثم تخبو — لا لونٌ مصمت */
+    `<linearGradient id="wave" x1="0" y1="1" x2="1" y2="0">` +
+    `<stop offset="0" stop-color="${PRIMARY}" stop-opacity="0"/>` +
+    `<stop offset="0.5" stop-color="${PRIMARY}" stop-opacity="0.34"/>` +
+    `<stop offset="1" stop-color="${SKY}" stop-opacity="0.14"/>` +
+    `</linearGradient>` +
+    /* خطُّ الضوء: يشتدّ في الوسط ويتلاشى في الطرفين، فلا يبدو حدًّا
+       مرسومًا بل انعكاسَ ضوءٍ على حافّة الموجة */
+    `<linearGradient id="edge" x1="0" y1="1" x2="1" y2="0">` +
+    `<stop offset="0" stop-color="${SKY}" stop-opacity="0"/>` +
+    `<stop offset="0.46" stop-color="#dceaf8" stop-opacity="0.9"/>` +
+    `<stop offset="0.78" stop-color="${SKY}" stop-opacity="0.35"/>` +
     `<stop offset="1" stop-color="${SKY}" stop-opacity="0"/>` +
-    `</radialGradient></defs>` +
-    `<rect width="460" height="630" fill="url(#glow)"/>` +
-    [
-      { x: 150, w: 26, o: 0.07 },
-      { x: 232, w: 54, o: 0.05 },
-      { x: 340, w: 20, o: 0.09 },
-    ]
-      .map(
-        ({ x, w, o }) =>
-          `<polygon points="${x},630 ${x + w},630 ${x + 300},0 ${x + 300 - w},0" fill="${SNOW}" opacity="${o}"/>`,
-      )
-      .join("") +
+    `</linearGradient>` +
+    `<linearGradient id="wave2" x1="0" y1="1" x2="1" y2="0">` +
+    `<stop offset="0" stop-color="${DEEP}" stop-opacity="0"/>` +
+    `<stop offset="1" stop-color="${PRIMARY}" stop-opacity="0.16"/>` +
+    `</linearGradient>` +
+    `</defs>` +
+    /* موجةٌ خلفيةٌ باهتة ثم الموجة الرئيسة فوقها — طبقتان تعطيان عمقًا
+       لا تعطيه واحدة */
+    `<path d="M -40 640 C 260 600 420 470 720 400 S 1060 300 1240 190 L 1240 640 Z" fill="url(#wave2)"/>` +
+    `<path d="M -40 640 C 300 585 430 360 760 300 S 1080 190 1240 70 L 1240 640 Z" fill="url(#wave)"/>` +
+    `<path d="M -40 640 C 300 585 430 360 760 300 S 1080 190 1240 70" fill="none" stroke="url(#edge)" stroke-width="3"/>` +
+    /* الكتل اليمنى — صفّان متداخلان بأحجامٍ متفاوتة، كما في اللوح */
+    slab(946, 286, 96, 148, SKY, 0.14) +
+    slab(1054, 286, 56, 148, SKY, 0.09) +
+    slab(1014, 168, 118, 148, PRIMARY, 0.40) +
+    slab(1144, 168, 66, 148, SKY, 0.12) +
+    slab(1086, 50, 84, 148, SKY, 0.10) +
+    slab(902, 404, 62, 148, SKY, 0.08) +
     `</svg>`;
   const decorSrc = `data:image/svg+xml;utf8,${encodeURIComponent(decor)}`;
 
@@ -104,60 +135,64 @@ export default function OpengraphImage() {
           backgroundColor: NIGHT,
           /* من الأدكن يسارًا إلى الأساسيّ يمينًا — بزاويةٍ تُسايِر ميلَ
              الشعار فلا يتعارض اتجاهان في صورةٍ واحدة. */
-          backgroundImage: `linear-gradient(115deg, ${NIGHT} 0%, ${DEEP} 58%, ${PRIMARY} 100%)`,
+          backgroundImage: `linear-gradient(115deg, #010f26 0%, ${NIGHT} 42%, ${DEEP} 100%)`,
         }}
       >
         <img
           src={decorSrc}
           alt=""
-          width={460}
+          width={1200}
           height={630}
-          style={{ position: "absolute", top: 0, right: 0 }}
+          style={{ position: "absolute", top: 0, left: 0 }}
         />
 
-        {/* ══ العلامة والاسم والشعار اللفظي — كتلةٌ واحدة ══
-            الشعار اللفظي **تحت الاسم لا في وسط البطاقة**: أوّل رسمةٍ
-            وزّعت الثلاثة بـ`space-between` فطفا بينهما فراغٌ يفصل ما هو
-            وحدةٌ واحدة في التصميم. */}
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <img src={markSrc} alt="" width={302} height={114} />
-
-          <div
-            style={{
-              width: 2,
-              height: 186,
-              margin: "0 46px",
-              backgroundColor: "rgba(249,249,249,0.32)",
-            }}
-          />
-
-          {/* ثلاثة أسطر لا سطرٌ واحد: الاسم طويل، وكسرُه عند حدود المعنى
-              أقرأُ من تصغيرِ خطٍّ ليتّسع في سطر. */}
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {["MANAGEMENT", "INFORMATION", "SYSTEMS CLUB"].map((line) => (
-              <div
-                key={line}
-                style={{
-                  fontSize: 50,
-                  lineHeight: 1.16,
-                  letterSpacing: 1.5,
-                }}
-              >
-                {line}
-              </div>
-            ))}
+        {/* ══ الشعار الكامل: العلامة والاسم، وتحتهما الشعار اللفظي ══
+            ⚠️ **الشعار اللفظي متوسّطٌ تحت الشعار كلِّه لا محاذٍ للاسم.**
+            رسمةٌ سابقة حاذته بيسار «MANAGEMENT» فبدا تابعًا للنصّ وحده،
+            وهو في اللوح تحت الوحدة كلِّها (العلامة + الفاصل + الاسم).
+            و`alignItems: center` على غلافٍ يتقلّص إلى عرض الصفّ هو ما
+            يوسّطه دون أن يوسّط الكتلة في البطاقة. */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <img src={markSrc} alt="" width={266} height={100} />
 
             <div
               style={{
-                display: "flex",
-                marginTop: 22,
-                fontSize: 27,
-                letterSpacing: 3,
-                color: SKY,
+                width: 2,
+                height: 164,
+                margin: "0 42px",
+                backgroundColor: "rgba(249,249,249,0.32)",
               }}
-            >
-              Build · Connect · Grow
+            />
+
+            {/* ثلاثة أسطر لا سطرٌ واحد: الاسم طويل، وكسرُه عند حدود المعنى
+                أقرأُ من تصغيرِ خطٍّ ليتّسع في سطر. */}
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {["MANAGEMENT", "INFORMATION", "SYSTEMS CLUB"].map((line) => (
+                <div
+                  key={line}
+                  style={{
+                    fontSize: 46,
+                    lineHeight: 1.18,
+                    letterSpacing: 1.5,
+                  }}
+                >
+                  {line}
+                </div>
+              ))}
             </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              marginTop: 26,
+              fontSize: 26,
+              letterSpacing: 3,
+              color: SNOW,
+            }}
+          >
+            Build · Connect · Grow
           </div>
         </div>
 
