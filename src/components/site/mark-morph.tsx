@@ -82,7 +82,7 @@ export function MarkMorph() {
       frame = 0;
       const hero = document.querySelector<HTMLElement>('[data-mark-anchor="hero"]');
       /* ⚠️ **`rest` لا `foot`.** كان الاجتماع في التذييل، ونُقل إلى قسم
-         «الأسئلة الشائعة» بطلبٍ صريح (حسام، ٧ أغسطس ٢٠٢٦) وحُذف شعار
+         «الأسئلة الشائعة» بطلبٍ صريح (الإدارة، ٧ أغسطس ٢٠٢٦) وحُذف شعار
          التذييل. والاسم `rest` (مستقرّ الرحلة) لا `faq` عمدًا: الموضع قد
          ينتقل ثانيةً، والمرساة تصف **دورها** لا القسم الذي تسكنه اليوم. */
       const rest = document.querySelector<HTMLElement>('[data-mark-anchor="rest"]');

@@ -65,7 +65,7 @@ export async function setStatus(id: string, status: string) {
  * ⚠️ **ولا سجلَّ إرسالٍ في القاعدة بعد**، فالإرسالُ مرّتين ممكنٌ بفعلٍ
  * متعمَّد. الواجهةُ تطلب تأكيدًا قبل كلّ إرسال، وهو ما يمنع النقرة
  * الخاطئة. والمنعُ الدائم يحتاج عمودًا (`notified_at`) وهجرةً على قاعدةٍ
- * حيّة — يُرفع لحسام لا يُقرَّر هنا.
+ * حيّة — يُرفع للإدارة لا يُقرَّر هنا.
  */
 export async function notifyDecision(id: string) {
   const supabase = await createClient();
