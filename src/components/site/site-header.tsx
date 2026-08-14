@@ -4,6 +4,7 @@ import { Mark } from "@/components/site/mark";
 import { MobileMenu } from "@/components/site/mobile-menu";
 import { NavLinks } from "@/components/site/nav-links";
 import { ScrollLift } from "@/components/site/scroll-lift";
+import { StaffGreeting } from "@/components/site/staff-greeting";
 import { ThemeToggle } from "@/components/site/theme-toggle";
 import { PRIMARY_ACTION } from "@/content/navigation";
 
@@ -148,6 +149,12 @@ export function SiteHeader() {
                 </div>
               </nav>
             </MobileMenu>
+
+            {/* ⚠️ **الترحيب قبل المبدّل لا بعده.** الطرفُ المقابل يُقرأ من
+                اليمين إلى اليسار كبقيّة الصفحة، والاسمُ أحقُّ بالسبق من
+                أداةٍ تُلمس مرّةً وتُنسى. وهو `max-lg:hidden` كجاره: شريطُ
+                الجوّال فيه العلامةُ وزرُّ القائمة وحدهما — بقرارٍ سابق. */}
+            <StaffGreeting className="max-lg:hidden" />
 
             {/* المبدّل على الحاسب يجد مقعدًا، وعلى الجوّال سكن في اللوحة */}
             <div className="max-lg:hidden">
