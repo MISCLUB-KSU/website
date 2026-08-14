@@ -58,7 +58,6 @@ export type Preference = {
 /** عناوين المجموعات — تُستعمل في القائمة وفي ترتيب العرض */
 const GROUP_STANDALONE = "لجان تُقدَّم ككتلة واحدة";
 const GROUP_PROJECTS = "المشاريع";
-const GROUP_INITIATIVES = "المبادرات";
 
 /**
  * صيغة القيمة: `committee:<لجنة>` أو `committee:<لجنة>/<وحدة>` أو `project:<مشروع>`.
@@ -115,19 +114,41 @@ export const COMMITTEE_PREFERENCES: readonly Preference[] = COMMITTEES.flatMap(
         ],
 );
 
-export const PROJECT_PREFERENCES: readonly Preference[] = PROJECTS.map(
-  (project) => ({
-    value: projectValue(project),
-    kind: "project" as const,
-    label: project.name,
-    fullLabel: project.name,
-    /* المبادرة تُعرض في مجموعة مستقلة — هي ليست مشروعًا من مشاريع النادي */
-    group: project.isExternal ? GROUP_INITIATIVES : GROUP_PROJECTS,
-    description: project.summary,
-    questions: project.questions,
-    directLink: project.directLink,
-  }),
-);
+/**
+ * ⚠️ **المبادرة الخارجية لا تدخل التسجيل — `isExternal` تُستبعَد هنا.**
+ *
+ * كانت تُعرض بطاقةً في مجموعةٍ مستقلّة اسمها «المبادرات»، فيختارها الطالب
+ * رغبةً كأيّ مشروع. والواقع أن **تسجيلها ليس عندنا**: النادي يشارك فيها
+ * ولا يستقبل طلباتها، فبطاقةُ «اختيار» تعِد بما لا نملكه — ومن يختارها
+ * يُنفق رغبةً من ثلاث على بابٍ لا يفتحه هذا النموذج.
+ *
+ * والاستبعاد من هنا يكفي وحده، فكلُّ ما يليه مشتقٌّ من هذي القائمة:
+ * البطاقات، والقوائم المنسدلة بلا جافاسكربت، ومجموعةُ «المبادرات» (تُبنى
+ * من `PREFERENCES` فلا تظهر فارغة)، والتحقّق على الخادم عبر
+ * `PREFERENCE_VALUES`، والرابطُ المباشر `/join/project/learnx` عبر
+ * `findDirectTarget` — يتوقّف كلُّه معًا ولا يبقى بابٌ خلفيّ.
+ *
+ * ⚠️ **ولم تُمسّ بيانات المبادرة في `projects.ts`** — تبقى في صفحة المشاريع
+ * وفي الإنجازات والرعاة. وصفحتُها تقرأ `PROJECTS` لا هذي القائمة، وهي اليوم
+ * تُحوَّل إلى `/projects` كسائر المشاريع لأن القسم مغلقٌ بانتظار الشعارات،
+ * لا بسبب هذا التغيير (مقيس: الثلاثة تُحوَّل ٣٠٧).
+ *
+ * والرابطُ المباشر `/join/project/learnx` لم يعد يقفل النموذج على المبادرة،
+ * بل **يسقط إلى النموذج المفتوح بثلاث رغبات** — لا 404. وهو الصواب: من وصل
+ * برابطٍ قديم يجد بابًا يعمل لا صفحةَ خطأ.
+ */
+export const PROJECT_PREFERENCES: readonly Preference[] = PROJECTS.filter(
+  (project) => !project.isExternal,
+).map((project) => ({
+  value: projectValue(project),
+  kind: "project" as const,
+  label: project.name,
+  fullLabel: project.name,
+  group: GROUP_PROJECTS,
+  description: project.summary,
+  questions: project.questions,
+  directLink: project.directLink,
+}));
 
 /* ── الروابط المباشرة ───────────────────────────────────────────────────
    ⚠️ **الأجزاء تُطابَق بجهةٍ معرَّفة، لا تُركَّب منها قيمة.** لو بُنيت القيمة
