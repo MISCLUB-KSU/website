@@ -30,7 +30,7 @@ export default async function AdminPage() {
 
   const { data: me } = await supabase
     .from("staff")
-    .select("role, scopes, label")
+    .select("role, scopes, label, display_name")
     .eq("email", (user?.email ?? "").toLowerCase())
     .maybeSingle();
 
@@ -104,9 +104,23 @@ export default async function AdminPage() {
 
         <div className="flex items-center gap-x-s4">
           <ThemeToggle />
-          <span className="hidden text-[0.76rem] opacity-60 sm:inline" dir="ltr">
-            {user?.email}
-          </span>
+          {/* ⚠️ **الاسم إن وُجد، وإلّا البريد — ولا يُختلق.** `display_name`
+              يُملأ يدويًّا لكل قائدٍ في `staff`، ومن لم يُملأ اسمُه يبقى
+              بريدُه كما كان. فلا يظهر «أهلًا» بلا أحد.
+              و`dir` يتبع المعروض: الاسم عربيّ والبريد لاتينيّ — ولو ثبت
+              على `ltr` انقلب الاسمُ بصريًّا. */}
+          {me.display_name ? (
+            <span className="hidden text-[0.76rem] opacity-60 sm:inline">
+              أهلًا {me.display_name}
+            </span>
+          ) : (
+            <span
+              className="hidden text-[0.76rem] opacity-60 sm:inline"
+              dir="ltr"
+            >
+              {user?.email}
+            </span>
+          )}
           <form action={signOut}>
             <button
               type="submit"
