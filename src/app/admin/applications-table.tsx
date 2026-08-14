@@ -772,6 +772,13 @@ function Dossier({
                   <dt className="text-fg-muted text-[0.7rem]">عرف عنّا من</dt>
                   <dd>{row.heard_from || "—"}</dd>
                 </div>
+                {/* التزاماتُ الفصل: يقرؤها القائد ليعرف كم يحمّل العضو.
+                    و«—» للصفوف السابقة للعمود، لا لمن لا التزام له —
+                    ذاك يقول «لا يوجد» صراحةً. */}
+                <div>
+                  <dt className="text-fg-muted text-[0.7rem]">التزامات الفصل</dt>
+                  <dd>{row.commitments?.join(" · ") || "—"}</dd>
+                </div>
                 <div className="col-span-2">
                   <dt className="text-fg-muted text-[0.7rem]">تاريخ التقديم</dt>
                   <dd dir="ltr" className="tabular-nums">

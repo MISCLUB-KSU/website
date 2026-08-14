@@ -28,6 +28,8 @@ import {
   CLUB_EXPERIENCE_MAX,
   CLUB_EXPERIENCE_NO,
   CLUB_NEWCOMER_MAX,
+  COMMITMENTS,
+  COMMITMENT_NONE,
   CV_ACCEPT,
   hasClubExperience,
   HEARD_FROM,
@@ -548,6 +550,90 @@ function ClubExperience({
   );
 }
 
+/**
+ * التزاماتُ الفصل — سؤالٌ عامٌّ، مربّعاتٌ لا قائمة.
+ *
+ * ⚠️ **«لا يوجد» حصريّةٌ في الواجهة وعلى الخادم.** الواجهةُ تمسح البقيّة
+ * حين تُختار وتُمسح حين يُختار غيرُها، فلا يرى القائدُ إجابةً تناقض نفسها.
+ * والحصرُ يُعاد فحصُه في `refineFinal` — الواجهةُ راحةٌ لا حارس.
+ *
+ * ⚠️ **والقيم تُقرأ من `values` مشقوقةً بـ`ANSWER_SEP`.** ردُّ الخادم يعيد
+ * ما أُرسل نصًّا واحدًا، فبلا الشقّ يعود من أشّر ثلاثةً فيجد واحدًا.
+ */
+function Commitments({
+  values: v,
+  errors: e,
+}: {
+  values: Record<string, string>;
+  errors: Record<string, string>;
+}) {
+  const [picked, setPicked] = useState<string[]>(() =>
+    splitAnswer(v.commitments ?? ""),
+  );
+
+  function toggle(option: string) {
+    setPicked((current) => {
+      if (option === COMMITMENT_NONE) {
+        return current.includes(option) ? [] : [option];
+      }
+      const without = current.filter((c) => c !== COMMITMENT_NONE);
+      return without.includes(option)
+        ? without.filter((c) => c !== option)
+        : [...without, option];
+    });
+  }
+
+  return (
+    <fieldset
+      className="flex flex-col gap-s2"
+      aria-invalid={e.commitments ? true : undefined}
+    >
+      <legend className="text-ink-label mb-1 text-sm font-semibold">
+        هل لديك التزامات أخرى هذا الفصل؟
+        <span className="font-bold text-danger" aria-hidden>
+          {" "}
+          *
+        </span>
+      </legend>
+
+      <p className="text-[0.875rem] text-fg-muted">
+        اختر كل ما ينطبق، أو «لا يوجد». لا يُخصم عليك التزامُك — يعرف به
+        القائد كم يحمّلك.
+      </p>
+
+      <div className="grid gap-s2 sm:grid-cols-3">
+        {COMMITMENTS.map((option) => {
+          const on = picked.includes(option);
+          return (
+            <label
+              key={option}
+              className={`flex min-h-11 cursor-pointer items-center gap-x-s3 border px-s3 text-[0.95rem] transition-colors ${
+                on ? "border-accent bg-accent/10" : "border-line hover:bg-bg-sunken"
+              }`}
+            >
+              <input
+                type="checkbox"
+                name="commitments"
+                value={option}
+                checked={on}
+                onChange={() => toggle(option)}
+                className="size-4 shrink-0 accent-accent"
+              />
+              {option}
+            </label>
+          );
+        })}
+      </div>
+
+      {e.commitments && (
+        <p role="alert" className="text-[0.875rem] text-danger">
+          {e.commitments}
+        </p>
+      )}
+    </fieldset>
+  );
+}
+
 export function StepQuestions({
   index,
   current,
@@ -574,6 +660,8 @@ export function StepQuestions({
       />
 
       <ClubExperience values={v} errors={e} />
+
+      <Commitments values={v} errors={e} />
 
       <SelectField
         key={`heardFrom-${v.heardFrom ?? ""}`}

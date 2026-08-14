@@ -39,6 +39,8 @@ export type Row = {
   club_expectation: string | null;
   /** ملفّ المشاريع السابقة — والرابط البديل في `portfolio` */
   projects_path: string | null;
+  /** التزامات الفصل — `'{}'` في الصفوف السابقة للعمود */
+  commitments: string[];
   answers: Record<string, string>;
   portfolio: string | null;
   linkedin: string | null;

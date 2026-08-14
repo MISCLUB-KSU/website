@@ -52,6 +52,8 @@ const ECHOED = [
   "clubPerception",
   "clubExpectation",
   "heardFrom",
+  /* `commitments` ليست هنا: مربّعاتٌ متعدّدة يجمعها `echo` أدناه بالفاصل،
+     و`formData.get` كان يعيد الأولى وحدها فيفقد الطالبُ بقيّة ما أشّر. */
   "portfolio",
   "linkedin",
   "agree",
@@ -78,7 +80,7 @@ function echo(formData: FormData): Record<string, string> {
      الأخيرَ وحده — فمن أشّر ثلاثةً وأخطأ في حقلٍ بعيد كان يرجع فيجد واحدًا.
      و`splitAnswer` في الواجهة يشقّه بـ`ANSWER_SEP` نفسِه. */
   for (const key of new Set(formData.keys())) {
-    if (!key.startsWith(ANSWER_PREFIX)) continue;
+    if (!key.startsWith(ANSWER_PREFIX) && key !== "commitments") continue;
     out[key] = formData
       .getAll(key)
       .filter((value): value is string => typeof value === "string")
@@ -141,6 +143,11 @@ export async function submitRegistration(
        أعلاه — والدرس: كلُّ حقلٍ يُضاف يُضاف هنا في اللحظة نفسِها. */
     clubPerception: text(formData, "clubPerception"),
     clubExpectation: text(formData, "clubExpectation"),
+    /* ⚠️ `getAll` لا `get` — مربّعاتٌ تحمل الاسم نفسه، و`get` يعيد الأولى
+       فتضيع البقيّة صامتةً. المصيدة نفسها الموصوفة عند `validateAnswers`. */
+    commitments: formData
+      .getAll("commitments")
+      .filter((v): v is string => typeof v === "string"),
     heardFrom: text(formData, "heardFrom"),
     portfolio: text(formData, "portfolio"),
     linkedin: text(formData, "linkedin"),
@@ -350,6 +357,7 @@ async function saveApplication(
         hasClubExperience(data.clubExperience)
           ? null
           : data.clubExpectation,
+      commitments: data.commitments,
       answers: attachments.answers,
       portfolio: data.portfolio || null,
       linkedin: data.linkedin || null,

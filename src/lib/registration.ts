@@ -201,6 +201,25 @@ export const CLUB_EXPERIENCE_MIN = 10;
  */
 export const CLUB_NEWCOMER_MAX = 250;
 
+/**
+ * التزاماتُ الفصل — **سؤالٌ عامٌّ لا سؤالُ لجنة**.
+ *
+ * ⚠️ كان في أسئلة اللجنة الإعلامية وحدها، فيُسأل من اختارها ولا يُسأل من
+ * اختار غيرها — والوقتُ المتاح ليس شأنَ لجنةٍ بعينها: كلُّ قائدٍ يحتاجه
+ * ليعرف كم يحمّل العضو. ونقلُه عامًّا يسأله مرّةً واحدة لا مرّةً لكل رغبة.
+ *
+ * و«تدريب» و«عمل» دُمجا في خيارٍ واحد بنصّ الوركفلو: الفرقُ بينهما لا
+ * يغيّر قرارًا — كلاهما ارتباطٌ بدوامٍ خارج الجامعة.
+ */
+export const COMMITMENT_CLUB = "نادي آخر";
+export const COMMITMENT_WORK = "تدريب/عمل";
+export const COMMITMENT_NONE = "لا يوجد";
+export const COMMITMENTS = [
+  COMMITMENT_CLUB,
+  COMMITMENT_WORK,
+  COMMITMENT_NONE,
+] as const;
+
 /** خمسة ميجابايت — سيرة ذاتية أو معرض أعمال لا يتجاوزها إلا بصور غير مضغوطة */
 export const CV_MAX_BYTES = 5 * 1024 * 1024;
 
@@ -505,6 +524,15 @@ const finalShape = {
     .max(CLUB_NEWCOMER_MAX, `اختصر إلى ${CLUB_NEWCOMER_MAX} حرف`)
     .default(""),
 
+  /* ⚠️ **القيمةُ مصفوفةٌ لا نصّ** — والقائمةُ مغلقة، فما لم يُعرض لا يمرّ
+     ولو أُرسل يدويًّا. والعددُ والحصرُ يفحصهما `refineFinal`: الرسالةُ
+     هناك تعرف أيَّ الشرطين انكسر، وهنا لا تعرف. */
+  commitments: z
+    .array(z.enum(COMMITMENTS), {
+      errorMap: () => ({ message: "اختر التزاماتك، أو «لا يوجد»" }),
+    })
+    .default([]),
+
   portfolio: optionalUrl(
     "الرابط غير صحيح — تأكّد أنه يبدأ بـ https:// ويفتح لدى غيرك",
   ),
@@ -595,6 +623,7 @@ type FinalValues = {
   clubExperienceDetails?: string;
   clubPerception?: string;
   clubExpectation?: string;
+  commitments?: readonly string[];
 };
 
 /**
@@ -612,6 +641,24 @@ type FinalValues = {
  * متقاربان، فلا يشتري أحدٌ راحتَه بجوابٍ غير صادق.
  */
 function refineFinal(v: FinalValues, ctx: z.RefinementCtx): void {
+  /* ⚠️ **المطلوبُ بلا خيارِ نفيٍ يحبس من لا ينطبق عليه شيء، وخيارُ النفي
+     بلا حصرٍ يسمح بـ«لا يوجد» و«تدريب» معًا** — فيقرأ القائدُ إجابةً
+     تناقض نفسها. والشرطان هنا لا في المخطّط: الرسالة تعرف أيُّهما انكسر. */
+  const commitments = v.commitments ?? [];
+  if (commitments.length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["commitments"],
+      message: "اختر التزاماتك هذا الفصل، أو «لا يوجد»",
+    });
+  } else if (commitments.includes(COMMITMENT_NONE) && commitments.length > 1) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["commitments"],
+      message: "«لا يوجد» لا تجتمع مع غيرها — اختر واحدًا منهما",
+    });
+  }
+
   if (hasClubExperience(v.clubExperience)) {
     if ((v.clubExperienceDetails ?? "").trim().length < CLUB_EXPERIENCE_MIN) {
       ctx.addIssue({
@@ -747,6 +794,7 @@ export const STEPS = [
       "clubExperienceDetails",
       "clubPerception",
       "clubExpectation",
+      "commitments",
       "heardFrom",
       "cv",
       "portfolio",
