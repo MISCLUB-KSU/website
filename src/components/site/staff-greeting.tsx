@@ -39,10 +39,14 @@ export function StaffGreeting({ className = "" }: { className?: string }) {
 
   if (!name) return null;
 
+  /* ⚠️ **لا `display` في الأساس — يأتي من موضعه.** الشريط يريده `inline-flex`
+     ولوحةُ الجوّال تريده `flex w-full`، وهما صنفان في طبقةٍ واحدة: لو ثبت
+     أحدُهما هنا لغلب أو غُلب بترتيب الملفّ لا بنيّة الموضع — فيصير الصنف
+     المُمرَّر يعمل أحيانًا ويُهمَل أحيانًا، وهو أسوأ من ألّا يعمل. */
   return (
     <Link
       href="/admin"
-      className={`text-fg-muted hover:text-fg inline-flex min-h-11 items-center whitespace-nowrap text-sm transition-colors ${className}`}
+      className={`text-fg-muted hover:text-fg min-h-11 items-center whitespace-nowrap text-sm transition-colors ${className}`}
     >
       أهلًا {name}
     </Link>
