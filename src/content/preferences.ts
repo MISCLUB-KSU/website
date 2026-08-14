@@ -5,9 +5,15 @@
  * ترسم منها القوائم، والخادم يتحقّق منها. مصدر واحد، وإلا قَبِل أحدهما
  * ما يرفضه الآخر.
  *
- * قاعدة الرغبات — بقرار رئاسة النادي: يختار الطالب **ثلاث رغبات** مرتّبة،
- * حرًّا فيها، بشرط أن تكون **واحدة منها على الأقل لجنة** (أو وحدة داخلها).
- * فمن أراد المشاريع الثلاثة كلّها لا يمرّ: العضوية في النادي تبدأ من لجنة.
+ * قاعدة الرغبات: يختار الطالب **ثلاث رغبات** مرتّبة، بشرط أن تكون فيها
+ * **لجنةٌ واحدة على الأقل ومشروعٌ واحد على الأقل** — أي لا تكون الثلاث من
+ * نوعٍ واحد. فمن أراد ثلاثة مشاريع لا يمرّ (العضوية تبدأ من لجنة)، ومن
+ * أراد ثلاث لجانٍ لا يمرّ كذلك.
+ *
+ * ⚠️ **وهذا يشدّد قاعدةً سابقة، بطلبٍ في ١٤ أغسطس ٢٠٢٦.** كانت: «واحدةٌ
+ * منها على الأقل لجنة» — فيمرّ من اختار ثلاث لجانٍ بلا مشروع. والقاعدةُ
+ * السابقة كانت موصوفةً هنا بأنها **بقرار رئاسة النادي**، فتشديدُها يُراجَع
+ * معها. وأثرُه على المتقدّم مقصود: من لا يريد مشروعًا يُلزَم باختيار واحد.
  */
 
 import { COMMITTEES, type Committee, type Unit } from "./committees";
@@ -55,9 +61,20 @@ export type Preference = {
   directLink?: boolean;
 };
 
-/** عناوين المجموعات — تُستعمل في القائمة وفي ترتيب العرض */
-const GROUP_STANDALONE = "لجان تُقدَّم ككتلة واحدة";
-const GROUP_PROJECTS = "المشاريع";
+/**
+ * عنوانُ مجموعة المشاريع.
+ *
+ * ⚠️ **«لجنة المشاريع» لا «المشاريع» — بقرارٍ في ١٤ أغسطس ٢٠٢٦.** الهيكل
+ * المعتمد (انظر رأس `committees.ts`) فيه لجنةٌ للمشاريع تحتها مشاريع
+ * النادي، والنموذج كان يعرضها مجموعةً بلا لجنة. فصارت تُعرض باسم لجنتها.
+ *
+ * ⚠️ **وهي مجموعةٌ في النموذج لا لجنةٌ في `committees.ts`** — عمدًا: قيمُ
+ * هذي الرغبات تبقى `project:` فيبقى **نوعُها مشروعًا**، وعليه تقوم قاعدةُ
+ * «لجنةٌ ومشروعٌ معًا» في `refinePreferences`. ولو صارت وحداتِ لجنةٍ
+ * حقيقية لانقلبت قيمُها إلى `committee:` — فيصير من اختار ثلاثة مشاريع
+ * مستوفيًا شرطَ اللجنة، وتسقط القاعدة صامتةً.
+ */
+const GROUP_PROJECTS = "لجنة المشاريع";
 
 /**
  * صيغة القيمة: `committee:<لجنة>` أو `committee:<لجنة>/<وحدة>` أو `project:<مشروع>`.
@@ -81,9 +98,12 @@ export function isCommitteeValue(value: string): boolean {
 
 /** اللجان ووحداتها — بترتيب العرض نفسه في صفحة اللجان */
 export const COMMITTEE_PREFERENCES: readonly Preference[] = COMMITTEES.flatMap(
-  (committee): Preference[] =>
-    committee.units.length
-      ? committee.units.map((unit) => ({
+  (committee): Preference[] => {
+    /* ⚠️ وحداتُ **النموذج** لا وحداتُ صفحة اللجنة — انظر `applicationUnits`
+       في `committees.ts`. اللجنة الإعلامية وحدها تفترق اليوم. */
+    const units = committee.applicationUnits ?? committee.units;
+    return units.length
+      ? units.map((unit) => ({
           value: committeeValue(committee, unit),
           kind: "committee" as const,
           label: unit.name,
@@ -107,11 +127,16 @@ export const COMMITTEE_PREFERENCES: readonly Preference[] = COMMITTEES.flatMap(
             kind: "committee" as const,
             label: committee.name,
             fullLabel: committee.name,
-            group: GROUP_STANDALONE,
+            /* ⚠️ **اسمُ اللجنة لا عنوانٌ تصنيفيّ.** كان هنا «لجان تُقدَّم
+               ككتلة واحدة» — وهو تصنيفٌ داخليّ لا يعني المتقدّم شيئًا. ومع
+               المُنتقي ذي المستويين صار كلُّ قسمٍ لجنةً باسمها، فاللجنةُ
+               بلا وحدات قسمٌ بخيارٍ واحدٍ هو نفسُها. */
+            group: committee.name,
             description: committee.description,
             questions: committee.questions,
           },
-        ],
+        ];
+  },
 );
 
 /**
@@ -286,3 +311,62 @@ export const PREFERENCE_GROUPS: readonly PreferenceGroup[] = (() => {
   }
   return groups;
 })();
+
+/* ── أقسامُ المُنتقي ────────────────────────────────────────────────────── */
+
+/**
+ * قسمٌ في مُنتقي الرغبات: **لجنةٌ وتحتها خياراتُها**.
+ *
+ * ⚠️ **مستويان لا قائمةٌ مسطّحة — بقرارٍ في ١٤ أغسطس ٢٠٢٦.** كان المُنتقي
+ * يعرض ستَّ عشرةَ بطاقةً متتابعة، فيمرّ المتقدّم على وحدات لجانٍ لا تعنيه
+ * ليبلغ ما يريد. فصار يختار اللجنة أوّلًا ثم ما تحتها.
+ *
+ * ولا يغيّر هذا **القيم** ولا الشرط ولا القوائم المنسدلة: هذي طبقةُ عرضٍ
+ * فوق `PREFERENCES` نفسِها، وبديلُ انقطاع السكربت يبقى قوائمَ مسطّحة
+ * مجموعةً بـ`optgroup` — والاثنان يقرآن المصدر نفسَه.
+ */
+export type PreferenceSection = {
+  /** مفتاحُ الفتح والطيّ — سلَجُ اللجنة، ثابتٌ لا يتبدّل بتبدّل اسمها */
+  key: string;
+  label: string;
+  description: string;
+  /**
+   * لجنةٌ تعمل ككتلة واحدة: خيارُها **هي نفسُها**، فتُختار من بطاقة القسم
+   * مباشرةً بلا مستوًى ثانٍ يُفتح على خيارٍ يتيم.
+   */
+  standalone: boolean;
+  items: readonly Preference[];
+};
+
+const SECTIONS: PreferenceSection[] = [
+  ...COMMITTEES.map((committee): PreferenceSection => {
+    const self = committeeValue(committee);
+    /* المطابقة على القيمة كاملةً أو على بادئةٍ منتهيةٍ بـ`/` — لا
+       `startsWith(self)` وحدها: سلَجٌ يبدأ بسلَجٍ آخر («media» و«media-lab»)
+       يسحب وحدات جارته إلى قسمه. */
+    const items = COMMITTEE_PREFERENCES.filter(
+      (preference) =>
+        preference.value === self || preference.value.startsWith(`${self}/`),
+    );
+    return {
+      key: committee.slug,
+      label: committee.name,
+      description: committee.description,
+      standalone: items.length === 1 && items[0].value === self,
+      items,
+    };
+  }),
+  {
+    key: "projects",
+    label: GROUP_PROJECTS,
+    description:
+      "تُبنى فوق اللجان، ويشتغل عليها أعضاؤها جميعًا. اختر منها واحدًا على الأقل.",
+    standalone: false,
+    items: PROJECT_PREFERENCES,
+  },
+];
+
+/** لا يُعرض قسمٌ بلا خيارات — يفتحه المتقدّم على فراغ */
+export const PREFERENCE_SECTIONS: readonly PreferenceSection[] = SECTIONS.filter(
+  (section) => section.items.length > 0,
+);

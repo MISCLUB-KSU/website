@@ -735,12 +735,26 @@ function refinePreferences(v: PreferenceValues, ctx: z.RefinementCtx): void {
 
   /* الشرط لا يُفحص إلا بعد اكتمال الثلاث، وإلا ظهر خطأٌ عن نقصٍ لم يقع بعد */
   const filled = chosen.filter((value): value is string => Boolean(value));
-  if (filled.length === chosen.length && !filled.some(isCommitteeValue)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["choice1"],
-      message: "لا بد أن تكون إحدى رغباتك الثلاث لجنة أو وحدة داخلها",
-    });
+  if (filled.length === chosen.length) {
+    /* ⚠️ **لجنةٌ ومشروعٌ معًا — لا ثلاثٌ من نوعٍ واحد** (١٤ أغسطس ٢٠٢٦).
+       كان الشرط «واحدةٌ منها لجنة» وحدَه، فيمرّ من اختار ثلاث لجانٍ بلا
+       مشروع. انظر رأس `preferences.ts` وسلسلة القرار فيه.
+
+       والنوعُ يُعرف من بادئة القيمة لا من بحثٍ في القوائم — ولذلك تبقى
+       رغباتُ «لجنة المشاريع» قيمُها `project:` وإن عُرضت تحت اسم لجنة. */
+    const missing = !filled.some(isCommitteeValue)
+      ? "لجنة أو وحدة داخلها"
+      : filled.every(isCommitteeValue)
+        ? "مشروعًا من لجنة المشاريع"
+        : undefined;
+
+    if (missing) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["choice1"],
+        message: `لا بد أن تكون إحدى رغباتك الثلاث ${missing}`,
+      });
+    }
   }
 }
 
