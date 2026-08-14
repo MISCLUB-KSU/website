@@ -268,8 +268,15 @@ function AnswerField({
           <p className="text-[0.875rem] text-fg-muted">{question.hint}</p>
         )}
 
-        <div className="grid gap-s3 sm:grid-cols-2">
-          {(question.options ?? []).map((raw) => {
+        {/* ⚠️ **استعلامُ حاويةٍ لا نقطةُ شاشة.** `sm:grid-cols-2` تقيس
+            **الشاشة**، وهذي البطاقات تعيش في عمودٍ قد يكون 296px على شاشةٍ
+            1440 (نموذج الرابط المباشر بعموديه). فكانت تنقسم عمودين داخل
+            عمودٍ ضيّق: **125px للبطاقة** — لا يسع بندًا من مسؤولياتها.
+            و`@container` يقيس ما حولها فعلًا، فتنقسم حين يتّسع المكان
+            لا حين تتّسع الشاشة. */}
+        <div className="@container">
+          <div className="grid gap-s3 @md:grid-cols-2">
+            {(question.options ?? []).map((raw) => {
             const option = asOption(raw);
             const on = picked[0] === option.value;
             return (
@@ -310,8 +317,9 @@ function AnswerField({
                   </ul>
                 )}
               </label>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
         {e[name] && (

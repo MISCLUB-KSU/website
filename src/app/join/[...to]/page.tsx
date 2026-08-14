@@ -55,8 +55,14 @@ export default async function DirectJoinPage({ params }: Params) {
     );
   }
 
+  /* ⚠️ **`max-w-5xl` كالنموذج العامّ لا `max-w-2xl`.** كُتبت هذي الصفحة حين
+     كان الرابط المباشر نموذجًا نحيلًا بحقولٍ قليلة، ثم صار يحمل **النموذج
+     نفسَه** بعمودَيه (الحقول وبطاقة الطلب الملتصقة) وأسئلةَ القائد ببطاقات
+     اختيار. فبقي السقف 672px، ومقيسٌ ما نتج عنه: عمودُ الحقول **296px**
+     وبطاقةُ الاختيار داخله **125px** — عرضٌ لا يسع بندًا واحدًا من
+     مسؤوليات الوحدة. */
   return (
-    <main className="mx-auto w-full max-w-2xl px-5 py-14 sm:py-20">
+    <main className="mx-auto w-full max-w-5xl px-5 py-14 sm:py-20">
       <header className="mb-10">
         <span className="mis-slant bg-deep mb-4 inline-block px-7 py-1.5">
           <span className="text-snow text-[0.7rem] font-semibold tracking-widest">
