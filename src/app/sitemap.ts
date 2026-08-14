@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { COMMITTEES } from "@/content/committees";
-import { POSTS } from "@/content/posts";
+/* استيرادُ `POSTS` رُفع مع سطورها أدناه — ويُعاد معها */
 import { SITE_URL } from "@/lib/site";
 
 /**
@@ -57,13 +57,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     page("/faq", 0.6),
     page("/contact", 0.6),
 
-    /* المنشورات وحدها لها تاريخٌ حقيقيّ، وهي الأكثر تغيّرًا */
-    page("/posts", 0.6),
-    ...POSTS.map((post) => ({
-      url: `${SITE_URL}/posts/${post.slug}`,
-      priority: 0.5,
-      changeFrequency: "yearly" as const,
-      lastModified: new Date(`${post.date}T00:00:00Z`),
-    })),
+    /* ⚠️ **المقالات خارج الخريطة ما دامت فارغة** (١٤ أغسطس ٢٠٢٦): `posts.json`
+       فارغ، ورُفع رابطُها من التذييل، وصفحتُها `noindex`. ونفسُ قاعدة
+       المشاريع أعلاه: ما لا يُفهرس لا يُدرَج.
+
+       وتُعاد هذي السطور عند امتلائها — وكان فيها:
+         page("/posts", 0.6) ومنشوراتُها من `POSTS` بتواريخها. */
   ];
 }

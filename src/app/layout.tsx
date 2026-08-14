@@ -96,10 +96,18 @@ export const viewport: Viewport = {
    * وحدها تُدخل المحتوى **تحت** النتوء.
    */
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f9f9f9" },
-    { media: "(prefers-color-scheme: dark)", color: "#011c40" },
-  ],
+  /**
+   * لونُ شريط المتصفّح — **قيمةٌ واحدة فاتحة، لا قيمتان بحسب الجهاز.**
+   *
+   * ⚠️ كانتا مربوطتين بـ`prefers-color-scheme`، وصار ذلك يكذب بعد أن صار
+   * الفاتح أصلَ الموقع (١٤ أغسطس ٢٠٢٦): زائرٌ جديد على جهازٍ داكن يرى صفحةً
+   * فاتحة وشريطَ متصفّحٍ داكنًا فوقها — وهو أظهرُ ما يكون على الجوّال.
+   *
+   * والوسم ساكنٌ لا يقرأ `data-theme`، فمن اختار الداكن يصحّحه `ThemeToggle`
+   * بعد التركيب وعند كل تبديل. والتصحيح متأخّرٌ إطارًا عن الرسم — مقبولٌ
+   * للونِ شريطٍ، بخلاف ألوان الصفحة التي يسبقها نصّ `<head>`.
+   */
+  themeColor: "#f9f9f9",
 };
 
 type RootLayoutProps = {
@@ -111,6 +119,19 @@ export default function RootLayout({ children }: RootLayoutProps) {
     <html
       lang="ar"
       dir="rtl"
+      /* ⚠️ **الفاتح أصلُ الموقع — بقرارٍ في ١٤ أغسطس ٢٠٢٦:** «اللون الأساسي
+         بالموقع هو اللايت مود، إذا دخل يوزر جديد إجباري يدخل على اللايت».
+
+         وكتابتُها على الخادم لا في نصّ `<head>` وحده مقصودة: من عطّل
+         الجافاسكربت أو تعثّر تحميلُه يبقى على الفاتح ولا يسقط إلى تفضيل
+         جهازه. والرموز مُعدّةٌ لهذا أصلًا — كتلة الوضع الداكن في
+         `tokens.generated.css` مكتوبةٌ `:root:not([data-theme="light"])`،
+         فوجودُ السمة هنا يقهر `prefers-color-scheme` بلا حيلةٍ إضافية.
+
+         ⚠️ ولا يُلغي هذا اختيار الزائر: نصُّ `mis-theme-init` أدناه يقرأ
+         `localStorage` **قبل** أوّل رسم ويكتب فوقها، فمن اختار الداكن مرّةً
+         يراه داكنًا بلا وميض. */
+      data-theme="light"
       className={`${plexArabic.variable} ${kufi.variable} h-full antialiased`}
       /* النصّ أدناه يكتب `data-theme` قبل أول رسم، فيختلف الوسم عن الخادم عمدًا */
       suppressHydrationWarning

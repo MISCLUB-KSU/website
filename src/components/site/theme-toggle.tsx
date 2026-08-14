@@ -13,10 +13,15 @@ import { useEffect, useState } from "react";
  * ثالثة «تتبع النظام»، وحُذفت لأن مبدّلًا ثلاثيّ الحالات يربك زائرًا يتوقّع
  * مفتاحًا يقلب لا دورةً تمرّ بثلاث.
  *
- * وما فُقد منها استُبقي: **أول زيارة تتبع جهاز الزائر** — لا يُكتب
- * `data-theme` إطلاقًا قبل أول ضغطة، فتحكم كتلة `prefers-color-scheme` في
- * `tokens.generated.css`. الضغطة الأولى تحوّله إلى اختيارٍ صريح ومحفوظ.
- * فالخسارة الوحيدة: من اختار مرّةً لا يملك زرًّا للرجوع إلى إعداد جهازه.
+ * ⚠️ **وأوّل زيارةٍ فاتحةٌ دائمًا — لا تتبع جهاز الزائر** (١٤ أغسطس ٢٠٢٦):
+ * «اللون الأساسي بالموقع هو اللايت مود، إذا دخل يوزر جديد إجباري يدخل على
+ * اللايت». وكان قبلها لا يُكتب `data-theme` إطلاقًا حتى أوّل ضغطة، فتحكم
+ * كتلةُ `prefers-color-scheme`. والآن يكتب **الخادم** `data-theme="light"`
+ * على `<html>` (انظر `layout.tsx`)، فالافتراض فاتحٌ ولو تعطّل السكربت.
+ *
+ * والاختيار المحفوظ يعلوه: النصّ أدناه يقرؤه قبل أوّل رسم ويكتب فوقه.
+ * فالخسارة الوحيدة كما كانت: من اختار مرّةً لا يملك زرًّا للرجوع إلى إعداد
+ * جهازه — ولا معنى له اليوم أصلًا، فالجهاز لم يعد مرجعًا.
  *
  * الاختيار يُطبَّق على `documentElement` مباشرةً لا عبر حالة React: النصّ في
  * `layout` يقرأه قبل أول رسم، فلا ترتدّ الصفحة من فاتح إلى داكن أمام العين.
@@ -37,16 +42,39 @@ const LABEL: Record<Theme, string> = {
   dark: "المظهر داكن — اضغط للفاتح",
 };
 
+/** لونا شريط المتصفّح — يطابقان أرضية الصفحة في الوضعين */
+const BAR_COLOR: Record<Theme, string> = {
+  light: "#f9f9f9",
+  dark: "#011c40",
+};
+
+/**
+ * يصحّح `<meta name="theme-color">`.
+ *
+ * الوسم في `layout.tsx` ساكنٌ على الفاتح — وهو الصواب للزائر الجديد — ولا
+ * يقرأ `data-theme`. فمن اختار الداكن يصحَّح له هنا: عند التركيب وعند كل
+ * تبديل. و`?.` لا شرط: غيابُ الوسم لا يستحقّ استثناءً يقطع التبديل.
+ */
+function paintBar(theme: Theme) {
+  document
+    .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    ?.setAttribute("content", BAR_COLOR[theme]);
+}
+
 function apply(theme: Theme) {
   document.documentElement.dataset.theme = theme;
   localStorage.setItem(THEME_KEY, theme);
+  paintBar(theme);
 }
 
-/** ما يراه الزائر الآن: اختيارُه المحفوظ إن وُجد، وإلا فتفضيل جهازه. */
+/**
+ * ما يراه الزائر الآن: `data-theme` على `<html>`.
+ *
+ * ⚠️ ولا يُسأل الجهاز بعد اليوم. السمة مكتوبةٌ من الخادم دائمًا، فالسقوط
+ * إلى الفاتح احتياطٌ لحالةٍ لا تقع — لا اتّباعٌ لتفضيل الجهاز كما كان.
+ */
 function currentTheme(): Theme {
-  const chosen = document.documentElement.dataset.theme;
-  if (chosen === "light" || chosen === "dark") return chosen;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
 }
 
 export function ThemeToggle() {
@@ -55,19 +83,17 @@ export function ThemeToggle() {
      التصحيح يمسّ وسمَ الزرّ وأيقونته فقط؛ ألوان الصفحة سبقته بنصّ `<head>`. */
   const [theme, setTheme] = useState<Theme>("light");
 
+  /* ⚠️ **ورُفع الإنصات لتبديل الجهاز.** كان يتابع `prefers-color-scheme`
+     لمن لم يختر بعد، فيقلب الأيقونة إن بدّل الزائر جهازه وهو على الصفحة.
+     ولمّا صار الفاتح أصلًا مكتوبًا من الخادم، لم يعد `data-theme` يخلو
+     أبدًا — فشرطُه لا يصدق، والإنصاتُ يستهلك ولا يفعل. */
   useEffect(() => {
-    const frame = requestAnimationFrame(() => setTheme(currentTheme()));
-    /* من لم يختر بعد يتبع جهازه — فإن بدّله وهو على الصفحة تبعته الأيقونة.
-       يتوقّف الإنصات عند أول اختيار صريح، فلا يُنقض اختيار الزائر. */
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const onSystemChange = () => {
-      if (!document.documentElement.dataset.theme) setTheme(currentTheme());
-    };
-    mq.addEventListener("change", onSystemChange);
-    return () => {
-      cancelAnimationFrame(frame);
-      mq.removeEventListener("change", onSystemChange);
-    };
+    const frame = requestAnimationFrame(() => {
+      const now = currentTheme();
+      setTheme(now);
+      paintBar(now);
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   return (

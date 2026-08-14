@@ -8,11 +8,26 @@ import { SiteHeader } from "@/components/site/site-header";
 import { POSTS, formatPostDate } from "@/content/posts";
 import { isolateLatin } from "@/lib/bidi";
 
+/**
+ * صفحة المقالات — **رُفع رابطُها و`noindex` مؤقّتًا** (١٤ أغسطس ٢٠٢٦).
+ *
+ * `posts.json` فارغٌ (`[]`)، فالصفحة عنوانٌ ووصفٌ ولا شيء تحتهما. ورُفع
+ * رابطُها من التذييل بطلبٍ صريح («ما فيه مقالات حاليًا، بفضّي لها بعدين»)،
+ * فلم يبقَ إليها طريقٌ من الموقع.
+ *
+ * فتُحجب عن الفهرسة ما دامت كذلك — نفسُ معاملة `/projects`: إدراجُ صفحةٍ
+ * فارغةٍ في نتائج البحث يَعِد القارئ بما لا يجده، ولا يصل إليها من الموقع
+ * أحدٌ ليعتدل الأمر.
+ *
+ * **ولإعادتها:** يُملأ `posts.json`، ويُعاد سطرُها في `FOOTER_LINKS`،
+ * ويُنزع `robots` أدناه، وتُعاد سطورُها في `sitemap.ts`.
+ */
 export const metadata: Metadata = {
   title: "المقالات",
   description:
     "مقالات نادي نظم المعلومات الإدارية: مسارات مهنية وشهادات وتجارب من سوق العمل.",
   alternates: { canonical: "/posts" },
+  robots: { index: false, follow: true },
 };
 
 export default function PostsPage() {
