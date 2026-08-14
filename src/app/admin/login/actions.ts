@@ -1,11 +1,21 @@
 "use server";
 
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-export type LoginState = { message: string; ok: boolean };
+/**
+ * `sent` تفتح خانةَ الرمز، و`email` تُعاد لتُرسَل معه في الخطوة الثانية —
+ * فلا يُطالَب القائد بكتابة بريده مرّتين.
+ */
+export type LoginState = {
+  message: string;
+  ok: boolean;
+  sent?: boolean;
+  email?: string;
+};
 
 /**
  * إرسال رابط الدخول.
@@ -23,16 +33,23 @@ export async function sendLoginLink(
   _prev: LoginState,
   formData: FormData,
 ): Promise<LoginState> {
-  const same: LoginState = {
-    ok: true,
-    /* ⚠️ «القادة والإدارة» لا «الطاقم» — تتبع عنوانَ الشاشة (غُيّر ١١
-       أغسطس ٢٠٢٦). والصياغةُ الشرطيّة تبقى: لا تكشف أوجد البريدُ أم لا. */
-    message: "إن كان بريدك مسجّلًا ضمن القادة والإدارة، وصلك رابط الدخول. تحقّق منه.",
-  };
-
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
+
+  const same: LoginState = {
+    ok: true,
+    sent: true,
+    email,
+    /* ⚠️ «القادة والإدارة» لا «الطاقم» — تتبع عنوانَ الشاشة (غُيّر ١١
+       أغسطس ٢٠٢٦). والصياغةُ الشرطيّة تبقى: لا تكشف أوجد البريدُ أم لا.
+
+       ⚠️ **و«آخر رسالة» صراحةً.** كلُّ إرسالٍ جديد يُبطل ما قبله، ومن
+       ضغط مرّتين ثم فتح البريد **الأول** يجد رمزًا ميّتًا — وهو ما
+       تكرّر أربع مرّاتٍ في سجلّ المصادقة (`One-time token not found`). */
+    message:
+      "إن كان بريدك مسجّلًا ضمن القادة والإدارة، وصلك رمزٌ ورابط. افتح «آخر» رسالة وصلتك — وما قبلها بطل.",
+  };
 
   if (!email || !email.includes("@")) {
     return { ok: false, message: "اكتب بريدًا صحيحًا." };
@@ -73,6 +90,68 @@ export async function sendLoginLink(
       message: "الخدمة غير مهيّأة الآن. أبلغ من يدير الموقع.",
     };
   }
+}
+
+/**
+ * التحقّق بالرمز — البابُ الثاني إلى الجلسة نفسِها.
+ *
+ * ⚠️ **وهو الذي يعالج العطل الحقيقيّ.** الرابط يُستهلَك قبل صاحبه: ماسحاتُ
+ * البريد (Gmail وOutlook) تفتح الروابط تلقائيًّا للفحص، فيصل القائد إلى
+ * رمزٍ «غير موجود». والرمزُ لا يُنقر فلا يستهلكه ماسح — يُقرأ ويُكتب.
+ *
+ * ⚠️ **والرابط يبقى عاملًا.** هذا بابٌ ثانٍ لا بديل: لو لم يُحدَّث قالبُ
+ * البريد في لوحة Supabase ليحوي `{{ .Token }}` فلن يظهر رمزٌ في الرسالة،
+ * ويبقى الرابطُ وحده — فلا تنكسر الشاشة، بل يفقد القائد الطريق الأسرع.
+ */
+export async function verifyLoginCode(
+  _prev: LoginState,
+  formData: FormData,
+): Promise<LoginState> {
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+  /* الأرقام وحدها: النسخُ من البريد يجرّ مسافةً أو سطرًا، والرمزُ ستّةُ
+     أرقامٍ لا غير — فتُنقّى قبل الإرسال بدل أن تُردَّ على الطالب. */
+  const token = String(formData.get("code") ?? "").replace(/\D/g, "");
+
+  if (!email || token.length !== 6) {
+    return {
+      ok: false,
+      sent: true,
+      email,
+      message: "اكتب الرمز — ستّة أرقام كما وصلك.",
+    };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: "email",
+    });
+
+    if (error) {
+      /* ⚠️ الرسالة تصف الحالتين معًا — انتهاءً واستعمالًا — ولا تفرّق
+         بينهما: التفريقُ يقول لمن يجرّب إن الرمز كان صحيحًا يومًا. */
+      return {
+        ok: false,
+        sent: true,
+        email,
+        message: "الرمز غير صحيح أو انتهى. اطلب رمزًا جديدًا.",
+      };
+    }
+  } catch (cause) {
+    console.error("[admin] خلل في التحقّق من الرمز", cause);
+    return {
+      ok: false,
+      sent: true,
+      email,
+      message: "الخدمة غير مهيّأة الآن. أبلغ من يدير الموقع.",
+    };
+  }
+
+  redirect("/admin");
 }
 
 export async function signOut() {
