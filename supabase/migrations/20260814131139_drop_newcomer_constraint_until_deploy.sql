@@ -1,0 +1,29 @@
+-- رفعُ قيد التقابل مؤقّتًا — لأنه يردّ طلباتٍ حقيقية الآن.
+--
+-- ⚠️ **عطلٌ من تسلسلٍ خاطئ لا من منطقٍ خاطئ.** أُضيف القيد في
+-- `20260814112436_add_newcomer_questions` مع الحقلين الجديدين، والشيفرة
+-- التي ترسلهما **لم تُنشر بعد** — والمنشور على `misclubksu.com` بناءٌ
+-- أقدم يرسل `club_perception` و`club_expectation` فارغين دائمًا.
+--
+-- والأثر مقيسٌ لا مُقدَّر: من يجيب «لا» عن سؤال الخبرة يُقيَّم شرطُه
+-- **FALSE** فيُرفض إدراجُه — أي أن **كلَّ متقدّمٍ بلا خبرةٍ سابقة يُمنع
+-- من التقديم**، وهم أكثرُ من يقدّم (طلاب السنة الأولى). ومن يجيب «نعم»
+-- يمرّ، فالعطل صامتٌ لا يظهر في فحصٍ عابر.
+--
+-- والقيدان الآخران من اليوم لا يحجبان: `NULL` لا يُسقط `CHECK` —
+-- `array_length('{}',1)` يرجع `NULL` لا صفرًا، و`club_experience_level`
+-- الفارغ يجعل الشرط كلَّه `NULL`. مفحوصان بالاستعلام قبل هذا الترحيل.
+--
+-- ⚠️ **ويُعاد فور نشر الشيفرة الحالية** — هو الذي يمنع صفًّا يقول «لا
+-- خبرة» وهو خالٍ من جوابَي التصوّر والتوقّع:
+--   alter table public.applications
+--     add constraint applications_newcomer_answers_consistent check (
+--       (not has_club_experience and club_perception is not null
+--        and length(btrim(club_perception)) > 0
+--        and club_expectation is not null
+--        and length(btrim(club_expectation)) > 0)
+--       or (has_club_experience and club_perception is null
+--           and club_expectation is null)
+--     ) not valid;
+alter table public.applications
+  drop constraint if exists applications_newcomer_answers_consistent;
