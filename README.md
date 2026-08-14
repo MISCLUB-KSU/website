@@ -176,7 +176,7 @@ Both must come out clean.
 
 | Gap | Impact |
 |---|---|
-| **The database schema is not in the repository** | No `.sql`, no migrations. Tables and policies exist only in the Supabase dashboard, so anyone setting up a fresh environment **cannot recreate it from here**. Export it into `supabase/migrations/` at the first opportunity. |
+| **Schema drift** | The schema now lives in `supabase/migrations/` (see [supabase/README.md](supabase/README.md)), but changes made through the Supabase dashboard do **not** land there on their own. Export after every schema change or the repository starts lying. |
 | **No tests** | Neither unit nor E2E. Verification is manual, in the browser. |
 | **No CI** | `tsc` and `eslint` are run by hand. |
 | **Deployment is undocumented** | The domain `misclubksu.com` works; where it is hosted and which variables are set there are not written down here. |
