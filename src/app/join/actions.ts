@@ -47,6 +47,8 @@ const ECHOED = [
      على تركه إيّاه. وهو حقلٌ يُكتب فيه سطرٌ كامل، فمحوُه ليس هيّنًا. */
   "clubExperience",
   "clubExperienceDetails",
+  "clubPerception",
+  "clubExpectation",
   "heardFrom",
   "portfolio",
   "linkedin",
@@ -319,6 +321,17 @@ async function saveApplication(
         data.clubExperience === CLUB_EXPERIENCE_YES
           ? data.clubExperienceDetails
           : null,
+      /* ومقابلُهما لمن قال «لا» — `null` لمن قال «نعم»، بالمنطق نفسِه:
+         الحقلُ الذي لم يُعرض لا يُحفظ سلسلةً فارغة تُقرأ إجابةً خاوية.
+         والقاعدة تفرض هذا التقابل بقيدٍ صريح، فلا يُخالَف من هنا. */
+      club_perception:
+        data.clubExperience === CLUB_EXPERIENCE_YES
+          ? null
+          : data.clubPerception,
+      club_expectation:
+        data.clubExperience === CLUB_EXPERIENCE_YES
+          ? null
+          : data.clubExpectation,
       answers: attachments.answers,
       portfolio: data.portfolio || null,
       linkedin: data.linkedin || null,

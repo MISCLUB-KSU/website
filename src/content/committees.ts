@@ -86,7 +86,7 @@ const MEDIA_QUESTIONS: readonly CustomQuestion[] = [
     hint: "اختر كل ما ينطبق.",
     options: [
       ...MEDIA_AREAS,
-      { value: "لم أعمل في أي من هذه المجالات بعد", exclusive: true },
+      { value: "لم أعمل سابقًا", exclusive: true },
     ],
   },
   {

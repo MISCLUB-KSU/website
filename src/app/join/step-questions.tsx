@@ -26,7 +26,9 @@ import {
   ANSWER_FILE_MAX_BYTES,
   CLUB_EXPERIENCE,
   CLUB_EXPERIENCE_MAX,
+  CLUB_EXPERIENCE_NO,
   CLUB_EXPERIENCE_YES,
+  CLUB_NEWCOMER_MAX,
   CV_ACCEPT,
   HEARD_FROM,
 } from "@/lib/registration";
@@ -504,6 +506,39 @@ function ClubExperience({
           placeholder="مثال: نادي ريادة الأعمال — عضو لجنة التنظيم، فصلين."
           maxLength={CLUB_EXPERIENCE_MAX}
         />
+      )}
+
+      {/* ⚠️ **ومن قال «لا» يُسأل سؤالَيه — لا يمرّ بلا شيءٍ يُقرأ عنه.**
+          كان يمرّ، فتصل لجنةَ الفرز ورقةٌ عن طالبٍ بلا خبرةٍ وبلا كلمةٍ
+          منه سوى «لماذا اخترت هذي الرغبات». والسؤالان لا يقيسان خبرة —
+          يقيسان **الفهم والتوقّع**، وهما ما يُفرز به من لا سجلَّ له.
+
+          وحدُّهما 250 لا 400: مسارُ «لا» حقلان ومسارُ «نعم» حقلٌ واحد،
+          فلو تساوى الحدّان صار «لا» أثقل — والأثقلُ يُشترى بجوابٍ غير
+          صادق. انظر التعليل في `refineFinal`. */}
+      {answer === CLUB_EXPERIENCE_NO && (
+        <>
+          <TextArea
+            id="clubPerception"
+            label="ما تصوّرك عن الأندية الجامعية؟"
+            required
+            defaultValue={v.clubPerception}
+            error={e.clubPerception}
+            hint="ما الذي تتوقّعه منها، أو ما الذي سمعته عنها. لا جواب صحيح وآخر خطأ."
+            placeholder="مثال: مكان أتعلّم فيه شغلًا حقيقيًّا خارج المحاضرات، وأعرف ناسًا يشتغلون مثلي."
+            maxLength={CLUB_NEWCOMER_MAX}
+          />
+          <TextArea
+            id="clubExpectation"
+            label="وماذا تتوقّع أن تعمل معنا؟"
+            required
+            defaultValue={v.clubExpectation}
+            error={e.clubExpectation}
+            hint="أي عملٍ تتخيّل نفسك فيه — ولو لم تجرّبه بعد."
+            placeholder="مثال: أساعد في تنظيم الفعاليات، وأتعلّم التصميم على مشروعٍ حقيقيّ."
+            maxLength={CLUB_NEWCOMER_MAX}
+          />
+        </>
       )}
     </>
   );

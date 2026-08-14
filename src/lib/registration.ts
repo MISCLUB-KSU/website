@@ -172,6 +172,16 @@ export const CLUB_EXPERIENCE_MAX = 400;
  */
 export const CLUB_EXPERIENCE_MIN = 10;
 
+/**
+ * حقلا من لا خبرة له — التصوّر والتوقّع.
+ *
+ * ⚠️ **حدُّهما أقصر من حدّ «نعم» عمدًا.** من قال «لا» يُسأل حقلين ومن قال
+ * «نعم» يُسأل واحدًا، فلو تساوى الحدّان صار مسار «لا» أثقل — ومسارٌ أثقل
+ * يدفع المتردّد إلى «نعم» ليكتب أقلّ، فيفسد الحقل الذي أُنشئ للفرز. فمجموعُ
+ * الحقلين هنا (500) قريبٌ من حدّ «نعم» وحده (400)، لا ضعفَه.
+ */
+export const CLUB_NEWCOMER_MAX = 250;
+
 /** خمسة ميجابايت — سيرة ذاتية أو معرض أعمال لا يتجاوزها إلا بصور غير مضغوطة */
 export const CV_MAX_BYTES = 5 * 1024 * 1024;
 
@@ -448,6 +458,20 @@ const finalShape = {
     .max(CLUB_EXPERIENCE_MAX, `اختصر إلى ${CLUB_EXPERIENCE_MAX} حرف`)
     .default(""),
 
+  /* ومثلُهما لمن قال «لا» — يطلبهما `refineFinal` وحده، ومن قال «نعم»
+     لا يراهما فلا يُرفض على حقلٍ لم يُعرض له. */
+  clubPerception: z
+    .string()
+    .trim()
+    .max(CLUB_NEWCOMER_MAX, `اختصر إلى ${CLUB_NEWCOMER_MAX} حرف`)
+    .default(""),
+
+  clubExpectation: z
+    .string()
+    .trim()
+    .max(CLUB_NEWCOMER_MAX, `اختصر إلى ${CLUB_NEWCOMER_MAX} حرف`)
+    .default(""),
+
   portfolio: optionalUrl(
     "الرابط غير صحيح — تأكّد أنه يبدأ بـ https:// ويفتح لدى غيرك",
   ),
@@ -536,24 +560,52 @@ function refinePersonal(v: PersonalValues, ctx: z.RefinementCtx): void {
 type FinalValues = {
   clubExperience?: string;
   clubExperienceDetails?: string;
+  clubPerception?: string;
+  clubExpectation?: string;
 };
 
 /**
- * تفاصيلُ الخبرة تُطلب ممّن قال «نعم» وحده.
+ * لكلّ مسارٍ سؤالُه: «نعم» تُسأل عن الجهة والدور، و«لا» تُسأل عن التصوّر
+ * والتوقّع.
  *
- * ⚠️ **ومن قال «لا» لا يُطالَب بشيءٍ ولا يُخصم عليه.** السؤال يكشف خبرةً إن
- * وُجدت، ولا يجعلها شرطًا للقبول: أكثرُ من يقدّم علينا طالبُ سنةٍ أولى، وأيُّ
- * صيغةٍ تُشعره أن «لا» نقصٌ تدفعه إلى «نعم» مبالَغٍ فيها — فيفسد الحقل الذي
- * أُنشئ للفرز.
+ * ⚠️ **و«لا» ليست نقصًا يُخصم عليه** — هذا هو الأصل ولم يتغيّر. الخبرة
+ * ليست شرطًا للقبول: أكثرُ من يقدّم علينا طالبُ سنةٍ أولى. والسؤالان هنا
+ * **يفتحان له بابًا** ليقول ما الذي يجذبه وما يتوقّع أن يعمل، بدل أن يمرّ
+ * بلا شيءٍ يُقرأ عنه — وكان يمرّ.
+ *
+ * ⚠️⚠️ **والخطر المقصود تفاديه: أن يصير «لا» أثقل فيُختار «نعم» كذبًا.**
+ * ولذلك حدُّ كل حقلٍ هنا 250 لا 400، ونصُّ الطمأنة فوق الخيارين باقٍ كما
+ * هو. الميزان: «نعم» حقلٌ واحدٌ حدُّه 400، و«لا» حقلان مجموعُهما 500 —
+ * متقاربان، فلا يشتري أحدٌ راحتَه بجوابٍ غير صادق.
  */
 function refineFinal(v: FinalValues, ctx: z.RefinementCtx): void {
-  if (v.clubExperience !== CLUB_EXPERIENCE_YES) return;
+  if (v.clubExperience === CLUB_EXPERIENCE_YES) {
+    if ((v.clubExperienceDetails ?? "").trim().length < CLUB_EXPERIENCE_MIN) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["clubExperienceDetails"],
+        message: "اذكر الجهة ودورك فيها — سطرٌ واحد يكفي",
+      });
+    }
+    return;
+  }
 
-  if ((v.clubExperienceDetails ?? "").trim().length < CLUB_EXPERIENCE_MIN) {
+  /* ما لم يُجَب أصلًا يردّه `z.enum` برسالته — فلا تُضاف رسالتان لحقلٍ واحد */
+  if (v.clubExperience !== CLUB_EXPERIENCE_NO) return;
+
+  if ((v.clubPerception ?? "").trim().length < CLUB_EXPERIENCE_MIN) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      path: ["clubExperienceDetails"],
-      message: "اذكر الجهة ودورك فيها — سطرٌ واحد يكفي",
+      path: ["clubPerception"],
+      message: "اكتب تصوّرك في سطرٍ واحد — لا جواب صحيح وآخر خطأ",
+    });
+  }
+
+  if ((v.clubExpectation ?? "").trim().length < CLUB_EXPERIENCE_MIN) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["clubExpectation"],
+      message: "ما الذي تتوقّع أن تعمله معنا؟ سطرٌ واحد يكفي",
     });
   }
 }
@@ -660,6 +712,8 @@ export const STEPS = [
       "why",
       "clubExperience",
       "clubExperienceDetails",
+      "clubPerception",
+      "clubExpectation",
       "heardFrom",
       "cv",
       "portfolio",
