@@ -1,12 +1,16 @@
 "use client";
 
+import { useState } from "react";
+
 import { SelectField } from "@/components/ui/field";
 import { useHydrated } from "@/lib/use-hydrated";
 import {
   PREFERENCES,
   PREFERENCE_GROUPS,
+  PREFERENCE_SECTIONS,
   isCommitteeValue,
   type Preference,
+  type PreferenceSection,
 } from "@/content/preferences";
 import { isolateLatin } from "@/lib/bidi";
 import { StepPanel } from "./step-panel";
@@ -30,6 +34,8 @@ import { StepPanel } from "./step-panel";
 
 const RANKS = ["الرغبة الأولى", "الرغبة الثانية", "الرغبة الثالثة"] as const;
 const SLOTS = ["رغبتك الأولى", "رغبتك الثانية", "رغبتك الثالثة"] as const;
+/* شارةُ القسم المطويّ — تُسرد بلا أرقام، فلا مطابقةَ مفردٍ ومثنّى وجمع */
+const RANKS_SHORT = ["الأولى", "الثانية", "الثالثة"] as const;
 
 /* ألوان الرتب — تدرّجٌ رتيب الإضاءة، الأولى أدكن فهي الأثقل وزنًا */
 const RANK_TINT = ["var(--deep)", "var(--primary)", "var(--sky)"] as const;
@@ -63,8 +69,21 @@ export function StepPreferences({
   const live = useHydrated();
 
   const complete = choices.every(Boolean);
-  const hasCommittee = choices.some((value) => value && isCommitteeValue(value));
   const rankOf = (value: string) => choices.indexOf(value);
+
+  /* ⚠️ **يوازي `refinePreferences` في `registration.ts` حرفًا بحرف.** لو
+     افترق الطرفان لرأى المتقدّم تحذيرًا لا يردّه الخادم — أو رُدَّ بلا
+     تحذيرٍ يشرح، وهو أسوأ الاثنين. */
+  const filled = choices.filter((value): value is string => Boolean(value));
+  const hasCommittee = filled.some(isCommitteeValue);
+  const hasProject = filled.some((value) => !isCommitteeValue(value));
+  const kindWarning = !complete
+    ? undefined
+    : !hasCommittee
+      ? "رغباتك الثلاث مشاريع. بدّل واحدة منها بلجنة أو وحدة داخلها لتتمكّن من المتابعة — اللجنة هي بابك إلى المشروع."
+      : !hasProject
+        ? "رغباتك الثلاث لجان. بدّل واحدة منها بمشروع من لجنة المشاريع لتتمكّن من المتابعة."
+        : undefined;
 
   /**
    * الرسالة المنطوقة عن الرغبات — تُشتقّ من أخطاء الخانات الثلاث كلِّها.
@@ -102,8 +121,10 @@ export function StepPreferences({
     if (free !== -1) onChange(free, value);
   }
 
-  const committees = PREFERENCES.filter((p) => p.kind === "committee");
-  const projects = PREFERENCES.filter((p) => p.kind === "project");
+  /* القسمُ المفتوح واحدٌ لا أكثر: فتحُ الجميع يعيد القائمة المسطّحة التي
+     خرجنا منها. و`null` أوّلًا — يبدأ المتقدّم على خمس بطاقاتٍ يقرؤها كلَّها
+     في شاشةٍ واحدة قبل أن يفتح شيئًا. */
+  const [openSection, setOpenSection] = useState<string | null>(null);
 
   return (
     <StepPanel
@@ -117,11 +138,12 @@ export function StepPreferences({
           وكان أُدخل بطلب الإدارة («حط تحتها ألف خط، لازم الأعضاء يعرفون»)،
           فالقرارُ الأحدث ينسخه — انظر سلسلة القرار في ذاكرة المشروع.
 
-          ⚠️ **وشرطُ اللجنة لم يُرفع معه**: `refinePreferences` في
-          `registration.ts` ما زال يردّ من اختار ثلاثةَ مشاريع، وسطرُ
-          «بابُ العضوية — واحدةٌ منها على الأقل مطلوبة» تحت عنوان اللجان
-          أدناه هو ما يقولها للطالب الآن. فلا تُنزع تلك الحاشية ظنًّا أنها
-          تكرارٌ لهذا الصندوق. */}
+          ⚠️ **وشرطُ النوع لم يُرفع معه، بل شُدّد** (١٤ أغسطس ٢٠٢٦):
+          `refinePreferences` في `registration.ts` يردّ من اختار ثلاثةَ
+          مشاريع **ومن اختار ثلاثَ لجانٍ** كذلك. والسطرُ الذي يقولها
+          للمتقدّم اليوم هو «ولا بدّ أن تكون في رغباتك الثلاث لجنةٌ ومشروع»
+          تحت عنوان «اللجان والمشاريع» أدناه — فلا يُنزع ظنًّا أنه تكرارٌ
+          لهذا الصندوق المرفوع. */}
 
       {/* ══ شريط ما اخترته ══════════════════════════════════════════════ */}
       <div
@@ -196,34 +218,43 @@ export function StepPreferences({
           </p>
         )}
 
-        {complete && !hasCommittee && (
+        {kindWarning && (
           <p
             role="alert"
             className="border-s-2 border-warning bg-warning/8 px-s4 py-s3 text-[0.875rem] leading-relaxed text-warning"
           >
-            رغباتك الثلاث مشاريع ومبادرات. بدّل واحدة منها بلجنة أو وحدة داخلها
-            لتتمكّن من المتابعة — اللجنة هي بابك إلى المشروع.
+            {kindWarning}
           </p>
         )}
       </div>
 
       {/* ══ البطاقات ═══════════════════════════════════════════════════ */}
       {live && (
-      <div className="flex flex-col gap-s6">
-        <CardGroup
-          title="اللجان ووحداتها"
-          note="بابُ العضوية — واحدةٌ منها على الأقل مطلوبة."
-          items={committees}
-          rankOf={rankOf}
-          onToggle={toggle}
-        />
-        <CardGroup
-          title="المشاريع والمبادرات"
-          note="تُبنى فوق اللجان، ويشتغل عليها أعضاؤها جميعًا."
-          items={projects}
-          rankOf={rankOf}
-          onToggle={toggle}
-        />
+      <div className="flex flex-col gap-s3">
+        <div>
+          <h3 className="font-display text-[1rem] font-bold text-fg">
+            اللجان والمشاريع
+          </h3>
+          <p className="mt-1 text-[0.875rem] leading-relaxed text-fg-muted">
+            اختر اللجنة أوّلًا لتظهر خياراتها. ولا بدّ أن تكون في رغباتك
+            الثلاث لجنةٌ ومشروع.
+          </p>
+        </div>
+
+        {PREFERENCE_SECTIONS.map((section) => (
+          <SectionCard
+            key={section.key}
+            section={section}
+            open={openSection === section.key}
+            onOpen={() =>
+              setOpenSection((current) =>
+                current === section.key ? null : section.key,
+              )
+            }
+            rankOf={rankOf}
+            onToggle={toggle}
+          />
+        ))}
       </div>
       )}
 
@@ -267,102 +298,179 @@ export function StepPreferences({
   );
 }
 
-/* ── مجموعةُ بطاقات ─────────────────────────────────────────────────── */
 
-function CardGroup({
-  title,
-  note,
-  items,
+/* ── القسم وبطاقاتُه ─────────────────────────────────────────────────── */
+
+/**
+ * قسمُ لجنةٍ في المُنتقي — عنوانٌ يُفتح على خياراته.
+ *
+ * ⚠️ **واللجنة التي تعمل ككتلة واحدة لا تُفتح**: خيارُها هي نفسُها، ففتحُها
+ * يعرض خيارًا يتيمًا يكرّر عنوانَه. فتُرسم بطاقةَ اختيارٍ مباشرة.
+ */
+function SectionCard({
+  section,
+  open,
+  onOpen,
   rankOf,
   onToggle,
 }: {
-  title: string;
-  note: string;
-  items: readonly Preference[];
+  section: PreferenceSection;
+  open: boolean;
+  onOpen: () => void;
   rankOf: (value: string) => number;
   onToggle: (value: string) => void;
 }) {
+  if (section.standalone) {
+    const only = section.items[0];
+    return (
+      <OptionCard
+        item={only}
+        rank={rankOf(only.value)}
+        onToggle={onToggle}
+      />
+    );
+  }
+
+  const picked = section.items
+    .map((item) => rankOf(item.value))
+    .filter((rank) => rank !== -1)
+    .sort((a, b) => a - b);
+
+  const panelId = `prefs-${section.key}`;
+
   return (
-    <section>
-      <h3 className="font-display text-[1rem] font-bold text-fg">{title}</h3>
-      <p className="mt-1 mb-s4 text-[0.875rem] text-fg-muted">{note}</p>
+    <section className="border border-line">
+      <h4>
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-expanded={open}
+          aria-controls={panelId}
+          className="flex min-h-11 w-full items-start justify-between gap-x-s3 p-s4 text-start transition-colors hover:bg-bg-sunken"
+        >
+          <span className="min-w-0">
+            <span className="block text-[0.95rem] font-semibold text-fg [overflow-wrap:anywhere]">
+              {isolateLatin(section.label)}
+            </span>
+            <span className="mt-1 block text-[0.875rem] leading-relaxed text-fg-muted">
+              {isolateLatin(section.description)}
+            </span>
+          </span>
 
-      <div className="grid gap-s3 sm:grid-cols-2">
-        {items.map((item) => {
-          const rank = rankOf(item.value);
-          const on = rank !== -1;
-          return (
-            <button
+          <span className="flex shrink-0 flex-col items-end gap-s1">
+            {/* ⚠️ **ما اخترته يظهر على القسم المطويّ.** بدونها يختفي
+                الاختيار حين يُطوى القسم، فيظنّ المتقدّم أنه ضاع فيعيده —
+                وشريطُ «رغباتك الثلاث» أعلى الخطوة بعيدٌ عن عينه هنا.
+                وتُسرد الرتب نصًّا («الأولى · الثالثة») لا عددًا: العدد
+                يجرّ مطابقةَ المفرد والمثنّى والجمع، ورقمًا لاتينيًّا يلزمه
+                عزلٌ في نصٍّ عربيّ. */}
+            {picked.length > 0 && (
+              <span
+                className="px-s2 py-s1 text-[0.8125rem] font-semibold"
+                style={{
+                  background: RANK_TINT[picked[0]],
+                  color: "var(--snow)",
+                }}
+              >
+                {picked.map((rank) => RANKS_SHORT[rank]).join(" · ")}
+              </span>
+            )}
+            <span className="text-[0.875rem] text-fg-muted">
+              {open ? "إخفاء الخيارات" : "عرض الخيارات"}
+            </span>
+          </span>
+        </button>
+      </h4>
+
+      {open && (
+        <div
+          id={panelId}
+          className="grid gap-s3 border-t border-line p-s4 sm:grid-cols-2"
+        >
+          {section.items.map((item) => (
+            <OptionCard
               key={item.value}
-              type="button"
-              onClick={() => onToggle(item.value)}
-              aria-pressed={on}
-              className={`flex flex-col gap-s2 border p-s4 text-start transition-colors ${
-                on ? "" : "border-line hover:bg-bg-sunken"
-              }`}
-              style={
-                on
-                  ? {
-                      borderColor: RANK_TINT[rank],
-                      background: `color-mix(in oklab, ${RANK_TINT[rank]} 9%, transparent)`,
-                    }
-                  : undefined
-              }
-            >
-              {/* ⚠️ **`anywhere` لا `break-word` — والفرق هو كلُّ الحكاية.**
-                  قِيس عند تكبير النصّ 200%: بطاقاتُ المشاريع تُخرج الصفحة
-                  إلى **404px** في 375 (مخالفة WCAG 1.4.4)، والسببُ اسمٌ
-                  لاتينيٌّ لا ينكسر — «InterMission» — وبطاقتُه عنصرُ شبكةٍ
-                  `min-width: auto` فلا ينزل تحت عرض محتواه الأدنى.
-                  و`overflow-wrap: break-word` **لا تُغيّر ذلك العرض الأدنى**
-                  بالمواصفة — تكسر السطر بصريًّا والحسابُ يبقى على الكلمة
-                  كاملة، فيبقى الفيض. و`anywhere` وحدها تدخل في حساب
-                  `min-content`، وهي المطلوبة هنا.
-                  وتُكتب خاصّيةً صريحة لا صنفًا مختصرًا: أسماءُ أدوات
-                  `overflow-wrap` تبدّلت بين إصداري Tailwind، وقِيس أن
-                  `break-words` أعطت `overflow-wrap: normal` — أي صنفٌ سقط
-                  صامتًا. ولا تكسر إلا حين لا يتّسع، فالمقاسُ الطبيعيّ كما هو. */}
-              <span className="flex min-w-0 items-start justify-between gap-x-s3">
-                <span className="min-w-0">
-                  <span className="block text-[0.95rem] font-semibold text-fg [overflow-wrap:anywhere]">
-                    {isolateLatin(item.label)}
-                  </span>
-                  {/* ⚠️ **اللجنة الأمّ وحدها، لا عنوانُ المجموعة.**
-                      `group` للوحدة اسمُ لجنتها (نافع)، وللجنةٍ بلا وحدات
-                      عنوانٌ تصنيفيّ داخليّ («لجان تُقدَّم ككتلة واحدة»)
-                      لا يعني المتقدّم شيئًا. والفارق أن الوحدة وحدها
-                      `fullLabel` فيها غير `label`. */}
-                  {item.fullLabel !== item.label && (
-                    <span className="block text-[0.875rem] text-fg-muted">
-                      {isolateLatin(item.group)}
-                    </span>
-                  )}
-                </span>
-
-                {/* ⚠️ الرتبة **نصٌّ لا لونٌ وحده** — من لا يميّز الأزرق
-                    الداكن من الفاتح يقرأ «الرغبة الثانية». */}
-                <span
-                  className="shrink-0 px-s3 py-s1 text-[0.875rem] font-semibold"
-                  style={
-                    on
-                      ? { background: RANK_TINT[rank], color: "var(--snow)" }
-                      : {
-                          border: "1px solid var(--line)",
-                          color: "var(--fg-muted)",
-                        }
-                  }
-                >
-                  {on ? RANKS[rank] : "اختيار"}
-                </span>
-              </span>
-
-              <span className="text-[0.875rem] leading-relaxed text-fg-muted">
-                {item.description}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+              item={item}
+              rank={rankOf(item.value)}
+              onToggle={onToggle}
+            />
+          ))}
+        </div>
+      )}
     </section>
+  );
+}
+
+/** بطاقةُ خيارٍ واحد — وحدةٌ أو مشروعٌ أو لجنةٌ تعمل ككتلة واحدة */
+function OptionCard({
+  item,
+  rank,
+  onToggle,
+}: {
+  item: Preference;
+  rank: number;
+  onToggle: (value: string) => void;
+}) {
+  const on = rank !== -1;
+  return (
+    <button
+      type="button"
+      onClick={() => onToggle(item.value)}
+      aria-pressed={on}
+      className={`flex flex-col gap-s2 border p-s4 text-start transition-colors ${
+        on ? "" : "border-line hover:bg-bg-sunken"
+      }`}
+      style={
+        on
+          ? {
+              borderColor: RANK_TINT[rank],
+              background: `color-mix(in oklab, ${RANK_TINT[rank]} 9%, transparent)`,
+            }
+          : undefined
+      }
+    >
+      {/* ⚠️ **`anywhere` لا `break-word` — والفرق هو كلُّ الحكاية.**
+          قِيس عند تكبير النصّ 200%: بطاقاتُ المشاريع تُخرج الصفحة إلى
+          **404px** في 375 (مخالفة WCAG 1.4.4)، والسببُ اسمٌ لاتينيٌّ لا
+          ينكسر — «InterMission» — وبطاقتُه عنصرُ شبكةٍ `min-width: auto`
+          فلا ينزل تحت عرض محتواه الأدنى. و`overflow-wrap: break-word`
+          **لا تُغيّر ذلك العرض الأدنى** بالمواصفة — تكسر السطر بصريًّا
+          والحسابُ يبقى على الكلمة كاملة، فيبقى الفيض. و`anywhere` وحدها
+          تدخل في حساب `min-content`، وهي المطلوبة هنا.
+          وتُكتب خاصّيةً صريحة لا صنفًا مختصرًا: أسماءُ أدوات `overflow-wrap`
+          تبدّلت بين إصداري Tailwind، وقِيس أن `break-words` أعطت
+          `overflow-wrap: normal` — أي صنفٌ سقط صامتًا. */}
+      <span className="flex min-w-0 items-start justify-between gap-x-s3">
+        <span className="min-w-0">
+          <span className="block text-[0.95rem] font-semibold text-fg [overflow-wrap:anywhere]">
+            {isolateLatin(item.label)}
+          </span>
+          {/* ⚠️ **لا سطرَ للجنة الأمّ هنا بعد اليوم.** كان يُعرض تحت اسم
+              الوحدة لأن البطاقات كانت قائمةً مسطّحة لا يُعرف فيها موضعُ
+              الوحدة. وقد صارت داخل قسم لجنتها وعنوانُه فوقها مباشرةً،
+              فتكرارُه سطرٌ يقول ما قالته الترويسة. */}
+        </span>
+
+        {/* ⚠️ الرتبة **نصٌّ لا لونٌ وحده** — من لا يميّز الأزرق الداكن من
+            الفاتح يقرأ «الرغبة الثانية». */}
+        <span
+          className="shrink-0 px-s3 py-s1 text-[0.875rem] font-semibold"
+          style={
+            on
+              ? { background: RANK_TINT[rank], color: "var(--snow)" }
+              : {
+                  border: "1px solid var(--line)",
+                  color: "var(--fg-muted)",
+                }
+          }
+        >
+          {on ? RANKS[rank] : "اختيار"}
+        </span>
+      </span>
+
+      <span className="text-[0.875rem] leading-relaxed text-fg-muted">
+        {item.description}
+      </span>
+    </button>
   );
 }

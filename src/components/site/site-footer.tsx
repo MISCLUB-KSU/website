@@ -29,9 +29,22 @@ export function SiteFooter() {
      السفلي (64px) يبقى: هو إيقاع الأقسام لا هامش التذييل. */
   return (
     <footer className="raked-field grain text-on-ink">
-      <div className="above-mark mx-auto max-w-6xl px-s4 pt-s7 sm:px-s7">
+      <div className="above-mark mx-auto max-w-6xl px-s4 pt-s6 sm:px-s7 sm:pt-s7">
+        {/* ⚠️ **عمودان على الجوّال لا عمودٌ واحد — بطلبٍ في ١٤ أغسطس ٢٠٢٦:**
+            «نضغط الأشياء ونخلّي الفوتر أصغر عشان ما يتعب صاحب الجوّال وهو
+            ينزل لآخر الصفحة».
+
+            والعلّة مقيسة: `sm:grid-cols-2` تعني عمودًا واحدًا تحت 640px،
+            فتنزل قائمتا «من نحن» (٣ روابط) و«أقسام» (٥) متتابعتين — ثمانيةُ
+            روابط × ٤٤px من هدف اللمس = ٣٥٢px من الارتفاع وحدها. وجنبًا إلى
+            جنب تصير `max(٣،٥) × ٤٤` = ٢٢٠px، فيسقط ١٣٢px بلا أن يُمسّ هدفُ
+            لمسٍ واحد.
+
+            ⚠️ **ولا يُضغط الارتفاع من `min-h-11` في `LINK_CLASS`** — ذاك
+            هدفُ اللمس الأدنى (٤٤px) وهو مفحوصٌ في تدقيق الوصول. الضغطُ من
+            الأعمدة والفجوات والحشو، لا من أهداف اللمس. */}
         <nav
-          className="grid gap-s6 sm:grid-cols-2 lg:grid-cols-3"
+          className="grid grid-cols-2 gap-x-s4 gap-y-s5 lg:grid-cols-3"
           aria-label="روابط التذييل"
         >
           <div>
@@ -62,7 +75,9 @@ export function SiteFooter() {
             </ul>
           </div>
 
-          <div>
+          {/* «تواصل» بعرض العمودين على الجوّال: البريد سطرٌ طويل لا يتّسع
+              في نصف العرض، والعلامات صفٌّ من ثلاث. وعند `lg` تعود عمودًا. */}
+          <div className="col-span-2 lg:col-span-1">
             <h2 className="text-sm font-bold text-snow">تواصل</h2>
             <ul className="mt-s2">
               <li>
@@ -113,7 +128,7 @@ export function SiteFooter() {
             التذييل، وهذا وزنٌ لا يحتمله تذييل موقع نادٍ. */}
         {/* `mis-safe-bottom` تحلّ محلّ `pb` من `py-s5`: مؤشّرُ الأسفل على
             الآيفون يمرّ فوق هذا الصفّ بعد `viewport-fit=cover`. */}
-        <div className="mis-safe-bottom mt-s7 flex flex-wrap items-center justify-between gap-s3 border-t border-snow/15 pt-s5">
+        <div className="mis-safe-bottom mt-s6 flex flex-wrap items-center justify-between gap-s3 border-t border-snow/15 pt-s4 sm:mt-s7 sm:pt-s5">
           {/* ═══ محطّة الرحلة الأخيرة — على العلامة الصغيرة نفسها ═══
               أضلاع الشعار تجتمع هنا وتنتهي رحلتها. والمرساة **علامةُ
               الكولوفون القائمة** لا كتلةٌ جديدة: الرحلة تبلغ قاع الصفحة
