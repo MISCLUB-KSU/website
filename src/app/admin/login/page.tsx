@@ -38,12 +38,27 @@ export default function AdminLoginPage() {
   /* ⚠️ **الضبط أثناء العرض لا داخل `useEffect`.** العدّاد مشتقٌّ من ردٍّ
      جديد وصل، وتأجيلُه إلى ما بعد الرسم يُظهر الزرَّ مفتوحًا ومضةً ثم
      يُقفله. وهو النمط الذي تستعمله `registration-form.tsx` نفسُها، ويرفض
-     `react-hooks/set-state-in-effect` غيرَه. */
+     `react-hooks/set-state-in-effect` غيرَه.
+
+     ⚠️⚠️ **و`state.sent` شرطٌ أوّل لا ثانٍ — وهذا أسقط بناء الإنتاج.**
+     كان الضبط يقع بلا شرطٍ في أوّل رسمة (`state !== null` صادقةٌ دائمًا)،
+     فيطلب رسمةً جديدة قبل أن تكتمل الأولى. وفي المتصفّح يستقرّ بعد رسمتين
+     لأن `useState` يحفظ بينهما؛ أمّا في **البناء المسبق** فلا شيء يُحفظ
+     بين المحاولات، فيدور بلا نهاية:
+
+         Error occurred prerendering page "/admin/login"
+         Error: Too many re-renders.
+
+     والبناءُ كلُّه يسقط معها — `Export encountered an error … exiting`.
+     فبقي الموقع الحيّ على بناءٍ أقدم، ولم يظهر أثرُ أي دفعةٍ بعده.
+
+     ومقدّمُ الشرط يحلّها بلا تبديل سلوك: الردُّ الابتدائي لا `sent` فيه،
+     فلا ضبطَ أصلًا أثناء البناء؛ وأوّلُ ردٍّ حقيقيّ يضبط مرّةً ثم يستقرّ. */
   const [left, setLeft] = useState(0);
   const [lastReply, setLastReply] = useState<LoginState | null>(null);
-  if (state !== lastReply) {
+  if (state.sent && state !== lastReply) {
     setLastReply(state);
-    if (state.sent) setLeft(RESEND_SECONDS);
+    setLeft(RESEND_SECONDS);
   }
 
   /* والتنازل بمؤقّتٍ واحدٍ لكل ثانية — لا `setInterval` يبقى بعد الصفر */
