@@ -102,7 +102,7 @@ export default function HomePage() {
               الحركة: حبرٌ كاملٌ ثابت — المظهر السابق بالضبط. */}
           <InkWords
             text={ABOUT_INTRO.lede}
-            className="mt-s7 max-w-3xl text-pretty font-display text-2xl font-medium leading-relaxed text-fg sm:text-3xl"
+            className="mt-s7 max-w-3xl text-pretty font-display text-2xl font-semibold leading-relaxed text-fg sm:text-3xl"
           />
 
           {/* الفقرة التعريفية — بخط المتن، بعرضٍ مقروء لا يتجاوز المقاس.

@@ -124,7 +124,7 @@ export function ProjectIndex() {
                     />
                   </span>
                 </span>
-                <span className="w-[2ch] shrink-0 font-display text-sm font-medium text-fg-muted">
+                <span className="w-[2ch] shrink-0 font-display text-sm font-semibold text-fg-muted">
                   {`0${index + 1}`}
                 </span>
                 <span className="shrink-0 font-display text-xl font-bold text-mark sm:text-2xl">
