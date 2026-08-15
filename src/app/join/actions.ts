@@ -213,8 +213,9 @@ export async function submitRegistration(
     };
   }
 
+  let applicationId: string;
   try {
-    await saveApplication(parsed.data, {
+    applicationId = await saveApplication(parsed.data, {
       answers: answers.answers,
       answerFiles: answers.files,
       cv: formData.get("cv"),
@@ -252,7 +253,7 @@ export async function submitRegistration(
      يجعل الطالب يعيد التقديم على طلبٍ وصل — فيُردّ بـ«سبق أن قدّمت».
      و`sendMail` لا يرمي أصلًا (انظر `email/client.ts`)، وهذا حزامٌ ثانٍ. */
   try {
-    await sendMail(
+    const mail = await sendMail(
       applicationReceived({
         fullName: parsed.data.fullName,
         email: parsed.data.email,
@@ -265,6 +266,12 @@ export async function submitRegistration(
           .map((value) => findPreference(value)?.fullLabel ?? value),
       }),
     );
+    /* ⚠️ **يُقيَّد النجاح في الصفّ، ولا يُقيَّد الفشل.** الغيابُ هو الإشارة:
+       `receipt_mailed_at is null` تعني «لم يخرج» أيًّا كان السبب — مفتاحٌ
+       ناقص، أو نطاقٌ غير موثَّق، أو حصّةٌ نفدت. وعمودٌ ثانٍ للسبب يغري
+       بقراءته بدل قراءة سجلّ Resend، وهو أدقُّ منه دائمًا.
+       واللوحةُ تعدّ الناقصَ وتعرضه — انظر `admin/page.tsx`. */
+    if (mail.sent) await markReceiptMailed(applicationId);
   } catch (error) {
     console.error("[registration] وصل الطلب ولم يُرسَل بريد التأكيد", error);
   }
@@ -274,7 +281,19 @@ export async function submitRegistration(
     errors: {},
     values: {},
     message: "وصل طلبك. سنراسلك على بريدك خلال أسبوع.",
+    /* ما وصل فعلًا — تقرؤه شاشةُ النجاح فتقول للطالب أوصلت سيرتُه أم لا.
+       يُقاس من `formData` لا من نتيجة الرفع: الرفعُ قد يفشل بعدها ويُسجَّل،
+       أمّا هذا فيجيب عن السؤال الذي أخطأنا فيه — **هل أرسلها أصلًا؟** */
+    received: {
+      cv: hasFile(formData.get("cv")),
+      projects: hasFile(formData.get("projectsFile")),
+    },
   };
+}
+
+/** ملفٌّ حقيقيّ لا حقلٌ فارغ — المتصفّح يرسل `File` باسمٍ وحجمٍ صفر حين لا يُختار */
+function hasFile(value: FormDataEntryValue | null): boolean {
+  return value instanceof File && value.size > 0;
 }
 
 /** رمزُ خرق التفرّد في `Postgres` — يصل عبر `PostgrestError.code` */
@@ -314,7 +333,7 @@ type Attachments = {
 async function saveApplication(
   data: RegistrationInput,
   attachments: Attachments,
-): Promise<void> {
+): Promise<string> {
   const supabase = createAdminClient();
 
   const { data: row, error } = await supabase
@@ -385,6 +404,28 @@ async function saveApplication(
     "projects_path",
     "ملفّ المشاريع",
   );
+
+  /* المعرّفُ يُردّ ليُختم به وقتُ بريد التأكيد بعد خروجه — انظر أعلاه */
+  return row.id as string;
+}
+
+/**
+ * ختمُ وقتِ خروج بريد «وصل طلبك» على الصفّ.
+ *
+ * ⚠️ **ولا يُرمى خطؤه أبدًا.** الطلبُ محفوظٌ والبريدُ خرج فعلًا؛ وفشلُ
+ * الختم يعني عدّادًا في اللوحة أعلى ممّا يجب — إزعاجٌ، لا ضياعُ طلب.
+ * وإسقاطُ العملية لأجله يقلب لطفًا إلى عطل.
+ */
+async function markReceiptMailed(id: string): Promise<void> {
+  try {
+    const { error } = await createAdminClient()
+      .from("applications")
+      .update({ receipt_mailed_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) throw error;
+  } catch (error) {
+    console.error("[registration] خرج البريد ولم يُختم وقتُه على الصفّ", error);
+  }
 }
 
 /**

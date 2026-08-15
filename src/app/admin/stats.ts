@@ -23,6 +23,13 @@ export type Row = {
   choice3: string;
   status: string;
   cv_path: string | null;
+  /**
+   * وقتُ خروج بريد «وصل طلبك» — و`null` يعني **لم يخرج**.
+   *
+   * ⚠️ `null` في الصفوف السابقة للعمود أيضًا (١٥ أغسطس ٢٠٢٦)، لكنّ الجدول
+   * كان قد أُفرغ يومَها فلا صفَّ قديمٌ يشوّش العدّ.
+   */
+  receipt_mailed_at: string | null;
   /* ما يُعرض في تفصيل الصفّ — محفوظٌ منذ البداية ولم يكن يُعرض */
   national_id: string;
   university_other: string | null;

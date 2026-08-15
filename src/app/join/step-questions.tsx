@@ -31,6 +31,7 @@ import {
   COMMITMENTS,
   COMMITMENT_NONE,
   CV_ACCEPT,
+  CV_MAX_MB,
   hasClubExperience,
   HEARD_FROM,
 } from "@/lib/registration";
@@ -703,8 +704,8 @@ export function StepQuestions({
           error={e.projectsFile}
           hint={
             <>
-              <span dir="ltr">PDF</span> أو صورة، حتى <span dir="ltr">5</span>{" "}
-              ميجابايت.
+              <span dir="ltr">PDF</span> أو صورة، حتى{" "}
+              <span dir="ltr">{CV_MAX_MB}</span> ميجابايت.
             </>
           }
         />
@@ -745,8 +746,8 @@ export function StepQuestions({
           error={e.cv}
           hint={
             <>
-              <span dir="ltr">PDF</span> أو صورة، حتى <span dir="ltr">5</span>{" "}
-              ميجابايت.
+              <span dir="ltr">PDF</span> أو صورة، حتى{" "}
+              <span dir="ltr">{CV_MAX_MB}</span> ميجابايت.
             </>
           }
         />

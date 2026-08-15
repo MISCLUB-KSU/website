@@ -401,19 +401,55 @@ export function FileField({
   required,
   optional,
   className = "",
+  onChange,
   ...rest
 }: FileFieldProps) {
   const hintId = `${id}-hint`;
+  const ref = useRef<HTMLInputElement>(null);
+  const [kept, setKept] = useState<File | null>(null);
+
+  /**
+   * ⚠️ **إعادةُ إلصاق الملفّ بعد أن تُصفّره React — وضياعُه كلّفنا طلبًا.**
+   *
+   * React 19 **تُصفّر النموذج** بعد انتهاء الـ`Server Action`. وحقولُ النصّ
+   * تنجو لأن الخادم يعيدها في `values` فتُملأ من جديد؛ أمّا حقلُ الملفّ فلا
+   * تُضبط قيمتُه برمجيًّا — يمنعه المتصفّح — **فيضيع بلا أثر**.
+   *
+   * ووقع فعلًا في ١٥ أغسطس ٢٠٢٦: قدّم متقدّمٌ ورفع سيرته، فوصل الطلبُ وحدَه.
+   * ولا سطرَ في السجلّ يدلّ: `uploadOne` يخرج صامتًا حين يصل الحقلُ فارغًا،
+   * وشاشةُ «وصل طلبك» كانت لا تذكر المرفق. والعلاجُ القديم سطرٌ في ملخّص
+   * الأخطاء («أعد اختياره») — يُقرأ إن قُرئ.
+   *
+   * فيُحفظ الملفّ في حالة المكوّن ويُعاد إلصاقُه بـ`DataTransfer` كلّما وُجد
+   * الحقلُ فارغًا وعندنا نسخة. و`useEffect` **بلا مصفوفة تبعيّات عمدًا**:
+   * التصفيرُ يقع بعد رسمةٍ لا نتحكّم بها، فيُفحص بعد كلّ رسمة.
+   *
+   * ⚠️ ومسحُ الطالب لاختياره يبقى مسحًا: `onChange` يضع `null` فلا يُعاد شيء.
+   */
+  useEffect(() => {
+    const input = ref.current;
+    if (!input || !kept || input.files?.length) return;
+    if (typeof DataTransfer === "undefined") return;
+    const box = new DataTransfer();
+    box.items.add(kept);
+    input.files = box.files;
+  });
+
   return (
     <div>
       <Label htmlFor={id} required={required} optional={optional}>
         {label}
       </Label>
       <input
+        ref={ref}
         id={id}
         name={id}
         type="file"
         required={required}
+        onChange={(event) => {
+          setKept(event.target.files?.[0] ?? null);
+          onChange?.(event);
+        }}
         aria-invalid={error ? true : undefined}
         aria-describedby={error || hint ? hintId : undefined}
         className={
@@ -425,6 +461,14 @@ export function FileField({
         }
         {...rest}
       />
+      {/* ⚠️ **اسمُ الملفّ مكتوبٌ بنصّنا لا بنصّ المتصفّح.** ذاك يقول «لم
+          يُختر ملفّ» بلغة الجهاز ويتبدّل بين المتصفّحات، وهذا يؤكّد للطالب
+          أن مرفقَه ما زال معه بعد أن رُدّ بخطأ في حقلٍ آخر. */}
+      {kept && (
+        <p className="mt-1.5 text-[0.8rem] text-fg-muted">
+          مرفقٌ الآن: <span dir="auto">{kept.name}</span>
+        </p>
+      )}
       <Hint id={hintId} error={error}>
         {hint}
       </Hint>

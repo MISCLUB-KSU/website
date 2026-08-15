@@ -34,9 +34,26 @@ export default async function AdminPage() {
     .eq("email", (user?.email ?? "").toLowerCase())
     .maybeSingle();
 
-  const { data, error } = await supabase
+  /**
+   * ⚠️ **`count: "exact"` ليس زخرفةً — هو حارسُ القصِّ الصامت.**
+   *
+   * `PostgREST` في Supabase له سقفٌ لعدد الصفوف في الردّ (`Max rows` في
+   * `Settings ← API`، وافتراضُه ألف). فمتى تجاوزت الطلباتُ السقفَ **رجع
+   * الردُّ مقصوصًا بلا خطأ ولا تحذير** — واللوحةُ تعرض ألفًا وتسكت، ولجنةُ
+   * الفرز تحسبها كلَّ الطلبات وتغلق الباب على من لم يُرَ.
+   *
+   * وهذا **صنفُ العطل الذي كلّفنا يومًا** في ١٤ أغسطس: فشلٌ لا يصرخ. والعلاج
+   * أن نسأل القاعدة عن العدد الحقيقيّ ونقارنه بما وصل — فإن اختلفا صرخت
+   * اللوحة. والموسمُ المتوقَّع يزيد على ٦٠٠ طلب، فالسقفُ على مرمى حجر.
+   *
+   * ولا يُستبدل هذا بترقيم صفحات: `dashboard.tsx` و`applications-table.tsx`
+   * مكوّنان عميلان يفلتران ويحسبان الإحصاء **فوق كل الصفوف** — فترقيمٌ من
+   * الخادم يجعل البحث والإحصاء يعملان على الصفحة المعروضة وحدها، وهو خطأٌ
+   * أخطر من البطء لأنه أيضًا لا يصرخ.
+   */
+  const { data, error, count } = await supabase
     .from("applications")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("created_at", { ascending: false });
 
   if (!me) {
@@ -66,6 +83,19 @@ export default async function AdminPage() {
     (scope) => findPreference(scope)?.fullLabel ?? scope,
   );
   const lastAt = rows[0] ? relative(rows[0].created_at) : null;
+
+  /* وصل أقلُّ ممّا في القاعدة ⇒ الردُّ قُصّ. انظر التعليل عند الاستعلام. */
+  const truncated = typeof count === "number" && rows.length < count;
+
+  /**
+   * طلباتٌ لم يخرج لأصحابها بريدُ «وصل طلبك».
+   *
+   * ⚠️ **فشلُ البريد لا يُسقط الطلب عمدًا** (`email/client.ts`) — وهو صواب:
+   * أن يصل الطلبُ بلا إشعارٍ خيرٌ من أن يُردَّ الطالب بعد ثلاث خطوات. لكنّ
+   * ثمنَه أن الفشل **لا يُرى إلا في سجلّ الخادم**، ولا أحد يفتحه يوميًّا.
+   * فيُقيَّد وقتُ الإرسال في الصفّ، ويُعدّ الناقصُ هنا — فيصير الصمتُ رقمًا.
+   */
+  const unmailed = rows.filter((row) => !row.receipt_mailed_at).length;
 
   return (
     /* ⚠️ **بلا رقمٍ سحريّ.** أول محاولةٍ طرحت ارتفاع الترويسة وحده
@@ -135,6 +165,27 @@ export default async function AdminPage() {
       {error && (
         <p role="alert" className="tile mb-s4 px-s5 py-s4 font-medium text-danger">
           تعذّر جلب الطلبات.
+        </p>
+      )}
+
+      {truncated && (
+        <p
+          role="alert"
+          className="tile mb-s4 px-s5 py-s4 font-medium text-danger"
+        >
+          ⚠️ اللوحة تعرض <strong>{rows.length}</strong> من{" "}
+          <strong>{count}</strong> طلبًا — الباقي مقصوصٌ من الردّ ولا يظهر هنا.
+          ارفع <span dir="ltr">Max rows</span> في{" "}
+          <span dir="ltr">Supabase → Settings → API</span> ثم أعد التحميل.{" "}
+          <strong>لا تُغلق الفرز قبل ذلك.</strong>
+        </p>
+      )}
+
+      {unmailed > 0 && (
+        <p className="tile mb-s4 px-s5 py-s4 text-[0.9rem] font-medium text-warning">
+          📮 <strong>{unmailed}</strong> من {rows.length} طلبًا لم يخرج لصاحبه
+          بريدُ «وصل طلبك». راجع نطاقَ الإرسال وحصّتَه في لوحة Resend — الطلبات
+          محفوظةٌ كلُّها، والناقصُ إشعارُ الطالب وحده.
         </p>
       )}
 
