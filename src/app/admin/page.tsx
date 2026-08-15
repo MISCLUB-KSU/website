@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 import { Mark } from "@/components/site/mark";
 import { AdminTabs } from "./admin-tabs";
 import { ThemeToggle } from "./theme-toggle";
@@ -28,11 +30,35 @@ export default async function AdminPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: me } = await supabase
+  /**
+   * ⚠️ **بلا جلسةٍ نرجع إلى الدخول، لا نقول «لا صلاحية لك».**
+   *
+   * الوسيطُ يحرس `/admin` ويردّ من لا جلسةَ له — لكنه يجدّد الرمزَ ويكتبه
+   * في كوكيز **الردّ**، والمكوّنُ الخادم يقرأ كوكيز **الطلب**. فإن كان
+   * الرمزُ قد انتهى للتوّ، مرّ من الوسيط وسقط هنا: `user` صفر، فيُبحث في
+   * `staff` عن بريدٍ فارغ، فلا يُوجَد — **فتُتَّهم صلاحيتُه وهو غيرُ داخلٍ
+   * أصلًا**. وقد وقع فعلًا لمن دخل ثم عاد بعد ثلاث ساعات (١٥ أغسطس ٢٠٢٦).
+   *
+   * والفرقُ ليس لفظيًّا: «لا صلاحية» تدفعه يراجع الرئاسة، و«سجّل دخولك»
+   * تحلّها بضغطة.
+   */
+  if (!user) redirect("/admin/login");
+
+  /* ⚠️ **الخطأ يُلتقط ويُسجَّل، لا يُهمَل.** كان `error` مُهمَلًا هنا، فأيّ
+     تعثّرٍ في القراءة (سياسةٌ ترفض · رمزٌ منتهٍ · انقطاع) يخرج بنفس شاشة
+     «لا صلاحية لك» بلا سطرٍ واحدٍ يدلّ على السبب. */
+  const { data: me, error: meError } = await supabase
     .from("staff")
     .select("role, scopes, label, display_name")
-    .eq("email", (user?.email ?? "").toLowerCase())
+    .eq("email", user.email?.toLowerCase() ?? "")
     .maybeSingle();
+
+  if (meError) {
+    console.error("[admin] تعذّرت قراءة صفّ الطاقم", {
+      email: user.email,
+      error: meError.message,
+    });
+  }
 
   /**
    * ⚠️ **`count: "exact"` ليس زخرفةً — هو حارسُ القصِّ الصامت.**
@@ -64,7 +90,7 @@ export default async function AdminPage() {
           <p className="leading-relaxed opacity-75">
             بريدك{" "}
             <span dir="ltr" className="font-medium">
-              {user?.email}
+              {user.email}
             </span>{" "}
             ليس في طاقم الاطّلاع. راجع رئاسة النادي إن كان ينبغي أن يكون.
           </p>
@@ -148,7 +174,7 @@ export default async function AdminPage() {
               className="hidden text-[0.76rem] opacity-60 sm:inline"
               dir="ltr"
             >
-              {user?.email}
+              {user.email}
             </span>
           )}
           <form action={signOut}>

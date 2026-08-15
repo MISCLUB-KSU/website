@@ -47,17 +47,31 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
     url.search = "";
-    return NextResponse.redirect(url);
+    return carryCookies(NextResponse.redirect(url), response);
   }
 
   if (user && isLogin) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin";
     url.search = "";
-    return NextResponse.redirect(url);
+    return carryCookies(NextResponse.redirect(url), response);
   }
 
   return response;
+}
+
+/**
+ * نقلُ الكوكيز من ردِّ المرور إلى ردِّ التحويل.
+ *
+ * ⚠️ **بدونه تضيع الجلسةُ المجدَّدة — والملغاةُ أيضًا.** `setAll` تكتب في
+ * `response`، فإن رجعنا `NextResponse.redirect` جديدًا ذهب ما كُتب: رمزٌ
+ * جُدِّد للتوّ لا يُحفظ، ورمزٌ ميّتٌ مسحته المكتبة لا يُمسح. والثاني أسوأ:
+ * كوكي فاسدٌ يبقى في المتصفّح، فكل زيارةٍ تُعيد محاولةً فاشلةً وتُحوَّل من
+ * جديد — يقف القائد عند بابٍ يفتح ويُغلق ولا يدري لماذا (١٥ أغسطس ٢٠٢٦).
+ */
+function carryCookies(to: NextResponse, from: NextResponse): NextResponse {
+  for (const cookie of from.cookies.getAll()) to.cookies.set(cookie);
+  return to;
 }
 
 export const config = {
