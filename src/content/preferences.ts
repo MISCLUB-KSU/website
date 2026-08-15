@@ -59,6 +59,19 @@ export type Preference = {
   shared?: SharedQuestions;
   /** تقبل رابطَ تقديمٍ مباشر — انظر `directLink` في `projects.ts` */
   directLink?: boolean;
+  /**
+   * **هل تستقبل هذي الجهةُ طلبات الآن؟**
+   *
+   * مصدرُها `unit.isOpen` للوحدات و`project.applicationState` للمشاريع.
+   * واللجنةُ التي تُقدَّم ككتلةٍ واحدة (بلا وحدات) مفتوحةٌ دائمًا — لا راية
+   * لها في `committees.ts`، فلا تُفترض واحدةٌ من عدم.
+   *
+   * ⚠️ **ولا تُقرأ من `findPreference`.** تلك تبقى على القائمة الكاملة لأن
+   * صفوفًا محفوظةً تحمل قيمَ جهاتٍ أُغلقت بعدها، ولوحةُ الإدارة تسمّيها
+   * بها. حذفُ المغلقة من البحث يجعل الطلبَ القديم يعرض `project:misthon`
+   * خامًا لقائدٍ يقرؤه اليوم.
+   */
+  open: boolean;
 };
 
 /**
@@ -111,6 +124,7 @@ export const COMMITTEE_PREFERENCES: readonly Preference[] = COMMITTEES.flatMap(
           group: committee.name,
           description: unit.description,
           questions: unit.questions,
+          open: unit.isOpen,
           /* أسئلة اللجنة تنزل على كل وحدةٍ فيها بمفتاح اللجنة — فمن اختار
              وحدتين منها يُسأل مرّةً. انظر `SharedQuestions` أعلاه. */
           shared: committee.questions?.length
@@ -134,6 +148,8 @@ export const COMMITTEE_PREFERENCES: readonly Preference[] = COMMITTEES.flatMap(
             group: committee.name,
             description: committee.description,
             questions: committee.questions,
+            /* لا راية على مستوى اللجنة في `committees.ts` — انظر `open` */
+            open: true,
           },
         ];
   },
@@ -173,6 +189,7 @@ export const PROJECT_PREFERENCES: readonly Preference[] = PROJECTS.filter(
   description: project.summary,
   questions: project.questions,
   directLink: project.directLink,
+  open: project.applicationState === "open",
 }));
 
 /* ── الروابط المباشرة ───────────────────────────────────────────────────
@@ -188,7 +205,10 @@ export function findDirectTarget(
   if (kind !== "project" && kind !== "committee") return undefined;
   const value = `${kind}:${rest.join("/")}`;
   const found = PREFERENCES.find((p) => p.value === value);
-  return found?.directLink ? found : undefined;
+  /* ⚠️ **والمغلقةُ لا يفتحها رابطُها المباشر.** بدون `open` هنا يبقى
+     `/join/project/misthon` بابًا خلفيًّا يقفل النموذجَ على جهةٍ لا
+     تستقبل — وهو أخطر من ظهورها في القائمة، لأن الرابط يُنشر ويبقى. */
+  return found?.directLink && found.open ? found : undefined;
 }
 
 /** مسارُ الرابط المباشر لجهة — عكسُ `findDirectTarget` */
@@ -196,12 +216,44 @@ export function directPath(preference: Preference): string {
   return `/join/${preference.value.replace(":", "/")}`;
 }
 
+/**
+ * **كلُّ الجهات — المفتوحُ منها والمغلق.**
+ *
+ * ⚠️ **لا يُبنى عليها عرضٌ ولا تحقّق.** هي مرجعُ **التسمية** وحده: صفوفٌ
+ * محفوظةٌ تحمل قيمَ جهاتٍ أُغلقت بعد أن قُدّم عليها، ولوحةُ الإدارة تسمّيها
+ * منها (`findPreference`). فلو قُصّت المغلقةُ هنا لعرض الطلبُ القديم
+ * `project:misthon` خامًا لقائدٍ يقرؤه اليوم.
+ */
 export const PREFERENCES: readonly Preference[] = [
   ...COMMITTEE_PREFERENCES,
   ...PROJECT_PREFERENCES,
 ];
 
-export const PREFERENCE_VALUES: readonly string[] = PREFERENCES.map(
+/**
+ * **الجهاتُ المستقبِلة للطلبات — وهي مصدرُ كلِّ عرضٍ وكلِّ تحقّق.**
+ *
+ * ⚠️ **وُلدت لأن الرايات كانت زينة (١٥ أغسطس ٢٠٢٦).** `unit.isOpen` و
+ * `project.applicationState` كانتا تُقرآن في سطرِ الواجهة «التقديم مفتوح /
+ * مغلق» **ولا شيء غيره**: المغلقُ يُعرض بطاقةً في المُنتقي، ويمرّ من
+ * `PREFERENCE_VALUES` على الخادم، ويعمل رابطُه المباشر. فخمسةُ مشاريعَ من
+ * ستّة كانت موسومةً «مغلق» وهي تستقبل.
+ *
+ * وهو الوجهُ المقلوب للعطل الذي وُلدت له `OPEN_UNITS`: هناك واجهةٌ تردّ
+ * والبابُ مفتوح، وهنا وسمٌ يقول مغلقٌ والبابُ مفتوح. والعلاجُ أن تصير
+ * الرايةُ قفلًا: **تُقصّ من هنا فتنقطع الأبواب الثلاثة معًا** — البطاقة
+ * والقائمة المنسدلة والرابط المباشر — ويردّها الخادمُ كذلك.
+ */
+export const OPEN_PREFERENCES: readonly Preference[] = PREFERENCES.filter(
+  (preference) => preference.open,
+);
+
+/**
+ * ⚠️ **حارسُ الخادم — ومن المفتوحة وحدها.**
+ *
+ * يفحصها `choiceField` في `registration.ts`، فقيمةٌ لجهةٍ مغلقة تُردّ ولو
+ * أُرسلت يدويًّا بتجاوز الواجهة. والواجهةُ راحةٌ لا حاجز.
+ */
+export const PREFERENCE_VALUES: readonly string[] = OPEN_PREFERENCES.map(
   (preference) => preference.value,
 );
 
@@ -301,7 +353,9 @@ export type PreferenceGroup = {
 export const PREFERENCE_GROUPS: readonly PreferenceGroup[] = (() => {
   const groups: { label: string; options: { value: string; label: string }[] }[] =
     [];
-  for (const preference of PREFERENCES) {
+  /* من `OPEN_PREFERENCES` لا `PREFERENCES`: هذي بديلُ المُنتقي حين ينقطع
+     السكربت، فلو حملت المغلقةَ لصار البديلُ بابًا خلفيًّا يردّه الخادم. */
+  for (const preference of OPEN_PREFERENCES) {
     let group = groups.find((g) => g.label === preference.group);
     if (!group) {
       group = { label: preference.group, options: [] };
@@ -346,7 +400,8 @@ const SECTIONS: PreferenceSection[] = [
        يسحب وحدات جارته إلى قسمه. */
     const items = COMMITTEE_PREFERENCES.filter(
       (preference) =>
-        preference.value === self || preference.value.startsWith(`${self}/`),
+        preference.open &&
+        (preference.value === self || preference.value.startsWith(`${self}/`)),
     );
     return {
       key: committee.slug,
@@ -362,7 +417,7 @@ const SECTIONS: PreferenceSection[] = [
     description:
       "تُبنى فوق اللجان، ويشتغل عليها أعضاؤها جميعًا. اختر منها واحدًا على الأقل.",
     standalone: false,
-    items: PROJECT_PREFERENCES,
+    items: PROJECT_PREFERENCES.filter((preference) => preference.open),
   },
 ];
 
