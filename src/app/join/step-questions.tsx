@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/field";
 import { questionBlocks } from "@/content/preferences";
 import {
-  ANSWER_MAX,
   answerName,
   asOption,
   exclusiveValues,
@@ -25,9 +24,7 @@ import {
   ANSWER_FILE_ACCEPT,
   ANSWER_FILE_MAX_BYTES,
   CLUB_EXPERIENCE,
-  CLUB_EXPERIENCE_MAX,
   CLUB_EXPERIENCE_NO,
-  CLUB_NEWCOMER_MAX,
   COMMITMENTS,
   COMMITMENT_NONE,
   CV_ACCEPT,
@@ -229,7 +226,6 @@ function AnswerField({
             label="أخرى — اكتبها"
             optional
             defaultValue={other}
-            maxLength={ANSWER_MAX}
           />
         )}
 
@@ -352,7 +348,6 @@ function AnswerField({
             name={`${name}__other`}
             label="أخرى — اكتبها"
             optional
-            maxLength={ANSWER_MAX}
           />
         )}
       </>
@@ -360,10 +355,10 @@ function AnswerField({
   }
 
   if (question.type === "long-text") {
-    return <TextArea {...shared} maxLength={ANSWER_MAX} />;
+    return <TextArea {...shared} />;
   }
 
-  return <TextField {...shared} maxLength={ANSWER_MAX} />;
+  return <TextField {...shared} />;
 }
 
 /**
@@ -517,9 +512,8 @@ function ClubExperience({
           required
           defaultValue={v.clubExperienceDetails}
           error={e.clubExperienceDetails}
-          hint="سطرٌ واحد يكفي: اسم الجهة، ودورك، والمدّة إن ذكرتها."
+          hint="اسم الجهة، ودورك، والمدّة إن ذكرتها."
           placeholder="مثال: نادي ريادة الأعمال — عضو لجنة التنظيم، فصلين."
-          maxLength={CLUB_EXPERIENCE_MAX}
         />
       )}
 
@@ -528,9 +522,11 @@ function ClubExperience({
           منه سوى «لماذا اخترت هذي الرغبات». والسؤالان لا يقيسان خبرة —
           يقيسان **الفهم والتوقّع**، وهما ما يُفرز به من لا سجلَّ له.
 
-          وحدُّهما 250 لا 400: مسارُ «لا» حقلان ومسارُ «نعم» حقلٌ واحد،
-          فلو تساوى الحدّان صار «لا» أثقل — والأثقلُ يُشترى بجوابٍ غير
-          صادق. انظر التعليل في `refineFinal`. */}
+          ⚠️ **وكان لهما سقفٌ ٢٥٠ حرفًا وللأوّل ٤٠٠** — موازنةً بين
+          المسارين لئلّا يصير «لا» أثقل فيدفع المتردّد إلى «نعم». ورُفعت
+          السقوف كلُّها في ١٥ أغسطس ٢٠٢٦، والموازنةُ باقيةٌ بلا عدد:
+          مسارُ «لا» حقلان ومسارُ «نعم» حقلٌ واحد، ولا يُطالَب أيٌّ منهما
+          بطولٍ معيّن. انظر التعليل عند `why` في `registration.ts`. */}
       {answer === CLUB_EXPERIENCE_NO && (
         <>
           <TextArea
@@ -541,7 +537,6 @@ function ClubExperience({
             error={e.clubPerception}
             hint="ما الذي تتوقّعه منها، أو ما الذي سمعته عنها. لا جواب صحيح وآخر خطأ."
             placeholder="مثال: مكان أتعلّم فيه شغلًا حقيقيًّا خارج المحاضرات، وأعرف ناسًا يشتغلون مثلي."
-            maxLength={CLUB_NEWCOMER_MAX}
           />
           <TextArea
             id="clubExpectation"
@@ -551,7 +546,6 @@ function ClubExperience({
             error={e.clubExpectation}
             hint="أي عملٍ تتخيّل نفسك فيه — ولو لم تجرّبه بعد."
             placeholder="مثال: أساعد في تنظيم الفعاليات، وأتعلّم التصميم على مشروعٍ حقيقيّ."
-            maxLength={CLUB_NEWCOMER_MAX}
           />
         </>
       )}
@@ -657,15 +651,19 @@ export function StepQuestions({
       title="الأسئلة والمرفقات"
       lede="آخر خطوة. المرفقات اختيارية، لكنها تعطي لجنة الفرز صورة أوضح عنك."
     >
+      {/* ⚠️ **ولا `maxLength` ولا تلميحَ طولٍ — بقرار الإدارة (١٥ أغسطس).**
+          كان التلميح «سطران أو ثلاثة»، والنائبُ «اكتب بإيجاز»، و`maxLength`
+          يقطع الكتابة عند ٦٠٠ بلا رسالة. ورفعُ الحدّ من المخطّط وحده لا
+          يكفي: التلميحُ يبقى يقول للطالب كم يكتب، فيكتب بقدره وإن قَبِل
+          الخادمُ أكثر. فالحدُّ يُرفع من الثلاثة معًا أو لا يُرفع. */}
       <TextArea
         id="why"
         label="لماذا اخترت هذي الرغبات؟"
         required
         defaultValue={v.why}
         error={e.why}
-        hint="سطران أو ثلاثة: ما الذي تتقنه، وما الذي تودّ تعلّمه معنا."
-        placeholder="اكتب بإيجاز…"
-        maxLength={600}
+        hint="ما الذي تتقنه، وما الذي تودّ تعلّمه معنا — واكتب على راحتك."
+        placeholder="اكتب ما تشاء…"
       />
 
       <ClubExperience values={v} errors={e} />

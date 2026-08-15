@@ -5,7 +5,6 @@ import {
   questionBlocks,
 } from "@/content/preferences";
 import {
-  ANSWER_MAX,
   ANSWER_SEP,
   answerName,
   exclusiveValues,
@@ -179,27 +178,24 @@ export function hasClubExperience(value: string | undefined): boolean {
   return value === CLUB_EXPERIENCE_MORE || value === CLUB_EXPERIENCE_ONE;
 }
 
-/** حدُّ التفاصيل — جهةٌ ودورٌ ومدّة، لا سيرةٌ ذاتية ثانية */
-export const CLUB_EXPERIENCE_MAX = 400;
-
 /**
- * أقلُّ ما يُقبل تفصيلًا.
+ * ⚠️ **لا حدَّ لطول أيّ حقلٍ نصّيّ — بقرار الإدارة (١٥ أغسطس ٢٠٢٦):**
+ * «ما أبي لا حدّ أدنى ولا أقصى، خلّ الطالب يكتب على راحته».
  *
- * «ايه» و«نعم» جوابان يمرّان من `min(1)` ولا يقولان شيئًا للجنة الفرز —
- * وهي تريد **الجهة والدور**. والعشرة حدٌّ يسع «نادي القانون، عضو تنظيم»
- * ويردّ كلمةَ تأكيدٍ وحدها.
- */
-export const CLUB_EXPERIENCE_MIN = 10;
-
-/**
- * حقلا من لا خبرة له — التصوّر والتوقّع.
+ * وكان هنا ثلاثةُ ثوابت رُفعت معه: `CLUB_EXPERIENCE_MAX` (٤٠٠) و
+ * `CLUB_NEWCOMER_MAX` (٢٥٠) و`CLUB_EXPERIENCE_MIN` (١٠)، ورابعٌ في
+ * `questions.ts` هو `ANSWER_MAX` (٤٠٠). ومعها `why`: أدناه ٣٠ وأقصاه ٦٠٠.
  *
- * ⚠️ **حدُّهما أقصر من حدّ «نعم» عمدًا.** من قال «لا» يُسأل حقلين ومن قال
- * «نعم» يُسأل واحدًا، فلو تساوى الحدّان صار مسار «لا» أثقل — ومسارٌ أثقل
- * يدفع المتردّد إلى «نعم» ليكتب أقلّ، فيفسد الحقل الذي أُنشئ للفرز. فمجموعُ
- * الحقلين هنا (500) قريبٌ من حدّ «نعم» وحده (400)، لا ضعفَه.
+ * وكان لكلٍّ منها تعليلٌ مكتوب — أدقُّها موازنةُ مسارَي «نعم» و«لا» بسقفين
+ * مختلفين لئلّا يصير أحدهما أثقل. والموازنةُ باقيةٌ بلا أرقام: من قال «لا»
+ * يُسأل حقلين ومن قال «نعم» حقلًا واحدًا، ولا يُطالَب أيٌّ منهما بطول.
+ *
+ * ⚠️ **وما بقي هو «أجب» لا «أطِل»:** الحقولُ مطلوبةٌ كما كانت — `min(1)`
+ * في `why`، وفحصُ الفراغ في `refineFinal` للثلاثة. رفعُ تلك يجعل الحقول
+ * اختيارية، وهو تغييرٌ في النموذج لا رفعٌ لحدّ.
+ *
+ * والأعمدةُ في القاعدة `text` بلا حدٍّ أصلًا، فلا شيء يُقصّ عند الحفظ.
  */
-export const CLUB_NEWCOMER_MAX = 250;
 
 /**
  * التزاماتُ الفصل — **سؤالٌ عامٌّ لا سؤالُ لجنة**.
@@ -510,12 +506,23 @@ const preferencesShape = {
 };
 
 const finalShape = {
-  why: z
-    .string()
-    .trim()
-    .min(1, "اكتب سبب اختيارك لهذي الرغبات")
-    .min(30, "وضّح أكثر — سطران أو ثلاثة تكفي")
-    .max(600, "اختصر إلى 600 حرف"),
+  /**
+   * ⚠️ **بلا حدٍّ أدنى ولا أقصى — بقرار الإدارة (١٥ أغسطس ٢٠٢٦).**
+   *
+   * كان أدناه ثلاثين حرفًا («وضّح أكثر — سطران أو ثلاثة تكفي») وأقصاه
+   * ستّمئة. والقرار: «ما أبي لا حدّ أدنى ولا أقصى، خلّ الطالب يكتب على
+   * راحته».
+   *
+   * وهو أصوبُ ممّا كان: الحدُّ الأدنى **يقيس الحروف لا الصدق**. من يكتب
+   * سطرًا دقيقًا يُردّ، ومن يملأ ثلاثين حرفًا بالتكرار يمرّ — فيتعلّم
+   * المتقدّم أن يُطيل لا أن يوضّح، ويصل لجنةَ الفرز حشوٌ مصنوعٌ لتجاوز
+   * عدّاد. والسقفُ يقطع على المسترسل جملتَه في نصفها.
+   *
+   * ⚠️ **و`min(1)` باقية — وهي ليست حدَّ طول.** معناها «أجب عن السؤال»
+   * لا «أطِل الجواب»: الحقل مطلوبٌ كما كان، وسببُ الاختيار أهمُّ ما
+   * تقرؤه لجنة الفرز. والعمود `text` في القاعدة بلا حدٍّ أصلًا.
+   */
+  why: z.string().trim().min(1, "اكتب سبب اختيارك لهذي الرغبات"),
 
   heardFrom: z.enum(HEARD_FROM, {
     errorMap: () => ({ message: "اختر كيف سمعت عن النادي" }),
@@ -529,25 +536,14 @@ const finalShape = {
 
   /* الحقلُ نفسه لا يُطلب هنا — يطلبه `refineFinal` ممّن قال «نعم» وحده،
      ومن قال «لا» لا يراه أصلًا فلا يُرفض على حقلٍ لم يُعرض له. */
-  clubExperienceDetails: z
-    .string()
-    .trim()
-    .max(CLUB_EXPERIENCE_MAX, `اختصر إلى ${CLUB_EXPERIENCE_MAX} حرف`)
-    .default(""),
+  /* بلا سقف — انظر التعليل عند `why` */
+  clubExperienceDetails: z.string().trim().default(""),
 
   /* ومثلُهما لمن قال «لا» — يطلبهما `refineFinal` وحده، ومن قال «نعم»
      لا يراهما فلا يُرفض على حقلٍ لم يُعرض له. */
-  clubPerception: z
-    .string()
-    .trim()
-    .max(CLUB_NEWCOMER_MAX, `اختصر إلى ${CLUB_NEWCOMER_MAX} حرف`)
-    .default(""),
+  clubPerception: z.string().trim().default(""),
 
-  clubExpectation: z
-    .string()
-    .trim()
-    .max(CLUB_NEWCOMER_MAX, `اختصر إلى ${CLUB_NEWCOMER_MAX} حرف`)
-    .default(""),
+  clubExpectation: z.string().trim().default(""),
 
   /* ⚠️ **القيمةُ مصفوفةٌ لا نصّ** — والقائمةُ مغلقة، فما لم يُعرض لا يمرّ
      ولو أُرسل يدويًّا. والعددُ والحصرُ يفحصهما `refineFinal`: الرسالةُ
@@ -684,12 +680,22 @@ function refineFinal(v: FinalValues, ctx: z.RefinementCtx): void {
     });
   }
 
+  /* ⚠️ **الفحصُ «هل أجاب» لا «كم كتب» — بقرار الإدارة (١٥ أغسطس ٢٠٢٦).**
+
+     كانت الثلاثة تردّ ما دون عشرة أحرف، فيُردّ من كتب «نادي القانون» أو
+     «أتعلّم التنظيم» — وهي أجوبةٌ كافية. والعشرةُ حدُّ طولٍ لا حدُّ معنى،
+     فذهبت مع أختيها عند `why`.
+
+     ⚠️ **وتبقى الحقول مطلوبةً كما كانت.** المخطّط الأساس يعطيها
+     `default("")` فالفارغ يمرّ منه، وهذه الفحوص هي التي تطلبها. فلو
+     حُذفت لصارت اختيارية — وذاك تغييرٌ في النموذج لا رفعٌ لحدّ. فيُقاس
+     الفراغ وحده. */
   if (hasClubExperience(v.clubExperience)) {
-    if ((v.clubExperienceDetails ?? "").trim().length < CLUB_EXPERIENCE_MIN) {
+    if ((v.clubExperienceDetails ?? "").trim() === "") {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["clubExperienceDetails"],
-        message: "اذكر الجهة ودورك فيها — سطرٌ واحد يكفي",
+        message: "اذكر الجهة ودورك فيها",
       });
     }
     return;
@@ -698,19 +704,19 @@ function refineFinal(v: FinalValues, ctx: z.RefinementCtx): void {
   /* ما لم يُجَب أصلًا يردّه `z.enum` برسالته — فلا تُضاف رسالتان لحقلٍ واحد */
   if (v.clubExperience !== CLUB_EXPERIENCE_NO) return;
 
-  if ((v.clubPerception ?? "").trim().length < CLUB_EXPERIENCE_MIN) {
+  if ((v.clubPerception ?? "").trim() === "") {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["clubPerception"],
-      message: "اكتب تصوّرك في سطرٍ واحد — لا جواب صحيح وآخر خطأ",
+      message: "اكتب تصوّرك — لا جواب صحيح وآخر خطأ",
     });
   }
 
-  if ((v.clubExpectation ?? "").trim().length < CLUB_EXPERIENCE_MIN) {
+  if ((v.clubExpectation ?? "").trim() === "") {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["clubExpectation"],
-      message: "ما الذي تتوقّع أن تعمله معنا؟ سطرٌ واحد يكفي",
+      message: "ما الذي تتوقّع أن تعمله معنا؟",
     });
   }
 }
@@ -936,10 +942,8 @@ export function validateAnswers(
         if (question.required) errors[name] = "أجب عن هذا السؤال للمتابعة";
         continue;
       }
-      if (value.length > ANSWER_MAX) {
-        errors[name] = `اختصر إلى ${ANSWER_MAX} حرف`;
-        continue;
-      }
+      /* ⚠️ **ولا سقفَ لطول الجواب** — كان ٤٠٠ حرف، ورُفع مع بقيّة الحدود
+         (١٥ أغسطس ٢٠٢٦). انظر التعليل عند `why`. */
 
       /* ⚠️ **الخيارات تُفحص على الخادم.** القائمة في المتصفّح راحةٌ للطالب،
          ومن يرسل قيمةً من خارجها يُردّ — وإلّا دخلت القاعدة قيمةٌ لا يعرفها
