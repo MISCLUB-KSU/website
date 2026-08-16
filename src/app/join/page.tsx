@@ -1,15 +1,62 @@
 import type { Metadata } from "next";
 
-import { SiteFooter } from "@/components/site/site-footer";
-import { SiteHeader } from "@/components/site/site-header";
+import { Mark } from "@/components/site/mark";
 import { PREFERENCE_VALUES } from "@/content/preferences";
 import { RegistrationForm } from "./registration-form";
 
+const JOIN_TITLE = "التقديم على عضوية نادي نظم المعلومات الإدارية";
+const JOIN_DESC =
+  "قدّم على عضوية النادي في جامعة الملك سعود — بياناتك، ثم ثلاث رغبات ترتّبها، ثم أسئلة قادتها. النتيجة على بريدك خلال أسبوع.";
+
+/**
+ * ⚠️ **بطاقةُ المشاركة تخصّ هذي الصفحة — ولم تكن كذلك.**
+ *
+ * `title` و`description` أعلاه يحكمان تبويبَ المتصفّح ونتائجَ البحث وحدها.
+ * أمّا `openGraph`/`twitter` فلا تُورَّث بالدمج: ما لم تُعرَّف هنا، تُنسخ
+ * كتلةُ الجذر كاملةً. فكان من يُرسل رابط التقديم في واتساب يرى بطاقةً
+ * تقول «MIS Club | Management Information Systems Club» و«نبني كفاءات
+ * تقنية وإدارية…» — تعريفٌ بالنادي لا دعوةٌ للتسجيل. و`og:url` كان
+ * `https://misclubksu.com` لكلّ صفحة، فبعضُ المنصّات تُرجع الزائر إلى
+ * الرئيسية بدل النموذج.
+ *
+ * ⚠️ **والعنوان هنا عربيّ خلافًا للجذر.** ذاك إنجليزيٌّ ليطابق صورةَ
+ * المشاركة الإنجليزية (التعليل في `layout.tsx`)، وهذا الرابط يُرسل في
+ * مجموعات الطلاب فيُقرأ سطرُه قبل الصورة — والدعوةُ تُفهم بالعربية.
+ *
+ * ⚠️ **والصورةُ تُذكر هنا صراحةً — ولا تُورَث.** أوّلُ محاولةٍ عرّفت
+ * `openGraph` بلا `images` ظنًّا أن صورةَ الجذر (`opengraph-image.png`)
+ * تنضمّ إليها؛ فاختفى `og:image` من الصفحة رأسًا — **بطاقةٌ بلا صورة،
+ * وهي أسوأ ممّا كانت**. مقيسٌ في الحالتين قبل الدفع.
+ *
+ * والمسارُ بلا بصمةٍ مُجزّئة: تلك تتبدّل مع كل بناء، وهذا ثابتٌ يخدمه
+ * المسارُ الملفّيّ نفسُه. و`metadataBase` في الجذر تجعله مطلقًا.
+ */
+const OG_IMAGE = {
+  url: "/opengraph-image.png",
+  width: 1200,
+  height: 630,
+  type: "image/png",
+};
+
 export const metadata: Metadata = {
   title: "انضم إلينا",
-  description:
-    "قدّم على عضوية نادي نظم المعلومات الإدارية بجامعة الملك سعود، واختر اللجنة أو الوحدة التي تناسب مهاراتك.",
+  description: JOIN_DESC,
   alternates: { canonical: "/join" },
+  openGraph: {
+    type: "website",
+    locale: "ar_SA",
+    url: "/join",
+    siteName: "نادي نظم المعلومات الإدارية",
+    title: JOIN_TITLE,
+    description: JOIN_DESC,
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: JOIN_TITLE,
+    description: JOIN_DESC,
+    images: [OG_IMAGE],
+  },
 };
 
 /**
@@ -44,12 +91,26 @@ export default async function JoinPage({ searchParams }: JoinPageProps) {
 function JoinPageBody({ initialChoice }: { initialChoice?: string }) {
   return (
     <>
-      {/* ⚠️ **كانت هذي الصفحةَ الوحيدة في الموقع بلا شريطٍ ولا تذييل.**
-          ثلاثَ عشرةَ صفحةً تستورد `SiteHeader`/`SiteFooter`، و`/join` لا
-          تستورد أيًّا منهما — فالطالب يهبط على نموذجٍ بلا شعارٍ ولا قائمةٍ
-          ولا طريقِ رجوع. وعلى الجوّال حيث لا يُرى شريطُ المتصفح أثناء
-          التمرير، هذا طريقٌ مسدود. */}
-      <SiteHeader />
+      {/* ⚠️ **صفحةُ تسجيلٍ مغلقة — بقرار الإدارة (١٦ أغسطس ٢٠٢٦).**
+          «أبي ذا الرابط بس للتسجيل، محد يقدر يطلع يتصفّح الموقع لأنه لسّه
+          ما جهز». فرُفع `SiteHeader` بقائمته وقائمةِ جوّاله، ورُفع
+          `SiteFooter` بروابطه الخمسة — ولا يخرج من هذي الصفحة رابطٌ واحد.
+
+          ⚠️ **والشعارُ باقٍ، وهو غيرُ قابلٍ للنقر عمدًا.** أُضيف الشريطُ
+          هنا في ١٥ أغسطس لأن الصفحة كانت «بلا شعارٍ ولا طريقِ رجوع»
+          فتُقرأ نموذجًا مجهولَ المصدر — ومن يُطلب منه رقمُ هويّته يحتاج أن
+          يعرف لمن يكتبه. فبقي ما يعرّف، وذهب ما يُخرج.
+
+          ويُعاد الشريطُ يوم يجهز الموقع: يُستبدل هذا العنصرُ بـ`<SiteHeader />`
+          ويُحذف التذييل المصغَّر أسفله. */}
+      <div className="border-b border-line-quiet">
+        <div className="mx-auto flex w-full max-w-5xl items-center gap-x-s3 px-5 py-s4">
+          <Mark className="h-6 w-auto text-deep dark:text-snow" />
+          <span className="text-fg-muted border-s border-line ps-s3 text-[0.78rem]">
+            نادي نظم المعلومات الإدارية · جامعة الملك سعود
+          </span>
+        </div>
+      </div>
       <main
         id="main" tabIndex={-1}
         className="mx-auto w-full max-w-5xl px-5 py-14 max-lg:py-s6 sm:py-20"
@@ -83,7 +144,21 @@ function JoinPageBody({ initialChoice }: { initialChoice?: string }) {
 
         <RegistrationForm initialChoice={initialChoice} />
       </main>
-      <SiteFooter />
+      {/* تذييلٌ يعرّف ولا يُخرج — سطرُ تواصلٍ واحد بلا روابطِ تصفّح */}
+      <footer className="border-t border-line-quiet">
+        <div className="text-fg-muted mx-auto w-full max-w-5xl px-5 py-s5 text-[0.78rem] leading-relaxed">
+          نادي نظم المعلومات الإدارية — كلية إدارة الأعمال، جامعة الملك سعود.
+          <br />
+          للاستفسار:{" "}
+          <a
+            href="mailto:misclub@ksu.edu.sa"
+            dir="ltr"
+            className="hover:text-fg underline underline-offset-4"
+          >
+            misclub@ksu.edu.sa
+          </a>
+        </div>
+      </footer>
     </>
   );
 }
