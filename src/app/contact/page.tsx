@@ -30,7 +30,7 @@ export default function ContactPage() {
     <>
       <SiteHeader />
 
-      <main>
+      <main id="main" tabIndex={-1}>
         <PageHeader
           id="contact"
           title="تواصل معنا"

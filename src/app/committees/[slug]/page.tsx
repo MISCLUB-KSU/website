@@ -47,7 +47,7 @@ export default async function CommitteePage({ params }: PageProps) {
     <>
       <SiteHeader />
 
-      <main>
+      <main id="main" tabIndex={-1}>
         <PageHeader
           id={`committee-${committee.slug}`}
           title={committee.name}

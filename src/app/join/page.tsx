@@ -51,7 +51,7 @@ function JoinPageBody({ initialChoice }: { initialChoice?: string }) {
           التمرير، هذا طريقٌ مسدود. */}
       <SiteHeader />
       <main
-        id="main"
+        id="main" tabIndex={-1}
         className="mx-auto w-full max-w-5xl px-5 py-14 max-lg:py-s6 sm:py-20"
       >
         {/* ⚠️ **الجوّال يقصّ المكرَّر لا المقاس.**

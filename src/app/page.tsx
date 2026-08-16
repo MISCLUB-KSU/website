@@ -52,7 +52,7 @@ export default function HomePage() {
       <MarkMorph />
       <SiteHeader />
 
-      <main id="main">
+      <main id="main" tabIndex={-1}>
         <Hero isOpen={isOpen} />
 
         {/* ⚠️ قسم «ما نعمل عليه» (`ProjectIndex`) حُذف بطلب الإدارة.

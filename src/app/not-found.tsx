@@ -32,7 +32,7 @@ export default function NotFound() {
       <SiteHeader />
 
       <main
-        id="main"
+        id="main" tabIndex={-1}
         className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center px-s4 py-s9 sm:px-s7"
       >
         <Mark decorative className="h-10 w-auto text-accent" />

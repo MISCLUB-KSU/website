@@ -23,7 +23,7 @@ export default function AboutPage() {
     <>
       <SiteHeader />
 
-      <main>
+      <main id="main" tabIndex={-1}>
         <PageHeader
           id="about"
           title="حول النادي"

@@ -28,7 +28,7 @@ export default function CommitteesPage() {
     <>
       <SiteHeader />
 
-      <main>
+      <main id="main" tabIndex={-1}>
         <PageHeader
           id="committees"
           title="اللجان"

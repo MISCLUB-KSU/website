@@ -37,7 +37,7 @@ export default function PostsPage() {
     <>
       <SiteHeader />
 
-      <main>
+      <main id="main" tabIndex={-1}>
         <PageHeader
           id="posts"
           title="المقالات"

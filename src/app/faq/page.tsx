@@ -47,7 +47,7 @@ export default function FaqPage() {
     <>
       <SiteHeader />
 
-      <main>
+      <main id="main" tabIndex={-1}>
         {/* الواجهة — موسّطةٌ فاتحة، لا حقلًا مائلًا داكنًا */}
         <section className="w-full px-s4 py-s9 sm:px-s7">
           <FaqHeading as="h1" id="faq-title">

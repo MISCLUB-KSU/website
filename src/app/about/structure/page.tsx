@@ -46,7 +46,7 @@ export default function StructurePage() {
     <>
       <SiteHeader />
 
-      <main>
+      <main id="main" tabIndex={-1}>
         <PageHeader
           id="structure"
           title="الهيكل الإداري"

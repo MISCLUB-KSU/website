@@ -49,7 +49,7 @@ export default function PartnershipsPage() {
       <SiteHeader />
 
       <main
-        id="main"
+        id="main" tabIndex={-1}
         className="mx-auto flex w-full max-w-3xl flex-col items-center px-s4 py-s9 text-center sm:px-s7"
       >
         <Mark decorative className="w-full max-w-sm text-mark" />

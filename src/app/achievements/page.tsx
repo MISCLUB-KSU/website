@@ -30,7 +30,7 @@ export default function AchievementsPage() {
     <>
       <SiteHeader />
 
-      <main>
+      <main id="main" tabIndex={-1}>
         <PageHeader
           id="achievements"
           title="الإنجازات"

@@ -53,7 +53,7 @@ export default function ProjectsPage() {
       <SiteHeader />
 
       <main
-        id="main"
+        id="main" tabIndex={-1}
         className="mx-auto flex w-full max-w-3xl flex-col items-center px-s4 pt-s9 pb-s7 text-center sm:px-s7"
       >
         {/* العلامة هي بطلُ الصفحة — حيّةٌ كما في صفحة الهيكل الإداري:

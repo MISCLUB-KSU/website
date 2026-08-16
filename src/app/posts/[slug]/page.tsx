@@ -49,7 +49,7 @@ export default async function PostPage({ params }: PageProps) {
     <>
       <SiteHeader />
 
-      <main className="mx-auto max-w-6xl px-s4 py-s8 sm:px-s7">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-s4 py-s8 sm:px-s7">
         <article>
           <header className="mx-auto max-w-[68ch]">
             <p className="text-sm font-semibold text-fg-muted">
