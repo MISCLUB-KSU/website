@@ -2,7 +2,7 @@ import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans_Arabic, Noto_Kufi_Arabic } from "next/font/google";
 import Script from "next/script";
-import { SITE_URL } from "@/lib/site";
+import { SHARE_DESC, SHARE_TITLE, SITE_URL } from "@/lib/site";
 
 import { MotionProvider } from "@/components/motion";
 import {
@@ -80,32 +80,22 @@ export const metadata: Metadata = {
     "نادي طلابي في جامعة الملك سعود يبني كفاءات تقنية وإدارية عبر مشاريع نوعية: MISthon، MISology، InterMission، Impact، وJob Shadowing.",
   alternates: { canonical: "/" },
   /**
-   * ⚠️ **عنوان المشاركة إنجليزيّ، وعنوان الصفحة عربيّ — واختلافُهما مقصود**
-   * (١٤ أغسطس ٢٠٢٦).
-   *
-   * صورةُ المشاركة إنجليزيةٌ بالكامل (`opengraph-image.tsx` — والسببُ تقنيّ
-   * مشروحٌ هناك). والمنصّة ترسم العنوان **سطرًا ملاصقًا** أسفل الصورة، فلو
-   * بقي عربيًّا لظهرت بطاقةٌ نصفُها إنجليزيّ ونصفُها عربيّ في سطرين
-   * متجاورين. فوُحّد اتجاهُ البطاقة.
-   *
-   * و`title` أعلاه يبقى عربيًّا: ذاك عنوان **الصفحة** في تبويب المتصفّح
-   * ونتائج البحث، والموقعُ عربيٌّ لقارئٍ عربيّ. والوصفُ يبقى عربيًّا في
-   * الاثنين — هو الجملة التي تقول ما النادي، ولا بديل إنجليزيّ لها معتمد.
+   * ⚠️ **نصّا البطاقة في `lib/site.ts` لا هنا** — لأن `/join` تعرّفهما
+   * ثانيةً (`openGraph` تُنسخ كتلةً لا تُدمج)، ونسختان تفترقان يومًا.
+   * وثمّة تعليلُ كون العنوان إنجليزيًّا وعنوانِ الصفحة عربيًّا.
    */
   openGraph: {
     type: "website",
     locale: "ar_SA",
     url: SITE_URL,
     siteName: "نادي نظم المعلومات الإدارية",
-    title: "MIS Club | Management Information Systems Club",
-    description:
-      "نبني كفاءات تقنية وإدارية عبر مشاريع نوعية تربط الطالب بسوق العمل.",
+    title: SHARE_TITLE,
+    description: SHARE_DESC,
   },
   twitter: {
     card: "summary_large_image",
-    title: "MIS Club | Management Information Systems Club",
-    description:
-      "نبني كفاءات تقنية وإدارية عبر مشاريع نوعية تربط الطالب بسوق العمل.",
+    title: SHARE_TITLE,
+    description: SHARE_DESC,
   },
   robots: { index: true, follow: true },
 };
