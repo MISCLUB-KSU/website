@@ -1,0 +1,363 @@
+/* ══ الشريط ═══════════════════════════════════════════════════════════ */
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--surface);
+  border-block-end: 1px solid var(--line);
+}
+
+.bar-in {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  max-width: 90rem;
+  margin-inline: auto;
+  padding: var(--s3) var(--s5);
+}
+
+.mark {
+  height: 1.25rem;
+  width: auto;
+  color: var(--ink-label);
+  flex-shrink: 0;
+}
+
+.bar h1 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink-label);
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin-inline-start: auto;
+  font-size: 0.8rem;
+  color: var(--ink-quiet);
+}
+
+.role {
+  padding: 0.15rem var(--s2);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  font-weight: 600;
+  color: var(--ink-label);
+}
+
+.email {
+  /* على الشاشة الضيّقة يختفي البريد ويبقى الدور وزرُّ الخروج */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 16rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 40rem) {
+  .email {
+    display: none;
+  }
+}
+
+/* ══ الصفحة ═══════════════════════════════════════════════════════════ */
+
+.page {
+  max-width: 90rem;
+  margin-inline: auto;
+  padding: var(--s5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+.tallies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+}
+
+.tally {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  min-width: 6rem;
+  padding: var(--s3) var(--s4);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  text-align: start;
+  transition: border-color var(--dur-state) var(--ease);
+}
+
+.tally:hover {
+  border-color: var(--line-control);
+}
+
+/* ⚠️ **الحالةُ المختارة تُعرَف بالحدّ والأرضية معًا، لا باللون وحده** —
+   من لا يميّز الأزرق يقرأ الحدَّ السميك. */
+.tally.on {
+  border-color: var(--action);
+  border-width: 2px;
+  background: var(--surface-sunken);
+}
+
+.tally .n {
+  font-family: var(--font-app-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--action);
+  font-variant-numeric: tabular-nums;
+}
+
+.tally .t {
+  font-size: 0.8rem;
+  color: var(--ink-quiet);
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+
+.search {
+  flex: 1 1 auto;
+  max-width: 26rem;
+}
+
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.input {
+  width: 100%;
+  min-height: var(--touch);
+  padding: 0.55rem var(--s3);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-field);
+  color: var(--ink);
+  /* 16px حدًّا أدنى: أقلُّ منها يُكبّر iOS الصفحة عند التركيز */
+  font-size: 1rem;
+}
+
+.count {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-quiet);
+}
+
+/* ══ الجدول ═══════════════════════════════════════════════════════════ */
+
+/* ⚠️ **الفيضُ داخل الغلاف لا في الصفحة.** جدولٌ بستّة أعمدة لا يدخل 375px،
+   وبلا هذا يمرّر المستخدمُ الصفحةَ كلَّها أفقيًّا — يهرب الشريطُ والعناوين. */
+.scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table th,
+.table td {
+  padding: var(--s3);
+  text-align: start;
+  border-block-end: 1px solid var(--line-quiet);
+  white-space: nowrap;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-sunken);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-label);
+  border-block-end: 1px solid var(--line);
+}
+
+.table tbody tr:hover {
+  background: var(--surface-sunken);
+}
+
+.table tr.busy {
+  opacity: 0.55;
+}
+
+.name {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-weight: 600;
+  color: var(--action);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.num,
+.when {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-quiet);
+  font-size: 0.85rem;
+}
+
+.status {
+  min-height: 2.25rem;
+  padding: 0.25rem var(--s2);
+  background: var(--surface);
+  border: 1px solid var(--line-control);
+  color: var(--ink);
+  font-size: 0.85rem;
+}
+
+/* ══ اللوح الجانبيّ ════════════════════════════════════════════════════ */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgb(15 15 15 / 0.45);
+}
+
+.sheet {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-end: 0;
+  z-index: 31;
+  width: min(30rem, 100vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-raised);
+  border-inline-start: 1px solid var(--line);
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s4) var(--s5);
+  border-block-end: 1px solid var(--line);
+}
+
+.sheet-head h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ink-label);
+  flex: 1 1 auto;
+}
+
+.sheet-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--s5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+}
+
+.pairs {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s4);
+}
+
+.pairs dt {
+  font-size: 0.75rem;
+  color: var(--ink-quiet);
+}
+
+.pairs dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ink);
+  /* ⚠️ `anywhere` لا `break-word`: الأخيرةُ لا تدخل حسابَ `min-content`،
+     فبريدٌ طويلٌ بلا مسافة يُخرج اللوح. */
+  overflow-wrap: anywhere;
+}
+
+.block h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink-label);
+  margin-block-end: var(--s2);
+}
+
+.choices {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  font-size: 0.9rem;
+}
+
+.text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: var(--lh-body);
+  overflow-wrap: anywhere;
+}
+
+.text.muted {
+  color: var(--ink-quiet);
+}
+
+.links {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3);
+}
+
+.links a {
+  color: var(--action);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* ══ حالاتٌ عامّة ══════════════════════════════════════════════════════ */
+
+.quiet {
+  min-height: var(--touch);
+  padding-inline: var(--s3);
+  border: 0;
+  background: none;
+  color: var(--action);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.error {
+  margin: 0;
+  padding: var(--s3);
+  border-inline-start: 2px solid var(--bad);
+  background: var(--surface-raised);
+  color: var(--bad);
+  font-size: 0.875rem;
+}
+
+.empty {
+  margin: 0;
+  padding: var(--s6);
+  text-align: center;
+  color: var(--ink-quiet);
+  font-size: 0.9rem;
+}

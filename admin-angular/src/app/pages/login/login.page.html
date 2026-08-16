@@ -1,0 +1,88 @@
+<main class="shell">
+  <div class="card">
+    <header class="head">
+      <!-- علامةُ النادي — نفسُ المضلّعات المقيسة من ملفّ الشعار الأصليّ،
+           لا صورةً نقطية. مصدرُها `lib/geometry.generated.ts` في الموقع. -->
+      <svg class="mark" viewBox="0 0 2701 1016" fill="currentColor" aria-hidden="true">
+        <polygon points="460,0 813,0 659.8,339 306.8,339" />
+        <polygon points="659,339 1012,339 859.2,677 506.2,677" />
+        <polygon points="153,677 506,677 352.8,1016 -0.2,1016" />
+        <polygon points="1518,0 1871,0 1411.8,1016 1058.8,1016" />
+        <polygon points="2224,0 2577,0 2347.4,508 1994.4,508" />
+        <polygon points="2347,508 2700,508 2470.4,1016 2117.4,1016" />
+      </svg>
+      <h1>لوحة التحكّم</h1>
+      <p class="lede">طلبات العضوية — نادي نظم المعلومات الإدارية</p>
+    </header>
+
+    @if (stage() === "form") {
+      <form class="form" (ngSubmit)="send()">
+        <label class="field">
+          <span class="label">بريدك</span>
+          <!-- ⚠️ `dir="ltr"` على الحقل: البريدُ لاتينيٌّ، وبلا العزل تنتقل
+               النقطةُ والعلامةُ إلى اليسار فيقرأ القائد عنوانًا مقلوبًا. -->
+          <input
+            class="input"
+            type="email"
+            name="email"
+            dir="ltr"
+            autocomplete="email"
+            inputmode="email"
+            placeholder="name@example.com"
+            [ngModel]="email()"
+            (ngModelChange)="email.set($event)"
+            [disabled]="busy()"
+            required
+          />
+        </label>
+
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+
+        <button class="action" type="submit" [disabled]="busy()">
+          {{ busy() ? "…يُرسل" : "أرسل رابط الدخول" }}
+        </button>
+
+        <p class="hint">
+          الدخولُ لفريق العمل وحده. ومن ليس في الفريق لا يُنشأ له حساب.
+        </p>
+      </form>
+    } @else {
+      <form class="form" (ngSubmit)="verify()">
+        @if (notice()) {
+          <p class="notice">{{ notice() }}</p>
+        }
+
+        <label class="field">
+          <span class="label">رمز الدخول</span>
+          <input
+            class="input code"
+            type="text"
+            name="code"
+            dir="ltr"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="6"
+            placeholder="000000"
+            [ngModel]="code()"
+            (ngModelChange)="code.set($event)"
+            [disabled]="busy()"
+          />
+        </label>
+
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+
+        <button class="action" type="submit" [disabled]="busy()">
+          {{ busy() ? "…يُتحقّق" : "ادخل" }}
+        </button>
+
+        <button class="quiet" type="button" (click)="back()" [disabled]="busy()">
+          بريدٌ آخر
+        </button>
+      </form>
+    }
+  </div>
+</main>

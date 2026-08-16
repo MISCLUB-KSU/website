@@ -1,0 +1,213 @@
+<header class="bar">
+  <div class="bar-in">
+    <svg class="mark" viewBox="0 0 2701 1016" fill="currentColor" aria-hidden="true">
+      <polygon points="460,0 813,0 659.8,339 306.8,339" />
+      <polygon points="659,339 1012,339 859.2,677 506.2,677" />
+      <polygon points="153,677 506,677 352.8,1016 -0.2,1016" />
+      <polygon points="1518,0 1871,0 1411.8,1016 1058.8,1016" />
+      <polygon points="2224,0 2577,0 2347.4,508 1994.4,508" />
+      <polygon points="2347,508 2700,508 2470.4,1016 2117.4,1016" />
+    </svg>
+    <h1>طلبات العضوية</h1>
+
+    <div class="who">
+      @if (staff(); as me) {
+        <span class="role">{{ me.role === "admin" ? "رئاسة" : "قائد" }}</span>
+      }
+      <span class="email" dir="ltr">{{ email() }}</span>
+      <button class="quiet" type="button" (click)="signOut()">خروج</button>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <!-- ⚠️ **العدّادات تخصّ نطاق قارئها.** الصفوف تصل مقصوصةً بـRLS، فما
+       يراه القائد هو حصيلةُ لجنته لا حصيلةُ النادي. -->
+  <div class="tallies">
+    <button
+      class="tally"
+      type="button"
+      [class.on]="filter() === 'all'"
+      (click)="filter.set('all')"
+    >
+      <span class="n">{{ rows().length }}</span>
+      <span class="t">الكل</span>
+    </button>
+    @for (s of statuses; track s.value) {
+      <button
+        class="tally"
+        type="button"
+        [class.on]="filter() === s.value"
+        (click)="filter.set(s.value)"
+      >
+        <span class="n">{{ tallies().get(s.value) ?? 0 }}</span>
+        <span class="t">{{ s.label }}</span>
+      </button>
+    }
+  </div>
+
+  <div class="tools">
+    <label class="search">
+      <span class="sr">ابحث</span>
+      <input
+        class="input"
+        type="search"
+        placeholder="اسم · بريد · رقم جامعي"
+        [ngModel]="query()"
+        (ngModelChange)="query.set($event)"
+      />
+    </label>
+    <button class="quiet" type="button" (click)="refresh()" [disabled]="loading()">
+      {{ loading() ? "…يُحدَّث" : "تحديث" }}
+    </button>
+  </div>
+
+  @if (loadError()) {
+    <p class="error" role="alert">{{ loadError() }}</p>
+  }
+  @if (saveError()) {
+    <p class="error" role="alert">{{ saveError() }}</p>
+  }
+
+  @if (loading() && rows().length === 0) {
+    <p class="empty">…تُجلب الطلبات</p>
+  } @else if (rows().length === 0) {
+    <!-- ⚠️ **فرقٌ بين «لا طلبات» و«لا صلاحية».** من ليس في `staff` يستقبل
+         صفرَ صفوفٍ من RLS — لا خطأ. فلو قيل له «لا توجد طلبات» لظنّ الموسم
+         لم يبدأ، وهو في الحقيقة لا يرى شيئًا. -->
+    @if (staff()) {
+      <p class="empty">لا طلبات في نطاقك بعد.</p>
+    } @else {
+      <p class="empty">
+        بريدك ليس في فريق العمل، فلا تصلك طلبات. راجع الرئاسة لإضافتك.
+      </p>
+    }
+  } @else {
+    <p class="count">
+      {{ shown().length }} من {{ rows().length }}
+    </p>
+
+    <div class="scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">الاسم</th>
+            <th scope="col">الرقم الجامعي</th>
+            <th scope="col">الجامعة</th>
+            <th scope="col">الرغبة الأولى</th>
+            <th scope="col">وصل</th>
+            <th scope="col">الحالة</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of shown(); track row.id) {
+            <tr [class.busy]="saving() === row.id">
+              <td>
+                <button class="name" type="button" (click)="open.set(row)">
+                  {{ row.full_name }}
+                </button>
+              </td>
+              <td dir="ltr" class="num">{{ row.student_id }}</td>
+              <td>{{ row.university }}</td>
+              <td>{{ row.choice1 }}</td>
+              <td class="when">{{ when(row.created_at) }}</td>
+              <td>
+                <select
+                  class="status"
+                  [value]="row.status"
+                  [disabled]="saving() === row.id"
+                  (change)="change(row, $any($event.target).value)"
+                >
+                  @for (s of statuses; track s.value) {
+                    <option [value]="s.value">{{ s.label }}</option>
+                  }
+                </select>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td class="empty" colspan="6">لا نتيجة لهذا البحث.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</main>
+
+<!-- ملفُّ المتقدّم — يُفتح بقصدٍ، وفيه وحده ما لا يُعرض في الجدول -->
+@if (open(); as row) {
+  <div class="scrim" (click)="open.set(null)" aria-hidden="true"></div>
+  <aside class="sheet" role="dialog" aria-label="ملفّ المتقدّم">
+    <header class="sheet-head">
+      <h2>{{ row.full_name }}</h2>
+      <button class="quiet" type="button" (click)="open.set(null)">إغلاق</button>
+    </header>
+
+    <div class="sheet-body">
+      <dl class="pairs">
+        <div><dt>الرقم الجامعي</dt><dd dir="ltr">{{ row.student_id }}</dd></div>
+        <!-- ⚠️ رقمُ الأحوال هنا وحدَه، ولا يُنسخ إلى سجلٍّ ولا تقرير -->
+        <div><dt>رقم الهوية</dt><dd dir="ltr">{{ row.national_id }}</dd></div>
+        <div><dt>الجوال</dt><dd dir="ltr">{{ row.phone }}</dd></div>
+        <div><dt>البريد</dt><dd dir="ltr">{{ row.email }}</dd></div>
+        <div><dt>الجامعة</dt><dd>{{ row.university_other || row.university }}</dd></div>
+        <div><dt>التخصص</dt><dd>{{ row.major_other || row.major }}</dd></div>
+        <div><dt>المستوى</dt><dd>{{ row.level }}</dd></div>
+        <div><dt>وصل</dt><dd>{{ when(row.created_at) }}</dd></div>
+      </dl>
+
+      <section class="block">
+        <h3>الرغبات</h3>
+        <ol class="choices">
+          <li>{{ row.choice1 }}</li>
+          @if (row.choice2) { <li>{{ row.choice2 }}</li> }
+          @if (row.choice3) { <li>{{ row.choice3 }}</li> }
+        </ol>
+      </section>
+
+      @if (row.why) {
+        <section class="block">
+          <h3>سبب اختياره</h3>
+          <p class="text">{{ row.why }}</p>
+        </section>
+      }
+
+      <section class="block">
+        <h3>خبرة سابقة</h3>
+        @if (row.has_club_experience) {
+          <p class="text">{{ row.club_experience || "— بلا تفصيل" }}</p>
+        } @else {
+          <p class="text muted">لا خبرة سابقة في عمل طلابي.</p>
+        }
+      </section>
+
+      @if (row.linkedin || row.portfolio) {
+        <section class="block">
+          <h3>روابط</h3>
+          <ul class="links">
+            @if (row.linkedin) {
+              <li><a dir="ltr" [href]="row.linkedin" target="_blank" rel="noreferrer">LinkedIn</a></li>
+            }
+            @if (row.portfolio) {
+              <li><a dir="ltr" [href]="row.portfolio" target="_blank" rel="noreferrer">معرض الأعمال</a></li>
+            }
+          </ul>
+        </section>
+      }
+
+      <!-- ⚠️ **المرفقاتُ لم تُنقل بعد.** تحميلُ السيرة يمرّ برابطٍ موقَّع
+           يُنشئه مسارُ Next (`/admin/cv/[id]`)، ونقلُه إلى هنا يحتاج قرارًا:
+           سياسةُ تخزينٍ تسمح للعميل بالتوقيع، أو دالّةُ حافّة. حتى ذلك
+           يُفتح المرفق من لوحة Next — وهي تعمل جنبًا إلى جنب. -->
+      @if (row.cv_path) {
+        <section class="block">
+          <h3>السيرة الذاتية</h3>
+          <p class="text muted">
+            مرفوعة — وتُفتح من لوحة Next حتى يُنقل رابطُ التحميل الموقَّع.
+          </p>
+        </section>
+      }
+    </div>
+  </aside>
+}

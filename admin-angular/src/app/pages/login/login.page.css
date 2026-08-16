@@ -1,0 +1,137 @@
+/* شاشةُ الدخول — لوحٌ واحدٌ في وسط الشاشة، بلا شريطٍ ولا تذييل.
+   لا وجهةَ يذهب إليها من لم يدخل، فكلُّ رابطٍ هنا طريقٌ مسدود. */
+
+.shell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: var(--s5);
+  background: var(--surface);
+}
+
+.card {
+  width: 100%;
+  max-width: 26rem;
+  padding: var(--s7) var(--s6);
+  background: var(--surface-raised);
+  /* حدٌّ واحد وحوافُّ حادّة — العمقُ من الفارق اللونيّ، لا من ظلّ */
+  border: 1px solid var(--line);
+}
+
+.head {
+  margin-block-end: var(--s6);
+}
+
+.mark {
+  display: block;
+  height: 1.75rem;
+  width: auto;
+  color: var(--ink-label);
+  margin-block-end: var(--s4);
+}
+
+h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ink-label);
+}
+
+.lede {
+  margin: var(--s2) 0 0;
+  font-size: 0.875rem;
+  color: var(--ink-quiet);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-label);
+}
+
+.input {
+  /* ⚠️ **الحدُّ هو ما يرسم الحقل ليلًا.** الأرضيةُ والمرفوعُ يفترقان
+     1.11:1 وحدهما، فبلا حدٍّ مرئيّ يذوب الحقل في اللوح — والرمزُ
+     `--line-field` معدٌّ لهذا في الوضعين. */
+  border: 1px solid var(--line-field);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0.7rem var(--s3);
+  /* ⚠️ **16px حدًّا أدنى على الجوّال.** أقلُّ منها يُكبِّر iOS الصفحةَ
+     تلقائيًّا عند التركيز، فتقفز اللوحةُ تحت إصبع القائد. */
+  font-size: 1rem;
+  min-height: var(--touch);
+}
+
+.input.code {
+  letter-spacing: 0.4em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.action {
+  min-height: var(--touch);
+  padding-inline: var(--s5);
+  border: 0;
+  background: var(--action);
+  color: var(--on-action);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--dur-state) var(--ease);
+}
+
+.action:hover:not(:disabled) {
+  background: var(--action-hover);
+}
+
+.action:disabled {
+  background: var(--ink-disabled);
+  cursor: not-allowed;
+}
+
+.quiet {
+  min-height: var(--touch);
+  border: 0;
+  background: none;
+  color: var(--action);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.error {
+  margin: 0;
+  padding-inline-start: var(--s3);
+  border-inline-start: 2px solid var(--bad);
+  color: var(--bad);
+  font-size: 0.875rem;
+  line-height: var(--lh-body);
+}
+
+.notice {
+  margin: 0;
+  padding-inline-start: var(--s3);
+  border-inline-start: 2px solid var(--line-control);
+  color: var(--ink-quiet);
+  font-size: 0.875rem;
+  line-height: var(--lh-body);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-quiet);
+  line-height: var(--lh-body);
+}

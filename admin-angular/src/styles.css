@@ -1,0 +1,77 @@
+/* ==========================================================================
+   لوحةُ التحكّم — Angular
+
+   ⚠️ **الرموزُ تُستورَد من الموقع ولا تُنسخ.** المسارُ يخرج من مجلّد هذا
+   التطبيق إلى `src/app/tokens.generated.css` في مشروع Next — وهو **المصدرُ
+   الوحيد** المولَّد من `brand/v2/tokens.css`. ولو نُسخت الرموزُ هنا لصار
+   للنادي لوحتا ألوانٍ تفترقان أوّلَ ما تُعدَّل إحداهما، ولا أحدَ يفتح
+   الاثنتين ليقارن — وهي غلطةٌ لا تُكتشف بالنظر.
+
+   وهذا أحدُ سببَي وضعِ التطبيق في المستودع نفسِه: الرموزُ تُشارَك بمسارٍ
+   نسبيّ لا بحزمةٍ تُنشر وتُحدَّث يدويًّا.
+   ========================================================================== */
+
+@import "../../src/app/tokens.generated.css";
+
+/* ==========================================================================
+   الخطّان — من Google مباشرةً لا عبر `next/font`.
+
+   ⚠️ **وهذا فرقٌ مقصودٌ عن الموقع، لا سهو.** الموقعُ يستضيف خطَّيه ذاتيًّا
+   ليمنع طلبًا لخادمٍ خارجيّ عن **زائرٍ عامّ**؛ ولوحةُ التحكّم خلف تسجيل
+   دخولٍ يستعملها عشرةُ أشخاص، فالمقايضةُ تنقلب: بناءٌ أبسط بلا خطوةِ
+   تنزيلٍ وتخزين. ويوم تُنقل اللوحةُ إلى نطاق النادي تُستضاف ذاتيًّا مثلَه.
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@600;700&display=swap");
+
+:root {
+  --font-app-display: "Noto Kufi Arabic", system-ui, sans-serif;
+  --font-app-text: "IBM Plex Sans Arabic", system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-app-text);
+  /* العربية تحتاج فسحةً بين السطور أكبرَ من اللاتينية — التعليل بالأرقام
+     في `tokens.generated.css` عند `--lh-body`. */
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-app-display);
+  line-height: var(--lh-head);
+  margin: 0;
+}
+
+/* ⚠️ **حلقةُ التركيز لا تُلغى.** لوحةٌ تُستعمل بالكيبورد أكثرَ من الفأرة —
+   القائد يمرّ على عشرات الصفوف. و`:focus-visible` وحدها فلا تظهر للفأرة. */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* حوافُّ حادّة: قاعدةُ الهوية `--radius: 0`. لا يُستثنى منها هنا شيء. */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+  border-radius: 0;
+}
