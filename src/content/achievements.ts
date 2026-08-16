@@ -17,7 +17,7 @@
  * يُنتج رقمًا لا يقابله شيء.
  */
 
-import { FOUNDED_YEAR, PARTNERS } from "./about";
+import { FOUNDED_YEAR } from "./about";
 
 export type Achievement = {
   /** الرقم وحده — لا يُعاد تنسيقه ولا يُقرَّب */
@@ -51,5 +51,8 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
 /** سطر السياق تحت العنوان — سنة التأسيس من الملف التعريفي الرسمي. */
 export const FOUNDED = FOUNDED_YEAR;
 
-/** الشراكات المكتملة — تُعرض كما هي في `about.ts`، بما قدّمته كل جهة. */
-export const DELIVERED_PARTNERSHIPS = PARTNERS;
+/* ⚠️ **`DELIVERED_PARTNERSHIPS` حُذف** (١٦ أغسطس ٢٠٢٦) — كان تسميةً ثانيةً
+   لـ`PARTNERS` تخدم قسم «شراكات اكتملت» في `/achievements`، ورُفع القسمُ
+   بقرار الإدارة فلم يبقَ له مستهلك. و`PARTNERS` نفسُها في `about.ts` باقيةٌ
+   لم تُمسّ، وشعاراتُ الشركاء ما تزال في الرئيسية عبر `ALL_PARTNERS`.
+   ولإعادته: سطرٌ واحدٌ هنا، وجسمُ القسم في التزام رفعه. */

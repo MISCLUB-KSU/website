@@ -26,13 +26,15 @@ import { SiteHeader } from "@/components/site/site-header";
  *
  * ⚠️ **وبيانات `content/about.ts` لم تُمسّ ولا تُمسّ.** ومنها ما **زال
  * معروضًا في مكانٍ آخر**، فلا يُظنّ أنها ماتت برفع هذي الصفحة:
- *   · `PARTNERS` (جاهز · علم · مزن) تُعرض في **`/achievements`** تحت
- *     «شراكات اكتملت» — عبر `DELIVERED_PARTNERSHIPS` في `achievements.ts`.
- *   · `ALL_PARTNERS` (شعارات الشركاء) تُعرض في الصفحة الرئيسية.
- *   · `PARTNERSHIP_TRACKS` وحدها هي التي بقيت بلا مستهلك — وتبقى للعودة.
+ *   · `ALL_PARTNERS` (شعارات الشركاء) تُعرض في الصفحة الرئيسية — وهي
+ *     الموضعُ الوحيد الباقي بعد ١٦ أغسطس ٢٠٢٦.
+ *   · `PARTNERS` (جاهز · علم · مزن) كانت تُعرض في **`/achievements`** تحت
+ *     «شراكات اكتملت»، ورُفع ذلك القسمُ بقرار الإدارة. فالبياناتُ باقيةٌ
+ *     بلا مستهلك، مثلُها مثل `PARTNERSHIP_TRACKS` — وكلاهما يبقى للعودة.
  *
- * ⚠️ **فرفعُ هذي الصفحة لا يُخفي أسماء الشركاء عن الموقع.** إن كان
- * المقصود إخفاءهم فالموضعان أعلاه هما المقصودان — يُرفع للإدارة.
+ * ⚠️ **فرفعُ هذي الصفحة لا يُخفي أسماء الشركاء عن الموقع.** بقيت الرئيسيةُ
+ * تعرض شعاراتهم. إن كان المقصود إخفاءهم فذاك الموضعُ هو المقصود — يُرفع
+ * للإدارة صراحةً ولا يُستنتج.
  */
 
 export const metadata: Metadata = {
@@ -49,7 +51,8 @@ export default function PartnershipsPage() {
       <SiteHeader />
 
       <main
-        id="main" tabIndex={-1}
+        id="main"
+        tabIndex={-1}
         className="mx-auto flex w-full max-w-3xl flex-col items-center px-s4 py-s9 text-center sm:px-s7"
       >
         <Mark decorative className="w-full max-w-sm text-mark" />

@@ -4,18 +4,16 @@ import Link from "next/link";
 import { PageHeader } from "@/components/site/page-header";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
-import {
-  ACHIEVEMENTS,
-  DELIVERED_PARTNERSHIPS,
-  FOUNDED,
-} from "@/content/achievements";
+import { ACHIEVEMENTS, FOUNDED } from "@/content/achievements";
 import { isolateLatin } from "@/lib/bidi";
 import { CountUp } from "@/components/site/mobile-motion";
 
 export const metadata: Metadata = {
   title: "الإنجازات",
+  /* ⚠️ «والشراكات المكتملة» حُذفت من الوصف مع حذف قسمها — الوصفُ يَعِد
+     محرّكَ البحث بما في الصفحة، فبقاؤه يعد بما لم يعد فيها. */
   description:
-    "ما أنجزه نادي نظم المعلومات الإدارية بجامعة الملك سعود بأرقامه: مستفيدو المشاريع، والمشاركون، والشراكات المكتملة.",
+    "ما أنجزه نادي نظم المعلومات الإدارية بجامعة الملك سعود بأرقامه: مستفيدو المشاريع والمشاركون، كل رقم بمصدره.",
   alternates: { canonical: "/achievements" },
 };
 
@@ -70,41 +68,29 @@ export default function AchievementsPage() {
             ))}
           </ul>
 
-          <section className="mt-s8 border-t border-line pt-s6">
-            <h2 className="font-display text-xl font-semibold text-fg">
-              شراكات اكتملت
-            </h2>
-            <p className="mt-s2 max-w-measure text-sm leading-relaxed text-fg-muted">
-              جهات تعاونت مع النادي فعلًا — لا شعارات بلا مضمون. وما زال قيد
-              التواصل لا يُعرض هنا حتى يكتمل.
-            </p>
+          {/* ⚠️ **«شراكات اكتملت» رُفعت — بقرار الإدارة (١٦ أغسطس ٢٠٢٦).**
+              كانت هنا ثلاثُ جهاتٍ باسمها وما قدّمته، مصدرُها
+              `DELIVERED_PARTNERSHIPS` في `achievements.ts` — وقد حُذف معها
+              إذ لم يبقَ له مستهلك. وبياناتُ `PARTNERS` في `about.ts` لم
+              تُمسّ، فتعود الكتلةُ من هذا الالتزام متى طُلبت.
 
-            <ul className="mt-s5 grid gap-s4 sm:grid-cols-3">
-              {DELIVERED_PARTNERSHIPS.map((partner) => (
-                <li
-                  key={partner.name}
-                  className="border-s-2 border-line-strong ps-s3"
-                >
-                  <p className="text-[0.95rem] font-semibold text-fg">
-                    {isolateLatin(partner.name)}
-                  </p>
-                  <p className="mt-1 text-[0.84rem] leading-relaxed text-fg-muted">
-                    {isolateLatin(partner.contribution)}
-                  </p>
-                </li>
-              ))}
-            </ul>
+              ⚠️ **ولا يُخفي هذا أسماءَ الشركاء عن الموقع.** شعاراتُهم ما
+              تزال في الرئيسية عبر `ALL_PARTNERS` — وهو الموضعُ الثاني
+              والأخير. فإن كان المقصودُ إخفاءهم بالكامل فذاك قرارٌ آخر
+              يُطلب صراحةً، ولا يُستنتج من رفع هذي الكتلة. */}
 
-            <p className="mt-s6 text-sm text-fg-muted">
-              تبحث عن تفاصيل كل مشروع ومخرجاته؟{" "}
-              <Link
-                href="/projects"
-                className="font-medium text-accent underline decoration-line-control underline-offset-4 transition-colors hover:text-accent-hover hover:decoration-current"
-              >
-                صفحة المشاريع
-              </Link>
-            </p>
-          </section>
+          {/* ورابطُ المشاريع باقٍ: هو تنقّلٌ لا شراكة، وحذفُه يُنهي الصفحةَ
+              عند آخر بطاقةِ رقمٍ بلا طريقٍ إلى تفصيلها. وحملَ الحدَّ العلويَّ
+              الذي كان للقسم المرفوع، فلا ينطبق على ما فوقه بلا فاصل. */}
+          <p className="mt-s8 border-t border-line pt-s6 text-sm text-fg-muted">
+            تبحث عن تفاصيل كل مشروع ومخرجاته؟{" "}
+            <Link
+              href="/projects"
+              className="font-medium text-accent underline decoration-line-control underline-offset-4 transition-colors hover:text-accent-hover hover:decoration-current"
+            >
+              صفحة المشاريع
+            </Link>
+          </p>
         </div>
       </main>
 
