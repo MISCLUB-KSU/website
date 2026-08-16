@@ -1,6 +1,6 @@
 import { CommitteeMark } from "@/components/site/committee-mark";
 import { COMMITTEES } from "@/content/committees";
-import { PROJECTS } from "@/content/projects";
+import { OPEN_PROJECTS, PROJECTS } from "@/content/projects";
 import { isolateLatin } from "@/lib/bidi";
 
 /**
@@ -57,7 +57,22 @@ function Entry({ name, description, meta }: EntryProps) {
 }
 
 export function PreferenceGuide() {
-  const projects = PROJECTS.filter((project) => !project.isExternal);
+  /**
+   * ⚠️ **يُعرَض ما **يُختار**، لا ما ليس خارجيًّا.** كان الفلتر
+   * `!project.isExternal`، وكان يكفي حين كانت الرايةُ هي ما يُقصي من
+   * الرغبات. وقد صار الإقصاءُ من `applicationState` (١٥ أغسطس)، ثم رُفعت
+   * الرايةُ عن `learnx` حين صُحِّح تصنيفُها وأُضيف مشروعان مغلقان (١٦
+   * أغسطس) — فلو بقي الفلتر على حاله لَعرض هذا الدليلُ **ثلاثةَ مشاريعَ
+   * لا توجد لها بطاقةُ اختيار**. والدليلُ يُقرأ قبل الاختيار، فذكرُ ما لا
+   * يُختار فيه يجعل الطالب يبحث عن بطاقةٍ لا وجود لها.
+   *
+   * و`OPEN_PROJECTS` هي المصدرُ نفسُه الذي تُبنى منه البطاقات
+   * (`OPEN_PREFERENCES` في `preferences.ts` تشتقّ من الشرط ذاته)، فلا
+   * يفترق المعروضُ هنا عمّا يُعرض هناك بتعديلٍ يُنسى في أحدهما.
+   */
+  const projects = OPEN_PROJECTS;
+  /* تبقى للمبادرة التي ليست لنا — ولا واحدة اليوم، والمجموعة محروسةٌ
+     بـ`length > 0` فلا يظهر عنوانٌ فارغ. */
   const initiatives = PROJECTS.filter((project) => project.isExternal);
 
   return (
