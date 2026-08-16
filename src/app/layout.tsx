@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans_Arabic, Noto_Kufi_Arabic } from "next/font/google";
 import Script from "next/script";
@@ -68,8 +69,6 @@ const kufi = Noto_Kufi_Arabic({
   weight: ["600", "700"],
   display: "swap",
 });
-
-
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -185,6 +184,28 @@ export default function RootLayout({ children }: RootLayoutProps) {
         {/* طبقة الحركة — تُوقف نفسها لمن طلب تقليل الحركة. لا تُخفي محتوى:
             انظر القاعدة في رأس `components/motion.tsx`. */}
         <MotionProvider>{children}</MotionProvider>
+        {/**
+         * **تحليلات Vercel** — عدّادُ زوّارٍ وصفحات، طلبته الإدارة (١٦ أغسطس
+         * ٢٠٢٦). يُقاس به أثرُ نشر رابط التقديم: كم فتحه، ومن أي صفحة جاء.
+         *
+         * ⚠️ **ولا يُرسل من العنوان إلّا المسار — لا وسائطه.** فُحص المصدرُ
+         * قبل التركيب لا الوثائق: `pageview` ترسل `{ route, path }` وحدهما،
+         * و`path` هو `usePathname()` أي بلا `?query`. أمّا `useSearchParams`
+         * فتُقرأ لغرضٍ واحد: تعميمُ المسار — تُستبدل **قيمةُ** الوسيط في
+         * المسار باسمه بين قوسين (`computeRoute`)، فلا تخرج القيمة.
+         *
+         * ويهمّنا هذا في هذا الموقع تحديدًا: `‎/join?choice=project:misology`
+         * رابطٌ يُرسل في مجموعات الطلاب. والبياناتُ الحسّاسة لا تمرّ بعنوانٍ
+         * أصلًا — النموذج `POST`، ولوحةُ الإدارة خلف تحقّق.
+         *
+         * ⚠️ **ولا يُحمَّل شيءٌ في التطوير.** الوضعُ `auto` يقرأ `NODE_ENV`
+         * فيسجّل في الطرفية بدل أن يُرسل، فلا تُلوَّث الأرقامُ بتصفّحنا.
+         *
+         * ويُخدَم النصُّ من `‎/_vercel/insights/script.js` — أصلُ الموقع نفسُه
+         * لا نطاقٌ خارجيّ، فلا حظرَ من مانعات الإعلانات ولا حاجةَ لتخفيف
+         * سياسة المصادر يوم تُضاف.
+         */}
+        <Analytics />
       </body>
     </html>
   );
