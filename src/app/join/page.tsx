@@ -114,11 +114,48 @@ function JoinPageBody({ initialChoice }: { initialChoice?: string }) {
 
           ويُعاد الشريطُ يوم يجهز الموقع: يُستبدل هذا العنصرُ بـ`<SiteHeader />`
           ويُحذف التذييل المصغَّر أسفله. */}
+      {/* ⚠️ **الشعارُ الكامل — علامةٌ وكلمةٌ وفاصل** (١٦ أغسطس ٢٠٢٦، بطلب
+          الإدارة بصورة الشعار الرسميّة). كان هنا العلامةُ وحدها يليها سطرٌ
+          عربيّ، فصار التركيبَ المعتمد: العلامة · خطٌّ رأسيّ · «MANAGEMENT
+          INFORMATION SYSTEM CLUB» ثلاثةَ أسطر.
+
+          ⚠️ **وهو مبنيٌّ بالنصّ والـSVG لا صورةً نقطية.** الصورةُ المرسلة
+          خلفيّتُها سوداءُ مصمتة وفيها تدرّجٌ معدنيّ — تُقحم مستطيلًا أسودَ
+          في شريطٍ فاتح، ولا تنقلب مع الوضع الداكن، وتتشقّق على شاشات
+          الكثافة العالية. والمبنيُّ هنا يأخذ لونه من `currentColor` فينقلب
+          وحده، ويبقى حادًّا عند أي مقاس، ولا يزن بايتًا واحدًا فوق ما
+          حُمِّل أصلًا.
+
+          ⚠️ **والسطرُ العربيّ لم يُحذف بل انتقل إلى الطرف الآخر.** من
+          يُطلب منه رقمُ هويّته يحتاج أن يعرف لمن يكتبه — وصفحةٌ عربيّةٌ
+          كاملةً لا يُعرّفها سطرٌ إنجليزيّ وحده. ويختفي تحت `sm` لضيق
+          الشريط لا لقلّة أهمّيته، والعلامةُ نفسُها تحمل الاسمَ العربيَّ في
+          `aria-label` فلا يفقده قارئُ الشاشة في أي مقاس. */}
       <div className="border-b border-line-quiet">
-        <div className="mx-auto flex w-full max-w-5xl items-center gap-x-s3 px-5 py-s4">
-          <Mark className="h-6 w-auto text-deep dark:text-snow" />
-          <span className="text-fg-muted border-s border-line ps-s3 text-[0.78rem]">
-            نادي نظم المعلومات الإدارية · جامعة الملك سعود
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-x-s4 px-5 py-s4">
+          {/* ⚠️ **`dir="ltr"` — والشعارُ لا ينعكس مع الصفحة.** الصفحةُ
+              `rtl`، فبلا هذا يقفز المربّعُ إلى اليمين والكلمةُ إلى يساره:
+              ترتيبٌ يقلب الشعارَ الرسميَّ رأسًا على عقب. والشعارُ رسمٌ
+              ثابت لا نصٌّ يتبع اتّجاه القراءة — يُقرأ كما اعتُمد في كل
+              لغة. والكلمةُ نفسُها لاتينيّةٌ فاتجاهُها `ltr` أصلًا. */}
+          <div
+            dir="ltr"
+            className="text-deep dark:text-snow flex items-center gap-x-s3"
+          >
+            <Mark className="h-9 w-auto" />
+            <span aria-hidden className="bg-line h-8 w-px shrink-0" />
+            {/* الكلمةُ ثلاثةَ أسطرٍ كما في الشعار الرسميّ — و`leading` ضيّقٌ
+                يجمعها كتلةً واحدة بارتفاع العلامة نفسِها */}
+            <span className="text-[0.6rem] leading-[1.25] font-bold tracking-[0.04em] uppercase">
+              Management
+              <br />
+              Information
+              <br />
+              System Club
+            </span>
+          </div>
+          <span className="text-fg-muted shrink-0 text-[0.78rem] max-sm:hidden">
+            جامعة الملك سعود
           </span>
         </div>
       </div>
