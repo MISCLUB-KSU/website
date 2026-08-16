@@ -383,6 +383,18 @@ type FileFieldProps = React.InputHTMLAttributes<HTMLInputElement> & {
   hint?: React.ReactNode;
   required?: boolean;
   optional?: boolean;
+  /**
+   * فحصُ الملفّ **في المتصفّح لحظةَ اختياره** — لا عند الإرسال.
+   *
+   * ⚠️ **سابقٌ لفحص الخادم لا بديلٌ عنه.** الخادم يفحص كما كان
+   * (`validateCvFile` في `actions.ts`)، فالواجهةُ تُتجاوَز باستدعاءٍ مباشر.
+   * وهذا يوفّر على الطالب **رفعَ ملفٍّ سيُردّ**: قِيس على ٣ ميجا فكان
+   * يُرفع كاملًا ثم يعود الجواب «حجمه أكبر من ٢ ميجابايت» — وعلى بيانات
+   * الجوّال في موسمٍ يزيد على ٦٠٠ متقدّم، ذاك انتظارٌ وباقةٌ بلا مقابل.
+   *
+   * وتُمرَّر الدالّةُ نفسُها التي يستعملها الخادم فلا تفترق الرسالتان.
+   */
+  validate?: (file: File) => string | undefined;
 };
 
 /**
@@ -402,11 +414,14 @@ export function FileField({
   optional,
   className = "",
   onChange,
+  validate,
   ...rest
 }: FileFieldProps) {
   const hintId = `${id}-hint`;
   const ref = useRef<HTMLInputElement>(null);
   const [kept, setKept] = useState<File | null>(null);
+  /* خطأُ الواجهة — يُعرض فورًا، ويعلوه خطأُ الخادم إن وصل */
+  const [localError, setLocalError] = useState<string | undefined>();
 
   /**
    * ⚠️ **إعادةُ إلصاق الملفّ بعد أن تُصفّره React — وضياعُه كلّفنا طلبًا.**
@@ -435,6 +450,9 @@ export function FileField({
     input.files = box.files;
   });
 
+  /* ⚠️ خطأُ الخادم يعلو: هو الحكمُ النهائيّ، والواجهةُ ترشيحٌ سابقٌ له */
+  const shown = error ?? localError;
+
   return (
     <div>
       <Label htmlFor={id} required={required} optional={optional}>
@@ -447,13 +465,15 @@ export function FileField({
         type="file"
         required={required}
         onChange={(event) => {
-          setKept(event.target.files?.[0] ?? null);
+          const picked = event.target.files?.[0] ?? null;
+          setKept(picked);
+          setLocalError(picked && validate ? validate(picked) : undefined);
           onChange?.(event);
         }}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error || hint ? hintId : undefined}
+        aria-invalid={shown ? true : undefined}
+        aria-describedby={shown || hint ? hintId : undefined}
         className={
-          `${BASE} cursor-pointer py-2.5 ${error ? INVALID : ""} ` +
+          `${BASE} cursor-pointer py-2.5 ${shown ? INVALID : ""} ` +
           "file:me-3 file:min-h-[30px] file:cursor-pointer file:border-0 " +
           "file:bg-bg-sunken file:px-3 file:py-1.5 file:text-[0.875rem] " +
           "file:font-semibold file:text-accent " +
@@ -464,12 +484,13 @@ export function FileField({
       {/* ⚠️ **اسمُ الملفّ مكتوبٌ بنصّنا لا بنصّ المتصفّح.** ذاك يقول «لم
           يُختر ملفّ» بلغة الجهاز ويتبدّل بين المتصفّحات، وهذا يؤكّد للطالب
           أن مرفقَه ما زال معه بعد أن رُدّ بخطأ في حقلٍ آخر. */}
-      {kept && (
+      {/* لا يُطمأن الطالبُ على مرفقٍ مرفوض — فيُكتم السطر عند الخطأ */}
+      {kept && !shown && (
         <p className="mt-1.5 text-[0.8rem] text-fg-muted">
           مرفقٌ الآن: <span dir="auto">{kept.name}</span>
         </p>
       )}
-      <Hint id={hintId} error={error}>
+      <Hint id={hintId} error={shown}>
         {hint}
       </Hint>
     </div>

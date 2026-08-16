@@ -29,6 +29,8 @@ import {
   COMMITMENT_NONE,
   CV_ACCEPT,
   CV_MAX_MB,
+  validateAnswerFile,
+  validateCvFile,
   hasClubExperience,
   HEARD_FROM,
 } from "@/lib/registration";
@@ -128,6 +130,7 @@ function AnswerField({
         name={name}
         label={question.label}
         accept={ANSWER_FILE_ACCEPT}
+        validate={validateAnswerFile}
         required={question.required}
         optional={!question.required}
         error={e[name]}
@@ -699,6 +702,7 @@ export function StepQuestions({
           id="projectsFile"
           label="ارفع ملفًا"
           accept={CV_ACCEPT}
+          validate={validateCvFile}
           error={e.projectsFile}
           hint={
             <>
@@ -741,6 +745,7 @@ export function StepQuestions({
           id="cv"
           label="ارفع ملفًا"
           accept={CV_ACCEPT}
+          validate={validateCvFile}
           error={e.cv}
           hint={
             <>
