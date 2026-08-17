@@ -818,7 +818,7 @@ export function StepQuestions({
           طمأنةٌ تُقرأ مرّةً لا شارةٌ تلزم البقاء. والحاسب لا يتغيّر: نسخةُ
           الشريط `hidden lg:block` وهذه `lg:hidden`، فلا تظهران معًا. */}
       <p className="text-[0.875rem] text-fg-muted lg:hidden">
-        تصلك النتيجة على واتساب خلال أسبوع.
+        تصلك النتيجة خلال أسبوعين عمل.
       </p>
     </StepPanel>
   );
