@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Mark } from "@/components/site/mark";
+import { CONTACT_EMAIL } from "@/content/contact";
 import { PREFERENCE_VALUES } from "@/content/preferences";
 import { SHARE_DESC, SHARE_TITLE } from "@/lib/site";
 import { RegistrationForm } from "./registration-form";
@@ -199,12 +200,14 @@ function JoinPageBody({ initialChoice }: { initialChoice?: string }) {
           نادي نظم المعلومات الإدارية — كلية إدارة الأعمال، جامعة الملك سعود.
           <br />
           للاستفسار:{" "}
+          {/* ⚠️ من `content/contact.ts` لا مكتوبًا هنا — كان منسوخًا باليد
+              فتخلّف عن التذييل العامّ حين تغيّر العنوان. */}
           <a
-            href="mailto:misclub@ksu.edu.sa"
+            href={`mailto:${CONTACT_EMAIL}`}
             dir="ltr"
             className="hover:text-fg underline underline-offset-4"
           >
-            misclub@ksu.edu.sa
+            {CONTACT_EMAIL}
           </a>
         </div>
       </footer>
