@@ -192,7 +192,8 @@ export async function submitRegistration(
     ],
     /* ⚠️ **`getAll` لا `get`.** الاختيار المتعدّد يرسل قيمةً لكل مربّعٍ
        مؤشَّر بالاسم نفسه، و`get` يعيد الأولى فتضيع البقيّة صامتةً. */
-    (name) => formData.getAll(name).map((v) => (typeof v === "string" ? v : "")),
+    (name) =>
+      formData.getAll(name).map((v) => (typeof v === "string" ? v : "")),
     (name) => formData.get(name),
   );
   Object.assign(errors, answers.errors);
@@ -277,11 +278,7 @@ export async function submitRegistration(
       applicationReceived({
         fullName: parsed.data.fullName,
         email: parsed.data.email,
-        choices: [
-          parsed.data.choice1,
-          parsed.data.choice2,
-          parsed.data.choice3,
-        ]
+        choices: [parsed.data.choice1, parsed.data.choice2, parsed.data.choice3]
           .filter(Boolean)
           .map((value) => findPreference(value)?.fullLabel ?? value),
       }),
@@ -300,7 +297,12 @@ export async function submitRegistration(
     ok: true,
     errors: {},
     values: {},
-    message: "وصل طلبك. سنراسلك على بريدك خلال أسبوع.",
+    /* ⚠️ **قناتان لا واحدة (١٦ أغسطس ٢٠٢٦، بقرار الإدارة: «القبول راح يكون
+       على الواتس»).** الإيصالُ بريدٌ يخرج من هنا، والنتيجةُ تُرسَل يدويًّا
+       على واتساب. وكانت الرسالة تعِد بالبريد للاثنين — فمن ينتظر نتيجته في
+       بريده ينتظر ما لا يأتي. */
+    message:
+      "وصل طلبك، ويصلك إيصالٌ على بريدك. والنتيجة على واتساب خلال أسبوع.",
     /* ما وصل فعلًا — تقرؤه شاشةُ النجاح فتقول للطالب أوصلت سيرتُه أم لا.
        يُقاس من `formData` لا من نتيجة الرفع: الرفعُ قد يفشل بعدها ويُسجَّل،
        أمّا هذا فيجيب عن السؤال الذي أخطأنا فيه — **هل أرسلها أصلًا؟** */
@@ -388,14 +390,12 @@ async function saveApplication(
       /* ومقابلُهما لمن قال «لا» — `null` لمن قال «نعم»، بالمنطق نفسِه:
          الحقلُ الذي لم يُعرض لا يُحفظ سلسلةً فارغة تُقرأ إجابةً خاوية.
          والقاعدة تفرض هذا التقابل بقيدٍ صريح، فلا يُخالَف من هنا. */
-      club_perception:
-        hasClubExperience(data.clubExperience)
-          ? null
-          : data.clubPerception,
-      club_expectation:
-        hasClubExperience(data.clubExperience)
-          ? null
-          : data.clubExpectation,
+      club_perception: hasClubExperience(data.clubExperience)
+        ? null
+        : data.clubPerception,
+      club_expectation: hasClubExperience(data.clubExperience)
+        ? null
+        : data.clubExpectation,
       commitments: data.commitments,
       answers: attachments.answers,
       portfolio: data.portfolio || null,

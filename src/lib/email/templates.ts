@@ -78,8 +78,7 @@ ${body}
 }
 
 /** فقرةٌ بمقاسٍ موحّد */
-const p = (text: string) =>
-  `<p style="margin:0 0 14px;">${text}</p>`;
+const p = (text: string) => `<p style="margin:0 0 14px;">${text}</p>`;
 
 /** صندوقُ تفصيلٍ جانبيّ — الرغبات ونحوها */
 const box = (rows: string) =>
@@ -115,7 +114,10 @@ export function applicationReceived(a: ApplicantMail): Mail {
       p("<strong>وصل طلبك للعضوية</strong> واستلمناه.") +
       (a.choices.length ? box(list) : "") +
       p(
-        "نراجع الطلبات ونرسل النتيجة على بريدك <strong>خلال أسبوع</strong>. لا حاجة لإعادة التقديم.",
+        /* ⚠️ **هذي رسالةُ الإيصال، والنتيجةُ لا تأتي بها** (١٦ أغسطس ٢٠٢٦).
+           كانت تقول «نرسل النتيجة على بريدك»، وهي أخطرُ المواضع الستّة: من
+           يقرؤها يستنتج أن هذا الصندوق هو موضعُ الجواب، فلا ينتبه لجوّاله. */
+        "نراجع الطلبات ونرسل النتيجة على <strong>واتساب</strong> خلال أسبوع، على الرقم الذي كتبته. لا حاجة لإعادة التقديم.",
       ) +
       p(
         `<span style="color:${MUTED};">إن لم يكن هذا الطلب منك، تجاهل هذي الرسالة.</span>`,
@@ -131,7 +133,7 @@ export function applicationReceived(a: ApplicantMail): Mail {
         `${["الرغبة الأولى", "الرغبة الثانية", "الرغبة الثالثة"][i] ?? "رغبة"}: ${c}`,
     ),
     "",
-    "نراجع الطلبات ونرسل النتيجة على بريدك خلال أسبوع. لا حاجة لإعادة التقديم.",
+    "نراجع الطلبات ونرسل النتيجة على واتساب خلال أسبوع، على الرقم الذي كتبته. لا حاجة لإعادة التقديم.",
     "",
     `${CLUB} — ${SITE_URL}`,
   ].join("\n");
@@ -162,7 +164,9 @@ export function applicationDecision(
   a: ApplicantMail & { status: NotifiableStatus; referredTo?: string },
 ): Mail {
   if (a.status === "accepted") {
-    const where = a.choices[0] ? ` في <strong>${place(a.choices[0])}</strong>` : "";
+    const where = a.choices[0]
+      ? ` في <strong>${place(a.choices[0])}</strong>`
+      : "";
     return {
       to: a.email,
       subject: `قُبل طلبك — ${CLUB}`,
@@ -188,7 +192,9 @@ export function applicationDecision(
   }
 
   if (a.status === "referred") {
-    const to = a.referredTo ? `<strong>${place(a.referredTo)}</strong>` : "جهةٍ أخرى";
+    const to = a.referredTo
+      ? `<strong>${place(a.referredTo)}</strong>`
+      : "جهةٍ أخرى";
     return {
       to: a.email,
       subject: `تحديث على طلبك — ${CLUB}`,

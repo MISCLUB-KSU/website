@@ -245,10 +245,21 @@ function Kpis({
   avg: number;
 }) {
   const cards = [
-    { label: "بانتظار المراجعة", value: waiting, of: total, tint: "var(--color-warning)" },
+    {
+      label: "بانتظار المراجعة",
+      value: waiting,
+      of: total,
+      tint: "var(--color-warning)",
+    },
     { label: "حُسم", value: decided, of: total, tint: "var(--color-success)" },
     { label: "بسيرة ذاتية", value: withCv, of: total, tint: "var(--d-cyan)" },
-    { label: "متوسّط الاكتمال", value: avg, of: 100, tint: "var(--primary)", pctOnly: true },
+    {
+      label: "متوسّط الاكتمال",
+      value: avg,
+      of: 100,
+      tint: "var(--primary)",
+      pctOnly: true,
+    },
   ];
   return (
     /* ⚠️ **على الجوّال صفٌّ يُسحب لا شبكةُ ٢×٢.** الشبكةُ كانت تأكل ≈300px
@@ -269,13 +280,21 @@ function Kpis({
             <div className="flex items-center gap-x-s3 px-s4 py-s3">
               <Arc pct={pct} color={c.tint} size={44} />
               <div className="min-w-0">
-                <p className="text-fg-muted truncate text-[0.72rem]">{c.label}</p>
+                <p className="text-fg-muted truncate text-[0.72rem]">
+                  {c.label}
+                </p>
                 <p className="flex items-baseline gap-x-s2">
-                  <span dir="ltr" className="text-xl leading-none font-bold tabular-nums">
+                  <span
+                    dir="ltr"
+                    className="text-xl leading-none font-bold tabular-nums"
+                  >
                     {c.pctOnly ? `${c.value}%` : c.value}
                   </span>
                   {!c.pctOnly && (
-                    <span dir="ltr" className="text-fg-muted text-[0.72rem] tabular-nums">
+                    <span
+                      dir="ltr"
+                      className="text-fg-muted text-[0.72rem] tabular-nums"
+                    >
                       {pct}%
                     </span>
                   )}
@@ -308,7 +327,12 @@ function Arc({
   const len = (Math.min(100, Math.max(0, pct)) / 100) * c;
   return (
     <span className="relative inline-flex shrink-0 items-center justify-center">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        aria-hidden
+      >
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -417,8 +441,13 @@ function Toolbar({
         </label>
 
         <p className="text-fg-muted ms-auto text-[0.78rem]">
-          <span dir="ltr" className="tabular-nums">{showing}</span> من{" "}
-          <span dir="ltr" className="tabular-nums">{total}</span>
+          <span dir="ltr" className="tabular-nums">
+            {showing}
+          </span>{" "}
+          من{" "}
+          <span dir="ltr" className="tabular-nums">
+            {total}
+          </span>
         </p>
       </div>
     </div>
@@ -510,7 +539,10 @@ function Roster({
                     الحالة فصار الشكلُ الواحد يحمل معنيين — قوسُه اكتمالٌ
                     ولونُه حالة — والنقطةُ إلى جانبه تحمل الحالة أصلًا. */}
                 <Arc pct={pct} color="var(--primary)" size={36} stroke={4}>
-                  <span dir="ltr" className="text-[0.6rem] font-bold tabular-nums">
+                  <span
+                    dir="ltr"
+                    className="text-[0.6rem] font-bold tabular-nums"
+                  >
                     {pct}
                   </span>
                 </Arc>
@@ -528,7 +560,10 @@ function Roster({
                 <span
                   aria-hidden
                   className="size-[9px] shrink-0 rounded-full"
-                  style={{ background: s?.color, boxShadow: `0 0 8px -1px ${s?.color}` }}
+                  style={{
+                    background: s?.color,
+                    boxShadow: `0 0 8px -1px ${s?.color}`,
+                  }}
                 />
                 <span className="sr-only">{s?.label}</span>
               </button>
@@ -573,7 +608,15 @@ function Dossier({
             onClick={onBack}
             className="mb-s4 -ms-s2 inline-flex min-h-11 items-center gap-x-s2 px-s2 text-[0.82rem] font-semibold lg:hidden"
           >
-            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              viewBox="0 0 20 20"
+              width="16"
+              height="16"
+              aria-hidden
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M8 4l6 6-6 6" />
             </svg>
             كل الطلبات
@@ -596,10 +639,20 @@ function Dossier({
                 </p>
               )}
               {row.source === "direct" && (
-                <p className="mt-s2 inline-flex items-center gap-x-s2 rounded-full border px-s3 py-s1 text-[0.74rem]"
-                   style={{ borderColor: "color-mix(in oklab, var(--d-cyan) 55%, transparent)",
-                            background: "color-mix(in oklab, var(--d-cyan) 16%, transparent)" }}>
-                  <span aria-hidden className="size-[7px] rounded-full" style={{ background: "var(--d-cyan)" }} />
+                <p
+                  className="mt-s2 inline-flex items-center gap-x-s2 rounded-full border px-s3 py-s1 text-[0.74rem]"
+                  style={{
+                    borderColor:
+                      "color-mix(in oklab, var(--d-cyan) 55%, transparent)",
+                    background:
+                      "color-mix(in oklab, var(--d-cyan) 16%, transparent)",
+                  }}
+                >
+                  <span
+                    aria-hidden
+                    className="size-[7px] rounded-full"
+                    style={{ background: "var(--d-cyan)" }}
+                  />
                   وصل برابطٍ مباشر — جهةٌ واحدة بلا مفاضلة
                 </p>
               )}
@@ -612,7 +665,10 @@ function Dossier({
 
             <div className="flex items-center gap-x-s4">
               <Arc pct={pct} color="var(--d-cyan)" size={72} stroke={7}>
-                <span dir="ltr" className="text-[0.95rem] font-bold tabular-nums">
+                <span
+                  dir="ltr"
+                  className="text-[0.95rem] font-bold tabular-nums"
+                >
                   {pct}%
                 </span>
               </Arc>
@@ -634,7 +690,12 @@ function Dossier({
           {/* ⚠️ **القرار في الرأس لا في ذيل العمود.** كان أسفلَ العمود
               الأيسر فبقي فراغٌ واسعٌ تحت «الدافع»، والأهمّ أنه **الفعل
               الذي فُتحت الصفحة لأجله** — فمكانه حيث تقع العين أولًا. */}
-          <div className="mt-s5 border-t pt-s4" style={{ borderColor: "color-mix(in oklab, var(--snow) 16%, transparent)" }}>
+          <div
+            className="mt-s5 border-t pt-s4"
+            style={{
+              borderColor: "color-mix(in oklab, var(--snow) 16%, transparent)",
+            }}
+          >
             <StatusPicker row={row} dark />
           </div>
         </header>
@@ -753,7 +814,9 @@ function Dossier({
                     فيُعرضان معًا ويغيب ما لم يُملأ. */}
                 <LinkPill
                   href={
-                    row.projects_path ? `/admin/cv/${row.id}?kind=projects` : null
+                    row.projects_path
+                      ? `/admin/cv/${row.id}?kind=projects`
+                      : null
                   }
                   label="ملفّ المشاريع"
                 />
@@ -776,7 +839,9 @@ function Dossier({
                     و«—» للصفوف السابقة للعمود، لا لمن لا التزام له —
                     ذاك يقول «لا يوجد» صراحةً. */}
                 <div>
-                  <dt className="text-fg-muted text-[0.7rem]">التزامات الفصل</dt>
+                  <dt className="text-fg-muted text-[0.7rem]">
+                    التزامات الفصل
+                  </dt>
                   <dd>{row.commitments?.join(" · ") || "—"}</dd>
                 </div>
                 <div className="col-span-2">
@@ -787,7 +852,6 @@ function Dossier({
                 </div>
               </dl>
             </Block>
-
           </div>
         </div>
       </div>
@@ -802,13 +866,7 @@ function Dossier({
    المرقوم بجانبه أصلًا، فكان الطول زخرفًا يكذب.
    وصار يحمل **كم متقدّمًا يزاحم على الجهة نفسها** — رقمٌ يخصّ القرار:
    جهةٌ عليها سبعة غيرُ جهةٍ عليها واحد. */
-function ChoiceLadder({
-  row,
-  rivalry,
-}: {
-  row: Row;
-  rivalry: Competition;
-}) {
+function ChoiceLadder({ row, rivalry }: { row: Row; rivalry: Competition }) {
   /* ⚠️ الفارغتان تُحذفان لا تُعرضان فارغتين: الرابط المباشر لا رغبةَ ثانيةً
      فيه ولا ثالثة، وعرضُ درجتين خاويتين يوحي بنقصٍ في الطلب لا بطبيعته. */
   const choices = [row.choice1, row.choice2, row.choice3].filter(Boolean);
@@ -827,7 +885,11 @@ function ChoiceLadder({
               <span
                 dir="ltr"
                 className="flex size-7 shrink-0 items-center justify-center rounded-lg text-[0.8rem] font-bold"
-                style={{ background: meta.color, color: meta.ink, boxShadow: `0 4px 14px -6px ${meta.color}` }}
+                style={{
+                  background: meta.color,
+                  color: meta.ink,
+                  boxShadow: `0 4px 14px -6px ${meta.color}`,
+                }}
               >
                 {i + 1}
               </span>
@@ -851,7 +913,10 @@ function ChoiceLadder({
                   {meta.label}
                 </span>
                 <span className="block text-[0.72rem] font-semibold">
-                  يزاحمه <span dir="ltr">{Math.max(0, (rivalry.get(c) ?? 1) - 1)}</span>
+                  يزاحمه{" "}
+                  <span dir="ltr">
+                    {Math.max(0, (rivalry.get(c) ?? 1) - 1)}
+                  </span>
                 </span>
               </span>
             </li>
@@ -885,7 +950,10 @@ function Checklist({ items }: { items: readonly Item[] }) {
               {it.ok ? "✓" : "—"}
             </span>
             <span className={it.ok ? "" : "text-fg-muted"}>{it.label}</span>
-            <span dir="ltr" className="text-fg-muted ms-auto text-[0.72rem] tabular-nums">
+            <span
+              dir="ltr"
+              className="text-fg-muted ms-auto text-[0.72rem] tabular-nums"
+            >
               {it.weight}
             </span>
           </li>
@@ -917,7 +985,9 @@ function StatusPicker({ row, dark }: { row: Row; dark?: boolean }) {
             <button
               key={s.key}
               type="button"
-              title={noTarget ? "لا رغبةَ ثانية — وصل الطلب برابطٍ مباشر" : undefined}
+              title={
+                noTarget ? "لا رغبةَ ثانية — وصل الطلب برابطٍ مباشر" : undefined
+              }
               disabled={pending || on || noTarget}
               aria-current={on ? "true" : undefined}
               onClick={() =>
@@ -975,17 +1045,64 @@ function StatusPicker({ row, dark }: { row: Row; dark?: boolean }) {
  *
  * ولا يظهر أصلًا قبل ضبط القرار: `new` و`reviewing` لا نتيجةَ فيهما.
  */
+/**
+ * رابطُ واتساب للمتقدّم — **القناةُ المعتمَدة للنتيجة** (١٦ أغسطس ٢٠٢٦،
+ * بقرار الإدارة: «القبول راح يكون على الواتس»).
+ *
+ * ⚠️ **يفتح المحادثةَ ولا يُرسل.** `wa.me` تضع النصّ في صندوق الكتابة
+ * والقائدُ يقرؤه ويعدّله ويضغط إرسال — فلا تخرج رسالةٌ باسم النادي بضغطةٍ
+ * واحدةٍ بلا مراجعة، ولا سيّما أن نصّ القبول يختلف من لجنةٍ إلى أخرى.
+ *
+ * والرقمُ يُحوَّل من `05XXXXXXXX` إلى `9665XXXXXXXX`: واتساب لا يقبل الصفرَ
+ * المحلّيّ. والمخطّطُ في `registration.ts` يضمن الصيغة (عشرُ خاناتٍ تبدأ
+ * بـ05)، فلا حاجةَ لتخمينٍ هنا — ومع ذلك يُفحص الطول قبل البناء: صفٌّ قديم
+ * أو مستوردٌ قد لا يلتزمها، ورابطٌ مكسورٌ يفتح واتساب على رقمٍ غير موجود.
+ */
+function whatsappHref(row: Row): string | null {
+  const digits = (row.phone ?? "").replace(/\D/g, "");
+  if (!/^05\d{8}$/.test(digits)) return null;
+  const intl = `966${digits.slice(1)}`;
+  const first = (row.full_name ?? "").trim().split(/\s+/)[0] || "";
+  const text = `مرحبًا ${first}، معك نادي نظم المعلومات الإدارية بجامعة الملك سعود بخصوص طلب عضويتك.`;
+  return `https://wa.me/${intl}?text=${encodeURIComponent(text)}`;
+}
+
 function NotifyButton({ row, dark }: { row: Row; dark?: boolean }) {
   const [pending, start] = useTransition();
   const [armed, setArmed] = useState(false);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
 
   const decision = STATUSES.find((s) => s.key === row.status);
+  const wa = whatsappHref(row);
   if (!NOTIFIABLE_STATUSES.includes(row.status)) return null;
 
   return (
-    <div className="mt-s4 border-t pt-s3" style={{ borderColor: dark ? "rgba(255,255,255,.14)" : "var(--line)" }}>
+    <div
+      className="mt-s4 border-t pt-s3"
+      style={{ borderColor: dark ? "rgba(255,255,255,.14)" : "var(--line)" }}
+    >
       <div className="flex flex-wrap items-center gap-x-s3 gap-y-s2">
+        {/* ⚠️ **الواتساب أوّلًا — هو قناةُ النتيجة المعتمَدة.** وزرُّ البريد
+            بعده وقد صُرِّح بقناته في وسمه: كان مكتوبًا «أرسل النتيجة للطالب»
+            فيظنّ القائدُ أنه أدّى الواجب، والطالبُ ينتظر على واتساب. */}
+        {wa && (
+          <a
+            href={wa}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-11 items-center gap-x-s2 rounded-xl border px-s4 text-[0.82rem] font-semibold transition-opacity hover:opacity-100 lg:min-h-10 opacity-90"
+            style={{
+              borderColor: dark
+                ? "rgba(255,255,255,.28)"
+                : "var(--line-strong)",
+              background: dark
+                ? "rgba(255,255,255,.06)"
+                : "color-mix(in oklab, var(--accent) 8%, transparent)",
+            }}
+          >
+            افتح واتساب المتقدّم
+          </a>
+        )}
         <button
           type="button"
           disabled={pending}
@@ -1018,8 +1135,8 @@ function NotifyButton({ row, dark }: { row: Row; dark?: boolean }) {
           {pending
             ? "جارٍ الإرسال…"
             : armed
-              ? `تأكيد: أرسل «${decision?.label ?? row.status}» إلى ${row.email}`
-              : "أرسل النتيجة للطالب"}
+              ? `تأكيد: أرسل «${decision?.label ?? row.status}» بريدًا إلى ${row.email}`
+              : "أرسل النتيجة بالبريد أيضًا"}
         </button>
 
         {armed && !pending && (
@@ -1048,7 +1165,13 @@ function NotifyButton({ row, dark }: { row: Row; dark?: boolean }) {
 
 /* ── قطعٌ صغيرة ─────────────────────────────────────────────────────────── */
 
-function Block({ title, children }: { title: string; children: React.ReactNode }) {
+function Block({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <section>
       <h3 className="text-fg-muted mb-s2 text-[0.72rem] font-semibold tracking-[0.1em]">
@@ -1150,7 +1273,14 @@ function askedQuestions(row: Row): Asked[] {
   }
   for (const [key, value] of Object.entries(answers)) {
     if (seen.has(key)) continue;
-    out.push({ key, title: null, label: null, type: null, required: false, value });
+    out.push({
+      key,
+      title: null,
+      label: null,
+      type: null,
+      required: false,
+      value,
+    });
   }
   return out;
 }

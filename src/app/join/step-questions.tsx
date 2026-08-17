@@ -277,46 +277,46 @@ function AnswerField({
         <div className="@container">
           <div className="grid gap-s3 @md:grid-cols-2">
             {(question.options ?? []).map((raw) => {
-            const option = asOption(raw);
-            const on = picked[0] === option.value;
-            return (
-              <label
-                key={option.value}
-                className={`flex cursor-pointer flex-col gap-s2 border p-s4 transition-colors ${
-                  on
-                    ? "border-accent bg-accent/8"
-                    : "border-line hover:bg-bg-sunken"
-                }`}
-              >
-                <span className="flex items-start gap-x-s3">
-                  <input
-                    type="radio"
-                    name={name}
-                    value={option.value}
-                    checked={on}
-                    onChange={() => onPick([option.value])}
-                    className="mt-1 size-4 shrink-0 accent-accent"
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[0.95rem] font-semibold text-fg">
-                      {option.value}
-                    </span>
-                    {option.seats !== undefined && (
-                      <span className="block text-[0.875rem] text-fg-muted">
-                        {seatsLabel(option.seats)}
+              const option = asOption(raw);
+              const on = picked[0] === option.value;
+              return (
+                <label
+                  key={option.value}
+                  className={`flex cursor-pointer flex-col gap-s2 border p-s4 transition-colors ${
+                    on
+                      ? "border-accent bg-accent/8"
+                      : "border-line hover:bg-bg-sunken"
+                  }`}
+                >
+                  <span className="flex items-start gap-x-s3">
+                    <input
+                      type="radio"
+                      name={name}
+                      value={option.value}
+                      checked={on}
+                      onChange={() => onPick([option.value])}
+                      className="mt-1 size-4 shrink-0 accent-accent"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[0.95rem] font-semibold text-fg">
+                        {option.value}
                       </span>
-                    )}
+                      {option.seats !== undefined && (
+                        <span className="block text-[0.875rem] text-fg-muted">
+                          {seatsLabel(option.seats)}
+                        </span>
+                      )}
+                    </span>
                   </span>
-                </span>
 
-                {option.details && option.details.length > 0 && (
-                  <ul className="flex list-disc flex-col gap-s1 ps-s6 text-[0.875rem] leading-relaxed text-fg-muted">
-                    {option.details.map((d) => (
-                      <li key={d}>{d}</li>
-                    ))}
-                  </ul>
-                )}
-              </label>
+                  {option.details && option.details.length > 0 && (
+                    <ul className="flex list-disc flex-col gap-s1 ps-s6 text-[0.875rem] leading-relaxed text-fg-muted">
+                      {option.details.map((d) => (
+                        <li key={d}>{d}</li>
+                      ))}
+                    </ul>
+                  )}
+                </label>
               );
             })}
           </div>
@@ -603,8 +603,8 @@ function Commitments({
       </legend>
 
       <p className="text-[0.875rem] text-fg-muted">
-        اختر كل ما ينطبق، أو «لا يوجد». لا يُخصم عليك التزامُك — يعرف به
-        القائد كم يحمّلك.
+        اختر كل ما ينطبق، أو «لا يوجد». لا يُخصم عليك التزامُك — يعرف به القائد
+        كم يحمّلك.
       </p>
 
       <div className="grid gap-s2 sm:grid-cols-3">
@@ -614,7 +614,9 @@ function Commitments({
             <label
               key={option}
               className={`flex min-h-11 cursor-pointer items-center gap-x-s3 border px-s3 text-[0.95rem] transition-colors ${
-                on ? "border-accent bg-accent/10" : "border-line hover:bg-bg-sunken"
+                on
+                  ? "border-accent bg-accent/10"
+                  : "border-line hover:bg-bg-sunken"
               }`}
             >
               <input
@@ -816,7 +818,7 @@ export function StepQuestions({
           طمأنةٌ تُقرأ مرّةً لا شارةٌ تلزم البقاء. والحاسب لا يتغيّر: نسخةُ
           الشريط `hidden lg:block` وهذه `lg:hidden`، فلا تظهران معًا. */}
       <p className="text-[0.875rem] text-fg-muted lg:hidden">
-        تصلك النتيجة على بريدك خلال أسبوع.
+        تصلك النتيجة على واتساب خلال أسبوع.
       </p>
     </StepPanel>
   );
