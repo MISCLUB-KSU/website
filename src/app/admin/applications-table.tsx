@@ -10,7 +10,7 @@ import {
 } from "@/content/questions";
 import { isolateLatin } from "@/lib/bidi";
 import { useHydrated } from "@/lib/use-hydrated";
-import { notifyDecision, setStatus } from "./actions";
+import { notifyDecision, sendPendingRejections, setStatus } from "./actions";
 import { STATUSES, openOnly, type Row } from "./stats";
 
 /**
@@ -176,6 +176,17 @@ export function ApplicationsTable({ rows }: Props) {
     [counts, scored, rows],
   );
 
+  /* ⚠️ **يُحسب من الصفوف الواصلة لا باستعلامٍ ثانٍ.** الصفوفُ مقصوصةٌ
+     بـ`RLS` أصلًا، فالعدُّ هنا يخصّ نطاق قارئه تلقائيًّا — وهو نفسُ ما
+     سترسله الدالّة. واستعلامٌ ثانٍ يُدخل احتمالَ أن يختلف العددُ المعروض
+     عمّا يُرسَل. */
+  const pendingRejections = useMemo(
+    () =>
+      rows.filter((r) => r.status === "rejected" && !r.decision_mailed_at)
+        .length,
+    [rows],
+  );
+
   /* ⚠️ **على الجوّال تنقّلٌ لا تراصّ.** التخطيطُ سيّدٌ وتفصيلٌ جنبًا لجنب
      على الحاسب؛ وعلى الجوّال كانا ينهاران فوق بعضهما فيقع الملفُّ أسفل
      قائمةٍ من ٣٦ طلبًا — أي أن فتحَ طلبٍ لا يُرى أثرُه. فصار: القائمةُ
@@ -202,6 +213,7 @@ export function ApplicationsTable({ rows }: Props) {
         counts={counts}
         total={rows.length}
         showing={shown.length}
+        pendingRejections={pendingRejections}
       />
 
       <div className="grid min-h-0 flex-1 gap-s3 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)]">
@@ -369,6 +381,115 @@ function Arc({
 
 /* ── شريط الأدوات ───────────────────────────────────────────────────────── */
 
+/**
+ * **إرسالُ الرفض بالجملة.**
+ *
+ * ⚠️ **يستدعي الخادمَ مرارًا حتى يفرغ المتبقّي — لا مرّةً واحدة.** الدالّةُ
+ * تُرسل عشرين في الاستدعاء الواحد (مهلةُ الدالّة وحدُّ المزوّد، والتعليل
+ * عند `BATCH`)، فبضع مئاتٍ تحتاج عشراتِ الجولات. والحلقةُ هنا لا هناك:
+ * استدعاءٌ واحدٌ طويلٌ يُقطع في منتصفه فيضيع خبرُ ما أُرسل.
+ *
+ * ⚠️ **ولا عدّادَ تقدّمٍ محلّيّ يُعتمد عليه.** كلُّ جولةٍ تسأل القاعدةَ عن
+ * المتبقّي وتعرض ردَّها. فلو أغلق القائدُ التبويبَ ثم عاد، أو عمل قائدان
+ * معًا، بقي الرقمُ صادقًا — والحارسُ الحقيقيّ `decision_mailed_at` في
+ * القاعدة لا شيءٌ في هذي الشاشة.
+ *
+ * ⚠️ **والتأكيدُ على خطوتين.** ضغطةٌ واحدةٌ تُخرج مئاتِ الرسائل التي لا
+ * تُستردّ. فالأولى تُسلّح والثانية تُنفّذ، ويظهر العددُ في نصّ التأكيد.
+ */
+function BulkRejectButton({ pending }: { pending: number }) {
+  const [armed, setArmed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [left, setLeft] = useState<number | null>(null);
+  const [done, setDone] = useState(0);
+  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+
+  if (pending === 0 && !note) return null;
+
+  async function run() {
+    setBusy(true);
+    setArmed(false);
+    setNote(null);
+    setDone(0);
+
+    let sentTotal = 0;
+    let failedTotal = 0;
+
+    /* حدُّ جولاتٍ صريح: حارسٌ من حلقةٍ لا تنتهي لو ردّت القاعدةُ متبقّيًا
+       ثابتًا (ختمٌ يفشل مرارًا مثلًا) — فتتوقّف وتقول ما جرى. */
+    for (let round = 0; round < 60; round++) {
+      const res = await sendPendingRejections();
+      sentTotal += res.sent;
+      failedTotal += res.failed;
+      setDone(sentTotal);
+      setLeft(res.remaining);
+
+      if (!res.ok && res.sent === 0) {
+        setBusy(false);
+        setNote({ ok: false, text: res.message });
+        return;
+      }
+      if (res.remaining === 0 || res.sent === 0) break;
+    }
+
+    setBusy(false);
+    setNote({
+      ok: failedTotal === 0,
+      text:
+        failedTotal === 0
+          ? `أُرسل ${sentTotal} رفضًا`
+          : `أُرسل ${sentTotal}، وتعذّر ${failedTotal} — أعد المحاولة`,
+    });
+  }
+
+  return (
+    <div className="flex items-center gap-x-s2">
+      <button
+        type="button"
+        disabled={busy || pending === 0}
+        onClick={() => (armed ? void run() : setArmed(true))}
+        className={`min-h-11 lg:min-h-10 rounded-xl border px-s4 text-[0.82rem] font-semibold transition-opacity ${
+          busy ? "opacity-50" : "opacity-90 hover:opacity-100"
+        }`}
+        style={{
+          borderColor: armed
+            ? "color-mix(in oklab, var(--danger) 60%, transparent)"
+            : "var(--line-strong)",
+          background: armed
+            ? "color-mix(in oklab, var(--danger) 12%, transparent)"
+            : "transparent",
+        }}
+      >
+        {busy
+          ? `…يُرسل ${done}${left !== null ? ` · بقي ${left}` : ""}`
+          : armed
+            ? `تأكيد: أرسل ${pending} رفضًا بالبريد`
+            : `أرسل الرفض للمتبقّين (${pending})`}
+      </button>
+
+      {armed && !busy && (
+        <button
+          type="button"
+          onClick={() => setArmed(false)}
+          className="text-fg-muted min-h-11 lg:min-h-10 px-s2 text-[0.8rem]"
+        >
+          تراجع
+        </button>
+      )}
+
+      {note && (
+        <span
+          role="status"
+          className="text-[0.8rem]"
+          style={{ color: note.ok ? "var(--success)" : "var(--danger)" }}
+        >
+          {note.text}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function Toolbar({
   q,
   setQ,
@@ -379,6 +500,7 @@ function Toolbar({
   counts,
   total,
   showing,
+  pendingRejections,
 }: {
   q: string;
   setQ: (v: string) => void;
@@ -389,6 +511,7 @@ function Toolbar({
   counts: Record<string, number>;
   total: number;
   showing: number;
+  pendingRejections: number;
 }) {
   return (
     <div className="tile shrink-0">
@@ -424,6 +547,8 @@ function Toolbar({
             />
           ))}
         </div>
+
+        <BulkRejectButton pending={pendingRejections} />
 
         <label className="flex items-center gap-x-s2 text-[0.8rem]">
           <span className="text-fg-muted">الترتيب</span>

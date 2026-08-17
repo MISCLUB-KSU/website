@@ -117,3 +117,189 @@ export async function notifyDecision(id: string) {
 
   return { ok: true as const, message: `أُرسل إلى ${row.email}` };
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   الإرسال بالجملة
+   ══════════════════════════════════════════════════════════════════════ */
+
+/**
+ * كم رسالةً في الاستدعاء الواحد.
+ *
+ * ⚠️ **الرقم محكومٌ بحدّين لا بذوق:**
+ *   · **مهلةُ الدالّة** — دالّةُ Vercel تُقطع بعد ثوانٍ معدودة، والإرسالُ
+ *     شبكيٌّ متسلسل. عشرون رسالةً × نصف ثانية ≈ ١٠ ثوانٍ، وهي تحت المهلة
+ *     بهامشٍ يحتمل بطءَ مزوّدٍ عارضًا.
+ *   · **حدُّ المزوّد** — Resend يقبل طلبين في الثانية على الخطط الدنيا،
+ *     فالتباطؤ أدناه يلزم وإلّا رُدَّت الدفعةُ نصفُها بـ429.
+ *
+ * والواجهةُ تستدعي مرارًا حتى يفرغ المتبقّي، فلا يقيّد هذا الرقمُ الحصيلة
+ * — يقيّد طولَ الاستدعاء الواحد وحده.
+ */
+const BATCH = 20;
+
+/** ٥٠٠ms بين رسالتين — دون سقف المزوّد بهامش */
+const GAP_MS = 500;
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * **إرسالُ قرارات الرفض لمن لم تصله بعد.**
+ *
+ * ⚠️ **`decision_mailed_at` هو الحارس، لا عدّادٌ في الواجهة.** الإرسالُ
+ * ينقطع ويُستأنف — مهلةُ دالّة، أو تبويبٌ يُغلق، أو نصيبُ اليومِ ينفد.
+ * فلو كان الحدُّ عدّادًا في المتصفّح لبدأ كلُّ استئنافٍ من الصفر: يستلم
+ * المرفوضُ رفضَه مرّتين وثلاثًا. والختمُ في القاعدة يجعل الاستئناف يلتقط
+ * من حيث انتهى مهما تكرّر.
+ *
+ * ⚠️ **ويُختم بعد نجاح الإرسال لا قبله.** الترتيبُ المعكوس يضيّع من فشل
+ * بريدُه بلا أثر — وهو صنفُ العطل الذي عطّل التقديم مرّتين: فشلٌ لا يصرخ.
+ * وثمنُ هذا الترتيب معروفٌ ومقبول: لو سقطت الدالّةُ **بين** الإرسال والختم
+ * لخرجت رسالةٌ بلا ختم، فتُرسَل ثانيةً. رسالةٌ مكرّرةٌ نادرةٌ أهونُ من
+ * مرفوضٍ لا يصله شيء.
+ *
+ * ⚠️ **وبعميل الجلسة لا بمفتاح الخدمة.** `RLS` تقصّ الصفوف على نطاق
+ * القارئ: قائدٌ يرسل لمرفوضي لجنته، والرئاسةُ للجميع. ولو مرّ بمفتاح
+ * الخدمة لصار أيُّ قائدٍ يراسل كلَّ متقدّمٍ في النادي.
+ *
+ * ⛔ **والرفضُ وحده يُرسَل بالجملة.** القبولُ قناتُه واتساب بقرار الإدارة،
+ * والإحالةُ تحتاج ذكرَ الجهة فتُراجَع فرديًّا. وقصرُ الدالّة على `rejected`
+ * يمنع أن يخرج قبولٌ بريدًا بضغطةٍ واحدةٍ على مئتين.
+ */
+export async function sendPendingRejections(): Promise<{
+  ok: boolean;
+  sent: number;
+  failed: number;
+  remaining: number;
+  message: string;
+}> {
+  const supabase = await createClient();
+
+  const { data: rows, error } = await supabase
+    .from("applications")
+    .select("id, full_name, email, status, choice1, choice2, choice3")
+    .eq("status", "rejected")
+    .is("decision_mailed_at", null)
+    .order("created_at", { ascending: true })
+    .limit(BATCH);
+
+  if (error) {
+    /* بحقوله لا كائنًا كاملًا: `details` قد يحمل الصفَّ برقم أحواله */
+    console.error("[admin] تعذّرت قراءة دفعة الرفض", {
+      code: error.code,
+      message: error.message,
+    });
+    return {
+      ok: false,
+      sent: 0,
+      failed: 0,
+      remaining: 0,
+      message: "تعذّرت القراءة",
+    };
+  }
+
+  const batch = rows ?? [];
+  if (batch.length === 0) {
+    return {
+      ok: true,
+      sent: 0,
+      failed: 0,
+      remaining: 0,
+      message: "لا رفضَ ينتظر الإرسال",
+    };
+  }
+
+  const label = (value: string | null) =>
+    value ? (findPreference(value)?.fullLabel ?? value) : "";
+
+  let sent = 0;
+  let failed = 0;
+  let noKey = false;
+
+  for (const [index, row] of batch.entries()) {
+    /* تباطؤٌ **بين** الرسائل لا قبل الأولى — لا معنى لانتظارٍ قبل أوّل طلب */
+    if (index > 0) await sleep(GAP_MS);
+
+    const result = await sendMail(
+      applicationDecision({
+        fullName: row.full_name,
+        email: row.email,
+        status: "rejected",
+        choices: [row.choice1, row.choice2, row.choice3]
+          .filter((value): value is string => Boolean(value))
+          .map(label),
+      }),
+    );
+
+    if (!result.sent) {
+      failed += 1;
+      /* ⚠️ **غيابُ المفتاح يوقف الدفعة كلَّها فورًا.** المضيُّ فيها يعني
+         عشرين فشلًا متطابقًا في السجلّ، وثوانيَ ضائعة، ورسالةً تقول
+         «فشل ٢٠» بدل أن تقول **السبب**. */
+      if (result.reason === "no-key") {
+        noKey = true;
+        break;
+      }
+      continue;
+    }
+
+    /* الختمُ بعد النجاح — وبعميل الجلسة، فتحكمه `RLS` كما تحكم القراءة */
+    const { error: stampError } = await supabase
+      .from("applications")
+      .update({ decision_mailed_at: new Date().toISOString() })
+      .eq("id", row.id);
+
+    if (stampError) {
+      /* ⚠️ خرجت الرسالةُ ولم يُختم — تُرسَل ثانيةً في دفعةٍ لاحقة. يُسجَّل
+         صراحةً لأنه السبب الوحيد لتكرارٍ يراه المتقدّم. */
+      console.error("[admin] أُرسل الرفض ولم يُختم الصفّ", {
+        id: row.id,
+        code: stampError.code,
+        message: stampError.message,
+      });
+    }
+    sent += 1;
+  }
+
+  /* المتبقّي يُحسب **بعد** الدفعة من القاعدة لا بالطرح: الطرحُ يفترض ألّا
+     أحدًا غيّر حالةً أثناء الإرسال، وقائدان يعملان معًا ينقضان الافتراض. */
+  const { count } = await supabase
+    .from("applications")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "rejected")
+    .is("decision_mailed_at", null);
+
+  const remaining = count ?? 0;
+
+  if (noKey) {
+    return {
+      ok: false,
+      sent,
+      failed,
+      remaining,
+      message: "البريد غير موصول — يلزم ضبط RESEND_API_KEY وتوثيق النطاق",
+    };
+  }
+
+  revalidatePath("/admin");
+  return {
+    ok: failed === 0,
+    sent,
+    failed,
+    remaining,
+    message:
+      failed === 0
+        ? `أُرسل ${sent}، وبقي ${remaining}`
+        : `أُرسل ${sent}، وتعذّر ${failed}، وبقي ${remaining}`,
+  };
+}
+
+/** كم رفضًا ينتظر الإرسال — تقرؤه اللوحة لتعرض العدد قبل أن يُضغط شيء */
+export async function pendingRejectionCount(): Promise<number> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("applications")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "rejected")
+    .is("decision_mailed_at", null);
+  return count ?? 0;
+}
