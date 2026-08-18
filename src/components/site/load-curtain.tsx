@@ -38,8 +38,14 @@ import { MARK_POINTS, MARK_VIEWBOX } from "@/lib/geometry.generated";
  * زينةٌ لا يفتح بابًا.
  *
  * و`JSON.stringify` تُخرج السلسلة مقتبسةً ومهروبةً — وهو ما يقبله `content`.
+ *
+ * ⚠️ **وخاصّيتان لا واحدة: التحيّةُ والاسم.** لأنّ لكلٍّ حجمَه ولونَه
+ * وتوقيتَ كشفِه — «أهلًا» صغيرةٌ متباعدةٌ تسبق، والاسمُ أكبرُ يليها. ولو
+ * جُمعا في سلسلةٍ واحدة لَتعذّر فصلُهما في CSS، إذ لا وسمَ بينهما.
+ *
+ * وتُضبطان معًا أو لا تُضبط واحدة — فلا يظهر «أهلًا» بلا اسمٍ بعدها.
  */
-export const CURTAIN_INIT_SCRIPT = `try{if(sessionStorage.getItem("mis-loaded")){document.documentElement.dataset.loaded="1"}else{sessionStorage.setItem("mis-loaded","1")}}catch(e){}try{if(document.cookie.indexOf("-auth-token")>-1){var h=localStorage.getItem("mis-hail");if(h){document.documentElement.style.setProperty("--mis-hail",JSON.stringify("أهلًا "+h))}}}catch(e){}`;
+export const CURTAIN_INIT_SCRIPT = `try{if(sessionStorage.getItem("mis-loaded")){document.documentElement.dataset.loaded="1"}else{sessionStorage.setItem("mis-loaded","1")}}catch(e){}try{if(document.cookie.indexOf("-auth-token")>-1){var h=localStorage.getItem("mis-hail");if(h){var r=document.documentElement.style;r.setProperty("--mis-hail",JSON.stringify(h));r.setProperty("--mis-hail-pre",'"أهلًا"')}}}catch(e){}`;
 
 export function LoadCurtain() {
   return (

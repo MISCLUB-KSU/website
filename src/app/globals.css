@@ -1354,35 +1354,71 @@ html.mark-morphing [data-mark-static] {
 }
 
 /* ==========================================================================
-   تحيّةُ القائد على لوح التحميل.
+   تحيّةُ القائد على لوح التحميل — سطران لا سطر.
 
-   نصُّها من خاصّيةٍ يكتبها `CURTAIN_INIT_SCRIPT` قبل أوّل رسم، لا من الوسم.
+   «أهلًا» صغيرةٌ متباعدة، والاسمُ تحتها أكبر: هرمٌ بصريّ يُبهر بالتفاوت لا
+   بالحجم. ونصُّهما من خاصّيتين يكتبهما `CURTAIN_INIT_SCRIPT` قبل أوّل رسم.
 
-   ⚠️ **وبلا ارتفاعٍ محجوز.** أكثرُ من يرى اللوحَ زائرٌ بلا جلسة، فحجزُ سطرٍ
-   له يزيح العلامةَ والمسار عند كلّ زيارة — إزاحةٌ مقابل لا شيء. والعنصرُ
-   فارغٌ بلا محتوى يطوي نفسَه، ويظهر لمن له اسمٌ وحده.
+   ⚠️ **وبلا ارتفاعٍ محجوز للزائر.** أكثرُ من يرى اللوحَ زائرٌ بلا جلسة،
+   فحجزُ سطرين له يزيح العلامةَ والمسار عند كلّ زيارة. ولذلك `line-height: 0`
+   على الحاوية وارتفاعُ كلّ سطرٍ على سطره: بلا خاصّيةٍ يبقى `content: ""`
+   وصندوقٌ بلا ارتفاع — فيطوي نفسَه تمامًا.
 
-   ⚠️ **والكشفُ بميلان الشعار لا بذوبانٍ عامّ.** القناعُ تدرّجٌ زاويتُه
+   ⚠️ **والكشفُ بميلان الشعار لا بذوبانٍ عامّ.** زاويةُ القناع
    `calc(90deg + var(--rake))` — أي ٢٤° المقيسة من ملفّ الشعار نفسِه. فلو
    صُحّحت زاويةُ العلامة يومًا تبعها الكشفُ وحده، ويبقى الأثرُ يخصّ هذا
-   النادي لا أيَّ موقعٍ آخر. وهو النمطُ نفسُه في `main` أعلاه.
+   النادي لا أيَّ موقعٍ آخر. وهو النمطُ نفسُه في ضوء `main`.
 
-   ⚠️ **وينتهي القناعُ معتمًا تمامًا.** الطرفُ الأخير من التدرّج مصمتٌ لا
-   شفّاف، وإلّا لبقي النصُّ مقصوصًا بعد انتهاء الحركة — وهو أسوأ من ألّا
-   يُكشف أصلًا.
+   ⚠️ **والقناعُ ينتهي مصمتًا** لا شفّافًا، وإلّا بقي النصُّ مقصوصًا بعد
+   انتهاء الحركة — وهو أسوأ من ألّا يُكشف أصلًا.
 
-   ⚠️ **والميزانيةُ الزمنية ٩٥٠ms.** اللوحُ ينسحب عندها، فكلُّ ما هنا ينتهي
-   قبلها: الكشفُ ٥٦٠ms، واللمعةُ تعبر مرّةً بين ٤٢٠ و٩٢٠. زيادةٌ على ذلك
-   تعني حركةً تُقطع في منتصفها.
+   ⚠️ **والميزانيةُ الزمنية ٩٥٠ms** — عندها ينسحب اللوح. فالتتابعُ كلُّه
+   ينتهي قبلها: «أهلًا» من ٩٠، والاسمُ من ٢٦٠، واللمعةُ تعبر مرّةً وتستقرّ
+   عند ٩٢٠. زيادةٌ على ذلك حركةٌ تُقطع في منتصفها.
    ========================================================================== */
 .load-hail {
-  font-family: var(--font-display);
-  font-size: clamp(1.6rem, 5.2vw, 3rem);
-  font-weight: 700;
-  line-height: 1.25;
-  color: var(--deep);
+  display: block;
+  /* الحاويةُ بلا ارتفاعٍ خاصّ — انظر التحذير أعلاه */
+  line-height: 0;
   text-align: center;
-  /* القناعُ يبدأ شفّافًا على النصّ وينتهي مصمتًا — انظر التحذير أعلاه */
+}
+
+/* ── «أهلًا» ─────────────────────────────────────────────────────────── */
+.load-hail::before {
+  content: var(--mis-hail-pre, "");
+  display: block;
+  font-family: var(--font-text);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: 0.62em;
+  /* التباعدُ يزيد فراغًا بعد آخر حرف، فيُزاح النصُّ يسارًا في RTL —
+     وإزاحةُ نصفِه تُعيده إلى المنتصف البصريّ */
+  text-indent: 0.62em;
+  color: var(--fg-muted);
+  animation: hail-pre 420ms cubic-bezier(0.22, 1, 0.36, 1) 90ms both;
+}
+
+@keyframes hail-pre {
+  from {
+    opacity: 0;
+    letter-spacing: 0.2em;
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.62em;
+  }
+}
+
+/* ── الاسم ───────────────────────────────────────────────────────────── */
+.load-hail::after {
+  content: var(--mis-hail, "");
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 3.6vw, 2.15rem);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--deep);
   -webkit-mask-image: linear-gradient(
     calc(90deg + var(--rake)),
     #000 0 34%,
@@ -1397,42 +1433,38 @@ html.mark-morphing [data-mark-static] {
   );
   -webkit-mask-size: 300% 100%;
   mask-size: 300% 100%;
-  animation: hail-reveal 560ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+  animation: hail-name 620ms cubic-bezier(0.22, 1, 0.36, 1) 260ms both;
 }
 
-.load-hail::before {
-  content: var(--mis-hail, "");
-}
-
-@keyframes hail-reveal {
+@keyframes hail-name {
   from {
     -webkit-mask-position: 100% 0;
     mask-position: 100% 0;
-    letter-spacing: 0.42em;
-    transform: translateY(0.28em);
+    letter-spacing: 0.3em;
+    transform: translateY(0.22em);
   }
   to {
     -webkit-mask-position: 0% 0;
     mask-position: 0% 0;
-    letter-spacing: 0.02em;
+    letter-spacing: 0;
     transform: translateY(0);
   }
 }
 
-/* ⚠️ **اللمعةُ داخل `@supports` وحدها — والسببُ أن فشلَها يمحو النصّ.**
+/* ⚠️ **اللمعةُ داخل `@supports` وحدها — والسببُ أن فشلَها يمحو الاسم.**
    `-webkit-text-fill-color: transparent` يجعل الحروفَ تُرسم من الخلفية؛
    فلو لم يُدعم `background-clip: text` بقي الملءُ شفّافًا على خلفيةٍ لا
    تُقصّ — أي **اسمٌ غيرُ مرئيّ**. فتُطبَّق حيث تُدعم، ويبقى `color` الصلب
    أعلاه هو الأساس في كلّ ما عداها. */
 @supports (background-clip: text) or (-webkit-background-clip: text) {
-  .load-hail {
+  .load-hail::after {
     background-image: linear-gradient(
       calc(90deg + var(--rake)),
-      var(--deep) 0 40%,
-      var(--primary) 47%,
+      var(--deep) 0 38%,
+      var(--primary) 46%,
       var(--sky) 50%,
-      var(--primary) 53%,
-      var(--deep) 60% 100%
+      var(--primary) 54%,
+      var(--deep) 62% 100%
     );
     background-size: 320% 100%;
     background-position: 100% 0;
@@ -1440,8 +1472,8 @@ html.mark-morphing [data-mark-static] {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     animation:
-      hail-reveal 560ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both,
-      hail-sheen 500ms cubic-bezier(0.4, 0, 0.2, 1) 420ms both;
+      hail-name 620ms cubic-bezier(0.22, 1, 0.36, 1) 260ms both,
+      hail-sheen 460ms cubic-bezier(0.4, 0, 0.2, 1) 460ms both;
   }
 }
 
