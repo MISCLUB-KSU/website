@@ -12,7 +12,6 @@ import {
   type Preference,
   type PreferenceSection,
 } from "@/content/preferences";
-import { PROJECTS } from "@/content/projects";
 import { isolateLatin } from "@/lib/bidi";
 import { StepPanel } from "./step-panel";
 
@@ -40,15 +39,6 @@ const RANKS_SHORT = ["الأولى", "الثانية", "الثالثة"] as cons
 
 /* ألوان الرتب — تدرّجٌ رتيب الإضاءة، الأولى أدكن فهي الأثقل وزنًا */
 const RANK_TINT = ["var(--deep)", "var(--primary)", "var(--sky)"] as const;
-
-/**
- * جهاتٌ تُعرَّف ولا تُختار — بابُ تسجيلها في قناتها هي (`applyAt`).
- *
- * ⚠️ **ليست `Preference` ولا تدخل `PREFERENCES`.** لو صارت خيارًا لَدخلت
- * قيمتُها القاعدةَ رغبةً، ولَظهرت في «الطلب» و«الطلب على الجهات» فأرت قائدًا
- * منافسةً على جهةٍ لا يُقدَّم عليها هنا أصلًا. فهي بطاقةٌ ساكنة بلا زرّ.
- */
-const INITIATIVES = PROJECTS.filter((project) => project.applyAt);
 
 type StepPreferencesProps = {
   index: number;
@@ -400,148 +390,9 @@ function SectionCard({
               onToggle={onToggle}
             />
           ))}
-          {/* ⚠️ **في قسم المشاريع وحده، وبعد ما يُختار.** موضعُها هنا لا في
-              قسمٍ مستقلّ لأن الطالب يبحث عن المشروع بين المشاريع؛ وقسمٌ
-              خاصٌّ بها يجعلها تُقرأ صنفًا آخر فيتخطّاه من لا يعرف اسمها.
-              وبعد المختار لا قبله: البطاقةُ الساكنة في أوّل الشبكة تكسر
-              توقّعَ «كلُّ ما هنا يُضغط». */}
-          {section.key === "projects" &&
-            INITIATIVES.map((initiative) => (
-              <InitiativeCard key={initiative.slug} project={initiative} />
-            ))}
         </div>
       )}
     </section>
-  );
-}
-
-/**
- * بطاقةٌ تعريفية لا خيار — لجهةٍ بابُ تسجيلها ليس عندنا.
- *
- * ⚠️ **`div` لا `button`، وبلا `aria-pressed`.** الشكلُ وحده لا يكفي: قارئُ
- * الشاشة يُعلن «زرّ» فيحاول المستخدم اختيارها ولا شيء يحدث. وهي هنا نصٌّ
- * ورابطٌ فحسب، فتُعلَن كذلك.
- *
- * ⚠️ **وتُعرَض بهوية صاحبها لا بهويتنا** (`brand`). في شبكةٍ كلُّ ما فيها
- * بطاقاتُنا، بطاقةٌ بلوحةٍ أخرى تُقرأ «هذي ليست منّا» قبل أن يُقرأ حرف —
- * وهو المعنى المطلوب بالضبط. ولمن لا `brand` له تبقى الحدودُ المتقطّعة
- * على لوحة النادي.
- */
-function InitiativeCard({ project }: { project: (typeof PROJECTS)[number] }) {
-  const applyAt = project.applyAt;
-  if (!applyAt) return null;
-  const brand = project.brand;
-
-  /* اسمٌ لاتينيٌّ آخرُ حرفه هو العلامة — يُفصل ليأخذ التدرّج وحده.
-     وبلا `brand` يبقى الاسمُ كتلةً واحدة بلون النادي. */
-  const head = project.name.slice(0, -1);
-  const mark = project.name.slice(-1);
-
-  return (
-    <div
-      className={
-        brand
-          ? "flex flex-col gap-s2 border p-s4"
-          : "flex flex-col gap-s2 border border-dashed border-line-strong bg-bg-sunken p-s4"
-      }
-      style={
-        brand ? { background: brand.bg, borderColor: brand.line } : undefined
-      }
-    >
-      <span className="flex min-w-0 items-start justify-between gap-x-s3">
-        <span className="min-w-0">
-          <span
-            dir="ltr"
-            className="block text-start text-[1.05rem] font-bold [overflow-wrap:anywhere]"
-            style={brand ? { color: brand.fg } : undefined}
-          >
-            {head}
-            {/* ⚠️ **اللونُ الصلب أوّلًا ثم القصّ.** `background-clip: text`
-                يسقط في متصفّحاتٍ قديمة فيبقى النصُّ بلون `color` — فلو كان
-                `transparent` اختفى الحرف. فيُلوَّن بطرف التدرّج أوّلًا،
-                والقصُّ يحسّنه ولا يشترطه. */}
-            <span
-              style={
-                brand
-                  ? {
-                      color: brand.to,
-                      backgroundImage: `linear-gradient(105deg, ${brand.from}, ${brand.to})`,
-                      WebkitBackgroundClip: "text",
-                      backgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                    }
-                  : undefined
-              }
-            >
-              {mark}
-            </span>
-          </span>
-          {project.tagline && (
-            <span
-              dir="ltr"
-              className="mt-0.5 block text-start text-[0.72rem] tracking-[0.22em] uppercase"
-              style={{ color: brand ? brand.muted : "var(--fg-muted)" }}
-            >
-              {project.tagline}
-            </span>
-          )}
-        </span>
-
-        {/* بدل زرّ «اختيار» — يشغل موضعَه فيُقرأ الفرقُ في لمحة */}
-        <span
-          className="shrink-0 border px-s3 py-s1 text-[0.875rem]"
-          style={
-            brand
-              ? { borderColor: brand.line, color: brand.muted }
-              : { borderColor: "var(--line)", color: "var(--fg-muted)" }
-          }
-        >
-          تعريف
-        </span>
-      </span>
-
-      {/* خطٌّ متدرّج تحت الترويسة — من لافتتهم، ويفصل الاسم عن المتن */}
-      {brand && (
-        <span
-          aria-hidden
-          className="block h-px w-full"
-          style={{
-            backgroundImage: `linear-gradient(90deg, transparent, ${brand.from}, ${brand.to}, transparent)`,
-          }}
-        />
-      )}
-
-      <span
-        className="text-[0.875rem] leading-relaxed [overflow-wrap:anywhere]"
-        style={{ color: brand ? brand.muted : "var(--fg-muted)" }}
-      >
-        {isolateLatin(project.summary)}
-      </span>
-
-      {/* ⚠️ النفيُ قبل الرابط: الرابطُ وحده يُقرأ «اطّلع» فيمضي الطالب
-          ظانًّا أن بطاقةَ اختيارها في مكانٍ ما تحت. */}
-      <span
-        className="border-s-2 ps-s3 text-[0.82rem] leading-relaxed"
-        style={{ borderColor: brand ? brand.to : "var(--accent)" }}
-      >
-        <span style={{ color: brand ? brand.fg : "var(--fg)" }}>
-          {applyAt.note}
-        </span>{" "}
-        <a
-          href={applyAt.href}
-          target="_blank"
-          /* `noopener` تقطع وصولَ الصفحة المفتوحة إلى صفحتنا عبر
-             `window.opener`، و`noreferrer` تمنع تسريبَ عنوان النموذج في
-             ترويسة الإحالة. */
-          rel="noopener noreferrer"
-          dir="ltr"
-          className="font-semibold underline underline-offset-4"
-          style={brand ? { color: brand.to } : { color: "var(--accent)" }}
-        >
-          {applyAt.label}
-        </a>
-      </span>
-    </div>
   );
 }
 
