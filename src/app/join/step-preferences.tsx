@@ -12,6 +12,7 @@ import {
   type Preference,
   type PreferenceSection,
 } from "@/content/preferences";
+import { PROJECTS } from "@/content/projects";
 import { isolateLatin } from "@/lib/bidi";
 import { StepPanel } from "./step-panel";
 
@@ -39,6 +40,15 @@ const RANKS_SHORT = ["الأولى", "الثانية", "الثالثة"] as cons
 
 /* ألوان الرتب — تدرّجٌ رتيب الإضاءة، الأولى أدكن فهي الأثقل وزنًا */
 const RANK_TINT = ["var(--deep)", "var(--primary)", "var(--sky)"] as const;
+
+/**
+ * جهاتٌ تُعرَّف ولا تُختار — بابُ تسجيلها في قناتها هي (`applyAt`).
+ *
+ * ⚠️ **ليست `Preference` ولا تدخل `PREFERENCES`.** لو صارت خيارًا لَدخلت
+ * قيمتُها القاعدةَ رغبةً، ولَظهرت في «الطلب» و«الطلب على الجهات» فأرت قائدًا
+ * منافسةً على جهةٍ لا يُقدَّم عليها هنا أصلًا. فهي بطاقةٌ ساكنة بلا زرّ.
+ */
+const INITIATIVES = PROJECTS.filter((project) => project.applyAt);
 
 type StepPreferencesProps = {
   index: number;
@@ -230,74 +240,73 @@ export function StepPreferences({
 
       {/* ══ البطاقات ═══════════════════════════════════════════════════ */}
       {live && (
-      <div className="flex flex-col gap-s3">
-        <div>
-          <h3 className="font-display text-[1rem] font-bold text-fg">
-            اللجان والمشاريع
-          </h3>
-          <p className="mt-1 text-[0.875rem] leading-relaxed text-fg-muted">
-            اختر اللجنة أوّلًا لتظهر خياراتها. ولا بدّ أن تكون في رغباتك
-            الثلاث لجنةٌ ومشروع.
-          </p>
-        </div>
+        <div className="flex flex-col gap-s3">
+          <div>
+            <h3 className="font-display text-[1rem] font-bold text-fg">
+              اللجان والمشاريع
+            </h3>
+            <p className="mt-1 text-[0.875rem] leading-relaxed text-fg-muted">
+              اختر اللجنة أوّلًا لتظهر خياراتها. ولا بدّ أن تكون في رغباتك
+              الثلاث لجنةٌ ومشروع.
+            </p>
+          </div>
 
-        {PREFERENCE_SECTIONS.map((section) => (
-          <SectionCard
-            key={section.key}
-            section={section}
-            open={openSection === section.key}
-            onOpen={() =>
-              setOpenSection((current) =>
-                current === section.key ? null : section.key,
-              )
-            }
-            rankOf={rankOf}
-            onToggle={toggle}
-          />
-        ))}
-      </div>
+          {PREFERENCE_SECTIONS.map((section) => (
+            <SectionCard
+              key={section.key}
+              section={section}
+              open={openSection === section.key}
+              onOpen={() =>
+                setOpenSection((current) =>
+                  current === section.key ? null : section.key,
+                )
+              }
+              rankOf={rankOf}
+              onToggle={toggle}
+            />
+          ))}
+        </div>
       )}
 
       {/* ══ بديلُ انقطاع السكربت ═══════════════════════════════════════ */}
       {!live && (
-      <div className="flex flex-col gap-s5">
-        <p className="text-[0.875rem] text-fg-muted">
-          اختر رغباتك الثلاث من القوائم:
-        </p>
-        {SLOTS.map((slotLabel, slot) => (
-          <SelectField
-            key={`choice${slot + 1}-${v[`choice${slot + 1}`] ?? ""}`}
-            id={`choice${slot + 1}-fallback`}
-            name={`choice${slot + 1}`}
-            label={slotLabel}
-            required
-            placeholder="اختر من القائمة"
-            groups={PREFERENCE_GROUPS}
-            defaultValue={choices[slot] ?? ""}
-            error={e[`choice${slot + 1}`]}
-          />
-        ))}
-      </div>
+        <div className="flex flex-col gap-s5">
+          <p className="text-[0.875rem] text-fg-muted">
+            اختر رغباتك الثلاث من القوائم:
+          </p>
+          {SLOTS.map((slotLabel, slot) => (
+            <SelectField
+              key={`choice${slot + 1}-${v[`choice${slot + 1}`] ?? ""}`}
+              id={`choice${slot + 1}-fallback`}
+              name={`choice${slot + 1}`}
+              label={slotLabel}
+              required
+              placeholder="اختر من القائمة"
+              groups={PREFERENCE_GROUPS}
+              defaultValue={choices[slot] ?? ""}
+              error={e[`choice${slot + 1}`]}
+            />
+          ))}
+        </div>
       )}
 
       {/* القيم تُرسل من حقولٍ خفيّة: البطاقة زرٌّ لا حقل، والزرُّ لا يحمل
           قيمةً في `FormData`. ولا تُرسم إلّا مع البطاقات — فلا يتكرّر الاسم. */}
       {live && (
-      <div>
-        {[0, 1, 2].map((slot) => (
-          <input
-            key={slot}
-            type="hidden"
-            name={`choice${slot + 1}`}
-            value={choices[slot] ?? ""}
-          />
-        ))}
-      </div>
+        <div>
+          {[0, 1, 2].map((slot) => (
+            <input
+              key={slot}
+              type="hidden"
+              name={`choice${slot + 1}`}
+              value={choices[slot] ?? ""}
+            />
+          ))}
+        </div>
       )}
     </StepPanel>
   );
 }
-
 
 /* ── القسم وبطاقاتُه ─────────────────────────────────────────────────── */
 
@@ -323,11 +332,7 @@ function SectionCard({
   if (section.standalone) {
     const only = section.items[0];
     return (
-      <OptionCard
-        item={only}
-        rank={rankOf(only.value)}
-        onToggle={onToggle}
-      />
+      <OptionCard item={only} rank={rankOf(only.value)} onToggle={onToggle} />
     );
   }
 
@@ -395,9 +400,79 @@ function SectionCard({
               onToggle={onToggle}
             />
           ))}
+          {/* ⚠️ **في قسم المشاريع وحده، وبعد ما يُختار.** موضعُها هنا لا في
+              قسمٍ مستقلّ لأن الطالب يبحث عن المشروع بين المشاريع؛ وقسمٌ
+              خاصٌّ بها يجعلها تُقرأ صنفًا آخر فيتخطّاه من لا يعرف اسمها.
+              وبعد المختار لا قبله: البطاقةُ الساكنة في أوّل الشبكة تكسر
+              توقّعَ «كلُّ ما هنا يُضغط». */}
+          {section.key === "projects" &&
+            INITIATIVES.map((initiative) => (
+              <InitiativeCard key={initiative.slug} project={initiative} />
+            ))}
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * بطاقةٌ تعريفية لا خيار — لجهةٍ بابُ تسجيلها ليس عندنا.
+ *
+ * ⚠️ **`div` لا `button`، وبلا `aria-pressed`.** الشكلُ وحده لا يكفي: قارئُ
+ * الشاشة يُعلن «زرّ» فيحاول المستخدم اختيارها ولا شيء يحدث. وهي هنا نصٌّ
+ * ورابطٌ فحسب، فتُعلَن كذلك.
+ *
+ * ⚠️ **ولا تُشبه بطاقةَ الخيار في حدودها.** حدٌّ متقطّعٌ وخلفيةٌ غائرة —
+ * يُقرآن «هذي ليست مثل جاراتها» قبل أن يُقرأ النصّ. والفرقُ ليس ذوقًا: في
+ * شبكةٍ كلُّ ما فيها يُضغط، بطاقةٌ لا تُضغط بلا إشارةٍ بصريّة تُقرأ عطلًا.
+ */
+function InitiativeCard({ project }: { project: (typeof PROJECTS)[number] }) {
+  const applyAt = project.applyAt;
+  if (!applyAt) return null;
+  return (
+    <div className="flex flex-col gap-s2 border border-dashed border-line-strong bg-bg-sunken p-s4">
+      <span className="flex min-w-0 items-start justify-between gap-x-s3">
+        <span className="min-w-0">
+          <span className="block text-[0.95rem] font-semibold text-fg [overflow-wrap:anywhere]">
+            {isolateLatin(project.name)}
+          </span>
+          {project.tagline && (
+            <span
+              dir="ltr"
+              className="mt-0.5 block text-start text-[0.78rem] tracking-wide text-fg-muted"
+            >
+              {project.tagline}
+            </span>
+          )}
+        </span>
+        {/* بدل زرّ «اختيار» — يشغل موضعَه فيُقرأ الفرقُ في لمحة */}
+        <span className="shrink-0 border border-line px-s3 py-s1 text-[0.875rem] text-fg-muted">
+          تعريف
+        </span>
+      </span>
+
+      <span className="text-[0.875rem] leading-relaxed text-fg-muted [overflow-wrap:anywhere]">
+        {isolateLatin(project.summary)}
+      </span>
+
+      {/* ⚠️ النفيُ قبل الرابط: الرابطُ وحده يُقرأ «اطّلع» فيمضي الطالب
+          ظانًّا أن بطاقةَ اختيارها في مكانٍ ما تحت. */}
+      <span className="border-s-2 border-accent ps-s3 text-[0.82rem] leading-relaxed">
+        <span className="text-fg">{applyAt.note}</span>{" "}
+        <a
+          href={applyAt.href}
+          target="_blank"
+          /* `noopener` تقطع وصولَ الصفحة المفتوحة إلى صفحتنا عبر
+             `window.opener`، و`noreferrer` تمنع تسريبَ عنوان النموذج في
+             ترويسة الإحالة. */
+          rel="noopener noreferrer"
+          dir="ltr"
+          className="font-semibold text-accent underline underline-offset-4 hover:text-accent-hover"
+        >
+          {applyAt.label}
+        </a>
+      </span>
+    </div>
   );
 }
 

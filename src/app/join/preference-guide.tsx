@@ -71,9 +71,19 @@ export function PreferenceGuide() {
    * يفترق المعروضُ هنا عمّا يُعرض هناك بتعديلٍ يُنسى في أحدهما.
    */
   const projects = OPEN_PROJECTS;
-  /* تبقى للمبادرة التي ليست لنا — ولا واحدة اليوم، والمجموعة محروسةٌ
-     بـ`length > 0` فلا يظهر عنوانٌ فارغ. */
-  const initiatives = PROJECTS.filter((project) => project.isExternal);
+  /**
+   * ما يُعرَّف به ولا يُقدَّم عليه هنا — والشرطُ `applyAt` لا `isExternal`.
+   *
+   * ⚠️ **الفرقُ ليس تصنيفًا بل بابٌ يُفتح أو يُسدّ.** `isExternal` تقول
+   * «ليست لنا»، وهي اليوم على لا أحد. و`applyAt` تقول «التسجيل ليس عندنا،
+   * وهذا مكانُه» — وهي حالُ `learnx`: مبادرةٌ لنا، بابُها في حسابها.
+   *
+   * ولولا هذي المجموعة لَسقطت من الدليل كلِّه (لأنها `closed`)، فيقرأ
+   * الطالبُ صمتَنا «انتهت» ويفوته تسجيلٌ مفتوح.
+   *
+   * والمجموعةُ محروسةٌ بـ`length > 0` فلا يظهر عنوانٌ فارغ.
+   */
+  const initiatives = PROJECTS.filter((project) => project.applyAt);
 
   return (
     <div className="flex flex-col gap-s3">
@@ -142,13 +152,38 @@ export function PreferenceGuide() {
       </Group>
 
       {initiatives.length > 0 && (
-        <Group title="المبادرات" note="خارج مشاريع النادي الأساسية">
+        <Group title="مبادرات النادي" note="تُعرَّف هنا، والتسجيل في قناتها">
           <div className="flex flex-col gap-s4">
             {initiatives.map((initiative) => (
               <Entry
                 key={initiative.slug}
                 name={initiative.name}
                 description={initiative.summary}
+                meta={
+                  initiative.applyAt && (
+                    /* ⚠️ **يُقال إنّ التسجيل ليس هنا قبل أن يُعطى الرابط.**
+                       الرابطُ وحده يُقرأ دعوةً للاطّلاع، فيمضي الطالبُ ظانًّا
+                       أنه سيجد بطاقةَ اختيارٍ لها في الأسفل. والنفيُ أوّلًا
+                       يجعل الرابطَ جوابًا لا زينة. */
+                    <p className="border-s-2 border-accent bg-bg-sunken mt-1.5 px-s3 py-s2 text-[0.8rem] leading-relaxed">
+                      <span className="text-fg-muted">
+                        {initiative.applyAt.note}
+                      </span>{" "}
+                      <a
+                        href={initiative.applyAt.href}
+                        target="_blank"
+                        /* `noopener` تقطع وصولَ الصفحة المفتوحة إلى صفحتنا
+                           عبر `window.opener`، و`noreferrer` تمنع تسريبَ
+                           عنوانِ نموذجِ التقديم في ترويسة الإحالة. */
+                        rel="noopener noreferrer"
+                        dir="ltr"
+                        className="text-accent hover:text-accent-hover font-semibold underline underline-offset-4"
+                      >
+                        {initiative.applyAt.label}
+                      </a>
+                    </p>
+                  )
+                }
               />
             ))}
           </div>
