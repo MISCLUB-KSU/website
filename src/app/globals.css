@@ -1354,36 +1354,83 @@ html.mark-morphing [data-mark-static] {
 }
 
 /* ==========================================================================
-   تحيّةُ القائد على لوح التحميل — سطران لا سطر.
+   تحيّةُ القائد على لوح التحميل.
 
-   «أهلًا» صغيرةٌ متباعدة، والاسمُ تحتها أكبر: هرمٌ بصريّ يُبهر بالتفاوت لا
-   بالحجم. ونصُّهما من خاصّيتين يكتبهما `CURTAIN_INIT_SCRIPT` قبل أوّل رسم.
+   ثلاثةُ أفعالٍ متتابعة: ضرباتٌ تعبر بميل الشعار، ثم الاسمُ يمتلئ من أسفل
+   كحبرٍ يُسكب، ثم لمعةٌ تعبره مرّة. ونصُّه من خاصّيتين يكتبهما
+   `CURTAIN_INIT_SCRIPT` قبل أوّل رسم.
 
    ⚠️ **وبلا ارتفاعٍ محجوز للزائر.** أكثرُ من يرى اللوحَ زائرٌ بلا جلسة،
    فحجزُ سطرين له يزيح العلامةَ والمسار عند كلّ زيارة. ولذلك `line-height: 0`
    على الحاوية وارتفاعُ كلّ سطرٍ على سطره: بلا خاصّيةٍ يبقى `content: ""`
    وصندوقٌ بلا ارتفاع — فيطوي نفسَه تمامًا.
 
-   ⚠️ **والكشفُ بميلان الشعار لا بذوبانٍ عامّ.** زاويةُ القناع
-   `calc(90deg + var(--rake))` — أي ٢٤° المقيسة من ملفّ الشعار نفسِه. فلو
-   صُحّحت زاويةُ العلامة يومًا تبعها الكشفُ وحده، ويبقى الأثرُ يخصّ هذا
-   النادي لا أيَّ موقعٍ آخر. وهو النمطُ نفسُه في ضوء `main`.
+   ⚠️ **والميلانُ مشتقٌّ لا مكتوب** — `var(--rake)` هو ٢٤° المقيسة من ملفّ
+   الشعار. فلو صُحّحت زاويةُ العلامة يومًا تبعها كلُّ ما هنا وحدَه، ويبقى
+   الأثرُ يخصّ هذا النادي لا أيَّ موقعٍ آخر.
 
-   ⚠️ **والقناعُ ينتهي مصمتًا** لا شفّافًا، وإلّا بقي النصُّ مقصوصًا بعد
-   انتهاء الحركة — وهو أسوأ من ألّا يُكشف أصلًا.
+   ⚠️ **والترتيبُ مقيسٌ لا مُقدَّر — وأوّلُ توقيتٍ خرج مقلوبًا.** كان
+   الاسمُ يمتلئ من ٣٢٠ والضرباتُ تعبر حتى ٩٢٠، فتمرّ **فوق اسمٍ ظاهرٍ
+   فتحجبه** بدل أن يخرج من خلفها. رُصد في لوحة الإطارات ثم أُعيد الضبط:
 
-   ⚠️ **والميزانيةُ الزمنية ٩٥٠ms** — عندها ينسحب اللوح. فالتتابعُ كلُّه
-   ينتهي قبلها: «أهلًا» من ٩٠، والاسمُ من ٢٦٠، واللمعةُ تعبر مرّةً وتستقرّ
-   عند ٩٢٠. زيادةٌ على ذلك حركةٌ تُقطع في منتصفها.
+     ٤٠←٦٢٠     الضرباتُ الثلاث تعبر وتُخلي الوسط
+     ٤٣٠←٧٧٠    «أهلًا» تظهر في أثرها
+     ٤٧٠←٨٣٠    الاسمُ يمتلئ من أسفل
+     ٧٥٠←٩٥٠    لمعةٌ تعبره مرّة
+
+   ⚠️ **والميزانيةُ ٩٥٠ms** — عندها ينسحب اللوح، فآخرُ ما هنا ينتهي عندها
+   تمامًا. أيُّ زيادةٍ حركةٌ تُقطع في منتصفها.
    ========================================================================== */
+
+/* ── الضربات الثلاث ──────────────────────────────────────────────────────
+   ⚠️ **كابحُها اسمُ الحركة لا شفافيّتها.** `animation-name: var(--mis-hail-anim, none)`
+   — فبلا جلسةٍ لا حركةَ تُجدوَل ولا إطارَ يُحسب. و`opacity: 0` كان سيُبقي
+   ثلاثَ حركاتٍ تعمل على كلّ زائرٍ بلا أن تُرى. */
+.hail-stroke {
+  position: absolute;
+  inset-block: calc(50% - 3.4rem) calc(50% - 3.4rem);
+  inline-size: 3.2rem;
+  inset-inline-start: -14%;
+  opacity: 0;
+  transform: skewX(calc(-1 * var(--rake)));
+  animation: var(--mis-hail-anim, none) 430ms cubic-bezier(0.55, 0, 0.35, 1)
+    both;
+}
+
+.hail-stroke-1 {
+  background: var(--primary);
+  animation-delay: 40ms;
+}
+
+.hail-stroke-2 {
+  background: var(--deep);
+  animation-delay: 115ms;
+}
+
+.hail-stroke-3 {
+  background: var(--sky);
+  animation-delay: 190ms;
+}
+
+@keyframes hail-sweep {
+  from {
+    inset-inline-start: -14%;
+    opacity: 1;
+  }
+  to {
+    inset-inline-start: 114%;
+    opacity: 1;
+  }
+}
+
+/* ── السطران ─────────────────────────────────────────────────────────── */
 .load-hail {
+  position: relative;
   display: block;
-  /* الحاويةُ بلا ارتفاعٍ خاصّ — انظر التحذير أعلاه */
   line-height: 0;
   text-align: center;
 }
 
-/* ── «أهلًا» ─────────────────────────────────────────────────────────── */
 .load-hail::before {
   content: var(--mis-hail-pre, "");
   display: block;
@@ -1392,25 +1439,25 @@ html.mark-morphing [data-mark-static] {
   font-weight: 500;
   line-height: 1.6;
   letter-spacing: 0.62em;
-  /* التباعدُ يزيد فراغًا بعد آخر حرف، فيُزاح النصُّ يسارًا في RTL —
+  /* التباعدُ يزيد فراغًا بعد آخر حرف فيُزاح النصُّ يسارًا في RTL —
      وإزاحةُ نصفِه تُعيده إلى المنتصف البصريّ */
   text-indent: 0.62em;
   color: var(--fg-muted);
-  animation: hail-pre 420ms cubic-bezier(0.22, 1, 0.36, 1) 90ms both;
+  animation: hail-pre 340ms ease 430ms both;
 }
 
 @keyframes hail-pre {
   from {
     opacity: 0;
-    letter-spacing: 0.2em;
   }
   to {
     opacity: 1;
-    letter-spacing: 0.62em;
   }
 }
 
-/* ── الاسم ───────────────────────────────────────────────────────────── */
+/* ⚠️ **الاسمُ يمتلئ من أسفل — والقناعُ ينتهي مصمتًا.** لو انتهى شفّافًا
+   لذاب الاسمُ في نهاية حركته. وقعتُ فيها في مختبر الخيارات ورصدتُها
+   باللقطة، فتُكتب هنا صراحةً. */
 .load-hail::after {
   content: var(--mis-hail, "");
   display: block;
@@ -1419,35 +1466,26 @@ html.mark-morphing [data-mark-static] {
   font-weight: 700;
   line-height: 1.3;
   color: var(--deep);
-  -webkit-mask-image: linear-gradient(
-    calc(90deg + var(--rake)),
-    #000 0 34%,
-    rgb(0 0 0 / 0.35) 44%,
-    transparent 62% 100%
-  );
-  mask-image: linear-gradient(
-    calc(90deg + var(--rake)),
-    #000 0 34%,
-    rgb(0 0 0 / 0.35) 44%,
-    transparent 62% 100%
-  );
-  -webkit-mask-size: 300% 100%;
-  mask-size: 300% 100%;
-  animation: hail-name 620ms cubic-bezier(0.22, 1, 0.36, 1) 260ms both;
+  -webkit-mask-image: linear-gradient(to top, #000 0 50%, transparent 50% 100%);
+  mask-image: linear-gradient(to top, #000 0 50%, transparent 50% 100%);
+  /* ⚠️ **٢٠٠٪ لا ٢٢٠٪، والموضعان ٠٪ و١٠٠٪ لا رقمٌ سالب.** النسبةُ في
+     `mask-position` تُحسب على (حجم القناع − حجم العنصر)، فقيمةٌ سالبة مع
+     قناعٍ أكبر تُخرج موضعًا غيرَ معرَّفٍ عمليًّا — ظهر الاسمُ قبل أوانه
+     رغم `both`. وبـ٢٠٠٪: `0%` يُحاذي أعلى القناع (الشفّاف) فيختفي،
+     و`100%` يُحاذي أسفله (المصمت) فيظهر. مقيسٌ في لوحة الإطارات. */
+  -webkit-mask-size: 100% 200%;
+  mask-size: 100% 200%;
+  animation: hail-fill 360ms cubic-bezier(0.33, 1, 0.68, 1) 470ms both;
 }
 
-@keyframes hail-name {
+@keyframes hail-fill {
   from {
-    -webkit-mask-position: 100% 0;
-    mask-position: 100% 0;
-    letter-spacing: 0.3em;
-    transform: translateY(0.22em);
+    -webkit-mask-position: 0% 0%;
+    mask-position: 0% 0%;
   }
   to {
-    -webkit-mask-position: 0% 0;
-    mask-position: 0% 0;
-    letter-spacing: 0;
-    transform: translateY(0);
+    -webkit-mask-position: 0% 100%;
+    mask-position: 0% 100%;
   }
 }
 
@@ -1472,8 +1510,8 @@ html.mark-morphing [data-mark-static] {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     animation:
-      hail-name 620ms cubic-bezier(0.22, 1, 0.36, 1) 260ms both,
-      hail-sheen 460ms cubic-bezier(0.4, 0, 0.2, 1) 460ms both;
+      hail-fill 360ms cubic-bezier(0.33, 1, 0.68, 1) 470ms both,
+      hail-sheen 200ms cubic-bezier(0.4, 0, 0.2, 1) 750ms both;
   }
 }
 

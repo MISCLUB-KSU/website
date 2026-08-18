@@ -44,8 +44,13 @@ import { MARK_POINTS, MARK_VIEWBOX } from "@/lib/geometry.generated";
  * جُمعا في سلسلةٍ واحدة لَتعذّر فصلُهما في CSS، إذ لا وسمَ بينهما.
  *
  * وتُضبطان معًا أو لا تُضبط واحدة — فلا يظهر «أهلًا» بلا اسمٍ بعدها.
+ *
+ * ⚠️ **وثالثةٌ تُشغّل الضربات: `--mis-hail-anim`.** الضرباتُ وسمٌ ثابتٌ في
+ * الصفحة، فلا بدّ من كابحٍ يمنعها عن الزائر. واسمُ الحركة نفسُه هو الكابح:
+ * بلا جلسةٍ تبقى القيمة `none` فلا حركةَ تُجدوَل ولا إطارَ يُحسب — أنظفُ من
+ * `opacity: 0` الذي يُبقي الحركةَ تعمل بلا أن تُرى.
  */
-export const CURTAIN_INIT_SCRIPT = `try{if(sessionStorage.getItem("mis-loaded")){document.documentElement.dataset.loaded="1"}else{sessionStorage.setItem("mis-loaded","1")}}catch(e){}try{if(document.cookie.indexOf("-auth-token")>-1){var h=localStorage.getItem("mis-hail");if(h){var r=document.documentElement.style;r.setProperty("--mis-hail",JSON.stringify(h));r.setProperty("--mis-hail-pre",'"أهلًا"')}}}catch(e){}`;
+export const CURTAIN_INIT_SCRIPT = `try{if(sessionStorage.getItem("mis-loaded")){document.documentElement.dataset.loaded="1"}else{sessionStorage.setItem("mis-loaded","1")}}catch(e){}try{if(document.cookie.indexOf("-auth-token")>-1){var h=localStorage.getItem("mis-hail");if(h){var r=document.documentElement.style;r.setProperty("--mis-hail",JSON.stringify(h));r.setProperty("--mis-hail-pre",'"أهلًا"');r.setProperty("--mis-hail-anim","hail-sweep")}}}catch(e){}`;
 
 export function LoadCurtain() {
   return (
@@ -60,6 +65,14 @@ export function LoadCurtain() {
           <polygon key={points} points={points} />
         ))}
       </svg>
+      {/* ⚠️ **ثلاثُ ضرباتٍ بميل الشعار — تعبر ولا تبقى.**
+          وسمٌ ثابتٌ لأنّ الستارَ خادميٌّ بحت، وكابحُها اسمُ الحركة في CSS
+          (`--mis-hail-anim`): بلا جلسةٍ لا تتحرّك ولا تُرى. وهي `aria-hidden`
+          ضمنًا لأن الستارَ كلَّه كذلك. */}
+      <i className="hail-stroke hail-stroke-1" />
+      <i className="hail-stroke hail-stroke-2" />
+      <i className="hail-stroke hail-stroke-3" />
+
       {/* ⚠️ فارغٌ في الوسم — نصُّه من `content: var(--mis-hail)` في CSS.
           وموضعُه بين العلامة والمسار: التحيّةُ تتبع الهوية، والمسارُ آخر
           ما يُقرأ لأنه مؤشّر تقدّمٍ لا رسالة. */}
