@@ -124,7 +124,7 @@ export function SiteHeader() {
               على الجوّال لم يبقَ في الشريط إلا العلامة، وكلُّ ما كان هنا —
               المبدّل وزرُّ التقديم — سكن داخل اللوحة أعلاه.
               و`flex-wrap` باقٍ لتكبير النصّ 200% على الحاسب. */}
-          <div className="ms-auto flex flex-wrap items-center justify-end gap-x-s4 gap-y-s2 lg:ms-0 lg:flex-1 lg:basis-0">
+          <div className="ms-auto flex flex-wrap items-center justify-end gap-x-s4 gap-y-s2 lg:ms-0 lg:flex-1 lg:basis-0 lg:flex-nowrap">
             {/* ⚠️ **زرُّ القائمة في الطرف المقابل للعلامة — بلا نصّ.**
                 ثلاثُ ضرباتٍ بميل الشعار وحدَها: العلامةُ تحمل الجهةَ
                 البادئة وتقود إلى الرئيسية، وهذا يحمل المنتهية ويفتح

@@ -58,6 +58,19 @@ export function StaffGreeting({ className = "" }: { className?: string }) {
 
   if (!name) return null;
 
+  /**
+   * ⚠️ **الاسمُ الأول وحده — وهو إصلاحُ تخطيطٍ قبل أن يكون ذوقًا.**
+   *
+   * الشريطُ يعطي الكتلةَ اليسرى ٢٦٥ بكسلًا، ومحتواها بلا ترحيبٍ ١٦٥.
+   * فاسمٌ كامل («عبدالرحمن بن عبدالعزيز الشمري») يتجاوزها فيلتفّ زرُّ
+   * التقديم إلى صفٍّ ثانٍ ويصير الشريطُ ١١٤ بكسلًا بدل ٦٢ — مقيسٌ عند
+   * ١٠٢٤ و١٢٨٠ و١٤٤٠.
+   *
+   * و«أهلًا حسام» أدفأ من «أهلًا حسام المطيري» في كلّ حال: التحيّةُ
+   * بالاسم الأول لا باللقب.
+   */
+  const first = name.trim().split(/\s+/)[0];
+
   /* ⚠️ **لا `display` في الأساس — يأتي من موضعه.** الشريط يريده `inline-flex`
      ولوحةُ الجوّال تريده `flex w-full`، وهما صنفان في طبقةٍ واحدة: لو ثبت
      أحدُهما هنا لغلب أو غُلب بترتيب الملفّ لا بنيّة الموضع — فيصير الصنف
@@ -65,9 +78,12 @@ export function StaffGreeting({ className = "" }: { className?: string }) {
   return (
     <Link
       href="/admin"
-      className={`text-fg-muted hover:text-fg min-h-11 items-center whitespace-nowrap text-sm transition-colors ${className}`}
+      /* ⚠️ `min-w-0` مع `truncate` شبكةُ أمانٍ لا زينة: الاسمُ الأول قصيرٌ
+         في الغالب، لكنّ اسمًا أوّلَ طويلًا جدًّا كان سيعيد الالتفافَ نفسَه.
+         فيتقلّص بنقاطٍ ثلاث ويبقى الشريطُ صفًّا واحدًا. */
+      className={`text-fg-muted hover:text-fg min-h-11 min-w-0 items-center truncate text-sm transition-colors ${className}`}
     >
-      أهلًا {name}
+      أهلًا {first}
     </Link>
   );
 }
