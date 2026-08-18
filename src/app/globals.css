@@ -1353,23 +1353,105 @@ html.mark-morphing [data-mark-static] {
   color: var(--mark);
 }
 
-/* تحيّةُ القائد على لوح التحميل — نصُّها من خاصّيةٍ يكتبها
-   `CURTAIN_INIT_SCRIPT` قبل أوّل رسم، لا من الوسم.
+/* ==========================================================================
+   تحيّةُ القائد على لوح التحميل.
+
+   نصُّها من خاصّيةٍ يكتبها `CURTAIN_INIT_SCRIPT` قبل أوّل رسم، لا من الوسم.
 
    ⚠️ **وبلا ارتفاعٍ محجوز.** أكثرُ من يرى اللوحَ زائرٌ بلا جلسة، فحجزُ سطرٍ
    له يزيح العلامةَ والمسار عند كلّ زيارة — إزاحةٌ مقابل لا شيء. والعنصرُ
    فارغٌ بلا محتوى يطوي نفسَه، ويظهر لمن له اسمٌ وحده.
 
-   والفراغُ بينه وبين جارَيه من `gap` الشبكة في `.load-curtain`، فلا هامشَ
-   هنا يضاعفه. */
+   ⚠️ **والكشفُ بميلان الشعار لا بذوبانٍ عامّ.** القناعُ تدرّجٌ زاويتُه
+   `calc(90deg + var(--rake))` — أي ٢٤° المقيسة من ملفّ الشعار نفسِه. فلو
+   صُحّحت زاويةُ العلامة يومًا تبعها الكشفُ وحده، ويبقى الأثرُ يخصّ هذا
+   النادي لا أيَّ موقعٍ آخر. وهو النمطُ نفسُه في `main` أعلاه.
+
+   ⚠️ **وينتهي القناعُ معتمًا تمامًا.** الطرفُ الأخير من التدرّج مصمتٌ لا
+   شفّاف، وإلّا لبقي النصُّ مقصوصًا بعد انتهاء الحركة — وهو أسوأ من ألّا
+   يُكشف أصلًا.
+
+   ⚠️ **والميزانيةُ الزمنية ٩٥٠ms.** اللوحُ ينسحب عندها، فكلُّ ما هنا ينتهي
+   قبلها: الكشفُ ٥٦٠ms، واللمعةُ تعبر مرّةً بين ٤٢٠ و٩٢٠. زيادةٌ على ذلك
+   تعني حركةً تُقطع في منتصفها.
+   ========================================================================== */
 .load-hail {
-  color: var(--fg-muted);
-  font-size: 0.9rem;
-  letter-spacing: 0.01em;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 5.2vw, 3rem);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--deep);
+  text-align: center;
+  /* القناعُ يبدأ شفّافًا على النصّ وينتهي مصمتًا — انظر التحذير أعلاه */
+  -webkit-mask-image: linear-gradient(
+    calc(90deg + var(--rake)),
+    #000 0 34%,
+    rgb(0 0 0 / 0.35) 44%,
+    transparent 62% 100%
+  );
+  mask-image: linear-gradient(
+    calc(90deg + var(--rake)),
+    #000 0 34%,
+    rgb(0 0 0 / 0.35) 44%,
+    transparent 62% 100%
+  );
+  -webkit-mask-size: 300% 100%;
+  mask-size: 300% 100%;
+  animation: hail-reveal 560ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
 }
 
 .load-hail::before {
   content: var(--mis-hail, "");
+}
+
+@keyframes hail-reveal {
+  from {
+    -webkit-mask-position: 100% 0;
+    mask-position: 100% 0;
+    letter-spacing: 0.42em;
+    transform: translateY(0.28em);
+  }
+  to {
+    -webkit-mask-position: 0% 0;
+    mask-position: 0% 0;
+    letter-spacing: 0.02em;
+    transform: translateY(0);
+  }
+}
+
+/* ⚠️ **اللمعةُ داخل `@supports` وحدها — والسببُ أن فشلَها يمحو النصّ.**
+   `-webkit-text-fill-color: transparent` يجعل الحروفَ تُرسم من الخلفية؛
+   فلو لم يُدعم `background-clip: text` بقي الملءُ شفّافًا على خلفيةٍ لا
+   تُقصّ — أي **اسمٌ غيرُ مرئيّ**. فتُطبَّق حيث تُدعم، ويبقى `color` الصلب
+   أعلاه هو الأساس في كلّ ما عداها. */
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .load-hail {
+    background-image: linear-gradient(
+      calc(90deg + var(--rake)),
+      var(--deep) 0 40%,
+      var(--primary) 47%,
+      var(--sky) 50%,
+      var(--primary) 53%,
+      var(--deep) 60% 100%
+    );
+    background-size: 320% 100%;
+    background-position: 100% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation:
+      hail-reveal 560ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both,
+      hail-sheen 500ms cubic-bezier(0.4, 0, 0.2, 1) 420ms both;
+  }
+}
+
+@keyframes hail-sheen {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0% 0;
+  }
 }
 
 .load-rail {
