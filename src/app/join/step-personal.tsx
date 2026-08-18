@@ -188,7 +188,10 @@ export function StepPersonal({
           type="email"
           defaultValue={v.email}
           error={e.email}
-          hint="نرسل نتيجة الطلب عليه."
+          /* ⚠️ **لا يَعِد بإرسال** (١٧ أغسطس ٢٠٢٦) — كان «نرسل نتيجة الطلب
+             عليه»، والبريدُ لا يخرج اليوم. والحقلُ يبقى مطلوبًا: هو معرّفُ
+             المتقدّم في اللوحة، ووجهةُ الرسائل يومَ يوثَّق النطاق. */
+          hint="نحفظه للتواصل بخصوص طلبك."
           placeholder="name@ksu.edu.sa"
           enterKeyHint="next"
           dir="ltr"
