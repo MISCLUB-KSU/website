@@ -45,12 +45,20 @@ import { MARK_POINTS, MARK_VIEWBOX } from "@/lib/geometry.generated";
  *
  * وتُضبطان معًا أو لا تُضبط واحدة — فلا يظهر «أهلًا» بلا اسمٍ بعدها.
  *
+ * ⚠️ **ورابعةٌ تُطيل مكوثَ الستار: `--mis-hail-hold`.** طلبت الإدارة إطالته
+ * «ثانيتين ولا ثلاث» — والإطالةُ للجميع كانت تعني أن كلَّ طالبٍ يفتح الموقع
+ * ينتظر ثلاثًا قبل أن يرى شيئًا، وصفحةُ الرئيسية تُرسم في ٨٤ مللي ثانية
+ * (مقيسة). فيبدو الموقعُ بطيئًا وهو سريع، بلا مقابلٍ للطالب.
+ *
+ * فالمهلةُ متغيّرٌ: ٩٥٠ms للزائر كما كانت، و٢٩٠٠ms لمن له اسم — يقرؤه
+ * ويستقرّ قبل أن ينسحب.
+ *
  * ⚠️ **وثالثةٌ تُشغّل الضربات: `--mis-hail-anim`.** الضرباتُ وسمٌ ثابتٌ في
  * الصفحة، فلا بدّ من كابحٍ يمنعها عن الزائر. واسمُ الحركة نفسُه هو الكابح:
  * بلا جلسةٍ تبقى القيمة `none` فلا حركةَ تُجدوَل ولا إطارَ يُحسب — أنظفُ من
  * `opacity: 0` الذي يُبقي الحركةَ تعمل بلا أن تُرى.
  */
-export const CURTAIN_INIT_SCRIPT = `try{if(sessionStorage.getItem("mis-loaded")){document.documentElement.dataset.loaded="1"}else{sessionStorage.setItem("mis-loaded","1")}}catch(e){}try{if(document.cookie.indexOf("-auth-token")>-1){var h=localStorage.getItem("mis-hail");if(h){var r=document.documentElement.style;r.setProperty("--mis-hail",JSON.stringify(h));r.setProperty("--mis-hail-pre",'"أهلًا"');r.setProperty("--mis-hail-anim","hail-sweep")}}}catch(e){}`;
+export const CURTAIN_INIT_SCRIPT = `try{if(sessionStorage.getItem("mis-loaded")){document.documentElement.dataset.loaded="1"}else{sessionStorage.setItem("mis-loaded","1")}}catch(e){}try{if(document.cookie.indexOf("-auth-token")>-1){var h=localStorage.getItem("mis-hail");if(h){var r=document.documentElement.style;r.setProperty("--mis-hail",JSON.stringify(h));r.setProperty("--mis-hail-pre",'"أهلًا"');r.setProperty("--mis-hail-anim","hail-sweep");r.setProperty("--mis-hail-hold","2900ms")}}}catch(e){}`;
 
 export function LoadCurtain() {
   return (

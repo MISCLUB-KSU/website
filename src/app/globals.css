@@ -1339,7 +1339,11 @@ html.mark-morphing [data-mark-static] {
   background: var(--surface);
   /* لا يبتلع ضغطةً أبدًا — ولو علق لبقي الموقعُ قابلًا للاستعمال */
   pointer-events: none;
-  animation: load-lift 450ms cubic-bezier(0.65, 0, 0.35, 1) 950ms both;
+  /* ⚠️ **المهلةُ متغيّرٌ لا رقمٌ ثابت** — ٩٥٠ms للزائر، و٢٩٠٠ms لمن له
+     ترحيبٌ يقرؤه (يضبطها `CURTAIN_INIT_SCRIPT`). والإطالةُ للجميع تجعل
+     الموقعَ يبدو بطيئًا وهو سريع: الرئيسية تُرسم في ٨٤ مللي ثانية. */
+  animation: load-lift 450ms cubic-bezier(0.65, 0, 0.35, 1)
+    var(--mis-hail-hold, 950ms) both;
 }
 
 @keyframes load-lift {
