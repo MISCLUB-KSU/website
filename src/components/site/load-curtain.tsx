@@ -21,8 +21,25 @@ import { MARK_POINTS, MARK_VIEWBOX } from "@/lib/geometry.generated";
  * ⚠️ ولا يُركَّب داخل مكوّنٍ عميل: هو وسمٌ ساكنٌ بحت، فيبقى في الخادم.
  */
 
-/** يُحقن `beforeInteractive` — نفس نمط `THEME_INIT_SCRIPT` في هذا المستودع */
-export const CURTAIN_INIT_SCRIPT = `try{if(sessionStorage.getItem("mis-loaded")){document.documentElement.dataset.loaded="1"}else{sessionStorage.setItem("mis-loaded","1")}}catch(e){}`;
+/**
+ * يُحقن `beforeInteractive` — نفس نمط `THEME_INIT_SCRIPT` في هذا المستودع.
+ *
+ * ويؤدّي أمرين: يمنع تكرار الستار في الجلسة، **ويكتب تحيّة القائد قبل أوّل
+ * رسم**.
+ *
+ * ⚠️ **والتحيّةُ خاصّيةٌ في `:root` لا نصٌّ في عنصر.** هذا السطر يسبق وسمَ
+ * الستار في المستند، فالعنصرُ غيرُ موجودٍ بعدُ حين يجري — فلا `textContent`
+ * يُكتب فيه. والخاصّيةُ تُضبط على الجذر ويلتقطها `content` في CSS متى
+ * رُسم اللوح. وغيابُها يعني `content: ""` — أي لا شيء، وهو حالُ الزائر.
+ *
+ * ⚠️ **ولا تُقرأ الذاكرةُ بلا كوكي جلسة.** الاسمُ محفوظٌ في `localStorage`
+ * وهو باقٍ بعد الخروج، والكوكي يزول معه — فالشرطُ يجعل التحيّة تختفي عند
+ * الخروج بلا أن نمسح شيئًا. وهي مسألةُ جهازٍ مشترك لا مسألةُ أمان: اللوحُ
+ * زينةٌ لا يفتح بابًا.
+ *
+ * و`JSON.stringify` تُخرج السلسلة مقتبسةً ومهروبةً — وهو ما يقبله `content`.
+ */
+export const CURTAIN_INIT_SCRIPT = `try{if(sessionStorage.getItem("mis-loaded")){document.documentElement.dataset.loaded="1"}else{sessionStorage.setItem("mis-loaded","1")}}catch(e){}try{if(document.cookie.indexOf("-auth-token")>-1){var h=localStorage.getItem("mis-hail");if(h){document.documentElement.style.setProperty("--mis-hail",JSON.stringify("أهلًا "+h))}}}catch(e){}`;
 
 export function LoadCurtain() {
   return (
@@ -37,6 +54,10 @@ export function LoadCurtain() {
           <polygon key={points} points={points} />
         ))}
       </svg>
+      {/* ⚠️ فارغٌ في الوسم — نصُّه من `content: var(--mis-hail)` في CSS.
+          وموضعُه بين العلامة والمسار: التحيّةُ تتبع الهوية، والمسارُ آخر
+          ما يُقرأ لأنه مؤشّر تقدّمٍ لا رسالة. */}
+      <span className="load-hail" />
       <span className="load-rail" />
     </div>
   );

@@ -47,7 +47,23 @@ export function StaffGreeting({ className = "" }: { className?: string }) {
     fetch("/api/me", { signal: stop.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { name?: string | null } | null) => {
-        if (typeof data?.name === "string") setName(data.name);
+        if (typeof data?.name !== "string") return;
+        setName(data.name);
+        /**
+         * ⚠️ **يُحفظ ليقرأه لوحُ التحميل قبل أوّل رسم.**
+         *
+         * اللوحُ وسمٌ ساكن ينسحب بعد ٩٥٠ms، وهذا الاسمُ يصل من الشبكة —
+         * فلا يلحقه أبدًا في أوّل زيارة. والمحفوظُ هنا يُقرأ في السطر
+         * `beforeInteractive` فيظهر فورًا في الزيارات التالية.
+         *
+         * ولا يُقرأ إلّا مع كوكي جلسةٍ قائمة (انظر `CURTAIN_INIT_SCRIPT`)،
+         * فمن خرج لا يُحيّا باسمه على جهازٍ يشاركه غيرُه.
+         */
+        try {
+          localStorage.setItem("mis-hail", data.name.trim().split(/\s+/)[0]);
+        } catch {
+          /* تخزينٌ ممنوع أو ممتلئ — اللوحُ يبقى بلا اسم، ولا شيء يسقط */
+        }
       })
       .catch(() => {
         /* صامتٌ عمدًا — انظر رأس الملفّ */
