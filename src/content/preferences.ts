@@ -180,7 +180,8 @@ export const COMMITTEE_PREFERENCES: readonly Preference[] = COMMITTEES.flatMap(
  * تُحوَّل إلى `/projects` كسائر المشاريع لأن القسم مغلقٌ بانتظار الشعارات،
  * لا بسبب هذا التغيير.
  *
- * والروابطُ المباشرة `‎/join/project/{learnx|technnovate|mis-community}`
+ * والرابطُ المباشر `‎/join/project/learnx` (وكذا روابطُ ما حُذف من
+ * `projects.ts` أصلًا: `technnovate` و`mis-community`)
  * **تسقط إلى النموذج المفتوح بثلاث رغبات** — لا 404. وهو الصواب: من وصل
  * برابطٍ قديم يجد بابًا يعمل لا صفحةَ خطأ.
  */
