@@ -37,12 +37,15 @@ import {
 import {
   DIRECT_STATUSES,
   INTERVIEW_CAP,
+  INTERVIEW_MINUTES,
   STAGE_LABELS,
   STATUSES,
   arrivalStamp,
   choiceAtStage,
   fromRiyadhInput,
+  interviewClashes,
   interviewLabel,
+  whatsappHref,
   toRiyadhInput,
   inScopes,
   openOnly,
@@ -453,6 +456,21 @@ export function ApplicationsTable({
    * وعلى الحاسب `j`/`k` تحلّها — لكن من لم يفتح لوحَ الاختصارات لا يعلم،
    * ولا لوحةَ مفاتيح على الجوّال أصلًا.
    */
+  /**
+   * من يتعارض موعدُه مع المفتوح — **للمفتوح وحدَه لا لكلّ الصفوف**.
+   *
+   * ⚠️ حسابُه لكلّ صفٍّ يعني مقارنةَ كلّ موعدٍ بكلّ موعدٍ في كلّ رسم؛
+   * والقائدُ لا يقرأ إلّا ملفًّا واحدًا. ولوحُ المقابلات يمسح الكلَّ مرّةً
+   * واحدةً بطريقةٍ أرخص لأنه يعرض الكلّ أصلًا.
+   */
+  const clash = useMemo(
+    () =>
+      current
+        ? interviewClashes(rows, current.row).map((r) => r.full_name)
+        : [],
+    [rows, current],
+  );
+
   const at = current ? shown.findIndex((x) => x.row.id === current.row.id) : -1;
   const step = useCallback(
     (delta: number) => {
@@ -777,6 +795,7 @@ export function ApplicationsTable({
             rivalry={rivalry}
             notes={notesByApp.get(current.row.id) ?? EMPTY_NOTES}
             me={me}
+            clash={clash}
             onBack={() => setPicked(null)}
             at={at}
             of={shown.length}
@@ -2045,6 +2064,7 @@ function Dossier({
   rivalry,
   notes,
   me,
+  clash,
   onBack,
   at,
   of,
@@ -2056,6 +2076,8 @@ function Dossier({
   rivalry: Competition;
   notes: readonly Note[];
   me: string;
+  /** أسماءُ من يتعارض موعدُهم مع موعده — تُقال عند الحقل لا في القائمة */
+  clash: readonly string[];
   onBack: () => void;
   /** موضعُه في المعروض (صفريّ) وعددُ المعروض — «٣ من ٥٧» */
   at: number;
@@ -2219,7 +2241,7 @@ function Dossier({
               borderColor: "color-mix(in oklab, var(--snow) 16%, transparent)",
             }}
           >
-            <StatusPicker row={row} dark />
+            <StatusPicker row={row} clash={clash} dark />
           </div>
         </header>
 
@@ -2491,7 +2513,15 @@ function Checklist({ items }: { items: readonly Item[] }) {
   );
 }
 
-function StatusPicker({ row, dark }: { row: Row; dark?: boolean }) {
+function StatusPicker({
+  row,
+  clash,
+  dark,
+}: {
+  row: Row;
+  clash: readonly string[];
+  dark?: boolean;
+}) {
   const [pending, start] = useTransition();
   const [error, setError] = useState("");
   const { patchRows } = useStore();
@@ -2577,7 +2607,7 @@ function StatusPicker({ row, dark }: { row: Row; dark?: boolean }) {
         </p>
       )}
 
-      <InterviewField row={row} dark={dark} />
+      <InterviewField row={row} clash={clash} dark={dark} />
 
       <PassOverButton row={row} dark={dark} />
 
@@ -2597,7 +2627,15 @@ function StatusPicker({ row, dark }: { row: Row; dark?: boolean }) {
  * ⚠️ **ولا يظهر لمن حُسم أمرُه** — موعدُ مقابلةٍ لمقبولٍ أو معتذَرٍ عنه
  * ليس شيئًا يُضبط.
  */
-function InterviewField({ row, dark }: { row: Row; dark?: boolean }) {
+function InterviewField({
+  row,
+  clash,
+  dark,
+}: {
+  row: Row;
+  clash: readonly string[];
+  dark?: boolean;
+}) {
   const { patchRows } = useStore();
   const [pending, start] = useTransition();
   const [note, setNote] = useState("");
@@ -2645,6 +2683,26 @@ function InterviewField({ row, dark }: { row: Row; dark?: boolean }) {
           {pending ? "…يُحفظ" : note || "بتوقيت الرياض"}
         </span>
       </label>
+
+      {/**
+       * ⚠️ **تنبيهٌ لا منع.** لا عمودَ لمدّة المقابلة، والثلاثون دقيقةً
+       * افتراضٌ (`INTERVIEW_MINUTES`) — فقد يقصد القائدُ التتابعَ الضيّق،
+       * وقد يقابله اثنان من اللجنة معًا. والمنعُ يفرض عليه جدولًا لا يعرفه
+       * من كتب الشيفرة؛ والسكوتُ يجعله يحجز اثنين في وقتٍ واحدٍ ولا يدري
+       * إلّا والطالبان على الباب.
+       *
+       * ⚠️ **والأسماءُ تُقال لا العدد.** «يتعارض مع موعدٍ آخر» يدفعه يبحث
+       * في خمسة عشر موعدًا عن أيِّها؛ والاسمُ يحسمها في سطر.
+       */}
+      {clash.length > 0 && (
+        <p
+          role="status"
+          className="mt-s2 text-[0.76rem] leading-relaxed"
+          style={{ color: dark ? "var(--sky)" : "var(--warning)" }}
+        >
+          ⚠️ يتداخل مع {clash.join(" · ")} — داخل {INTERVIEW_MINUTES} دقيقة.
+        </p>
+      )}
     </div>
   );
 }
@@ -2775,15 +2833,6 @@ function PassOverButton({ row, dark }: { row: Row; dark?: boolean }) {
  * بـ05)، فلا حاجةَ لتخمينٍ هنا — ومع ذلك يُفحص الطول قبل البناء: صفٌّ قديم
  * أو مستوردٌ قد لا يلتزمها، ورابطٌ مكسورٌ يفتح واتساب على رقمٍ غير موجود.
  */
-function whatsappHref(row: Row): string | null {
-  const digits = (row.phone ?? "").replace(/\D/g, "");
-  if (!/^05\d{8}$/.test(digits)) return null;
-  const intl = `966${digits.slice(1)}`;
-  const first = (row.full_name ?? "").trim().split(/\s+/)[0] || "";
-  const text = `مرحبًا ${first}، معك نادي نظم المعلومات الإدارية بجامعة الملك سعود بخصوص طلب عضويتك.`;
-  return `https://wa.me/${intl}?text=${encodeURIComponent(text)}`;
-}
-
 function NotifyButton({ row, dark }: { row: Row; dark?: boolean }) {
   const [pending, start] = useTransition();
   const [armed, setArmed] = useState(false);

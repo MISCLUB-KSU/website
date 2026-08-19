@@ -522,6 +522,91 @@ export function fromRiyadhInput(value: string): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
+/**
+ * رابطُ واتساب للمتقدّم — **وفارغٌ لمن رقمُه لا يطابق الشكل السعوديّ**.
+ *
+ * ⚠️ لا يُبنى رابطٌ من رقمٍ مشكوكٍ فيه: زرٌّ يفتح محادثةً مع رقمٍ خطأ
+ * أسوأُ من زرٍّ لا يظهر — الأوّل يُرسل رسالةَ نادٍ إلى غريب.
+ */
+export function whatsappHref(row: {
+  phone: string;
+  full_name: string;
+}): string | null {
+  const digits = (row.phone ?? "").replace(/\D/g, "");
+  if (!/^05\d{8}$/.test(digits)) return null;
+  const intl = `966${digits.slice(1)}`;
+  const first = (row.full_name ?? "").trim().split(/\s+/)[0] || "";
+  const text = `مرحبًا ${first}، معك نادي نظم المعلومات الإدارية بجامعة الملك سعود بخصوص طلب عضويتك.`;
+  return `https://wa.me/${intl}?text=${encodeURIComponent(text)}`;
+}
+
+/**
+ * طولُ المقابلة المفترَض — **حارسُ تعارضٍ لا قاعدةُ جدولة**.
+ *
+ * ⚠️ **رقمٌ افتراضيٌّ يُقال سببُه.** لا عمودَ لمدّة المقابلة في القاعدة،
+ * ولن يُضاف لأجل تنبيه. والثلاثون دقيقةً ما يستغرقه لقاءُ متقدّمٍ واحد
+ * عمليًّا — فما تداخل داخلها **يُنبَّه عليه ولا يُمنع**: قد يقابله اثنان
+ * من اللجنة معًا، وقد يقصد القائدُ التتابعَ الضيّق. والمنعُ هنا يفرض على
+ * القائد جدولًا لا يعرفه من كتب الشيفرة.
+ */
+export const INTERVIEW_MINUTES = 30;
+
+/**
+ * مواعيدُ تتداخل مع موعد صفٍّ بعينه — **من الصفوف الواصلة وحدَها**.
+ *
+ * ⚠️ **ولا تُقاس على النادي كلِّه.** `RLS` تُوصل القائدَ صفوفَ نطاقه، فما
+ * لا يراه لا يُقاس عليه — وهو الصواب: مقابلةٌ في لجنةٍ أخرى ليست تعارضًا
+ * في وقت هذا القائد. والرئاسةُ ترى الكلَّ فتقيس على الكلّ، وذاك يكشف
+ * تعارضًا من نوعٍ آخر: **متقدّمٌ واحدٌ مدعوٌّ في جهتين في الوقت نفسِه**.
+ */
+export function interviewClashes(
+  rows: readonly Row[],
+  row: Row,
+): readonly Row[] {
+  if (!row.interview_at) return [];
+  const at = Date.parse(row.interview_at);
+  if (Number.isNaN(at)) return [];
+  const window = INTERVIEW_MINUTES * 60_000;
+  return rows.filter((other) => {
+    if (other.id === row.id || !other.interview_at) return false;
+    /* من حُسم أمرُه لا يشغل وقتًا — موعدُه أثرٌ لم يُمسح */
+    if (other.status === "accepted" || other.status === "rejected") return false;
+    const t = Date.parse(other.interview_at);
+    return !Number.isNaN(t) && Math.abs(t - at) < window;
+  });
+}
+
+/** يومُ الموعد بتوقيت الرياض — مفتاحُ التجميع في لوح المقابلات */
+export function interviewDayKey(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : dayKey(d);
+}
+
+/** «الأحد ٢٢ أغسطس» — عنوانُ اليوم بلا ساعة */
+export function interviewDayLabel(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : DAY_FULL.format(d);
+}
+
+const DAY_FULL = new Intl.DateTimeFormat("ar", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  ...RIYADH,
+});
+
+/** «١:٠٠ م» — الساعةُ وحدَها، فاليومُ عنوانٌ فوقها */
+export function interviewTime(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : TIME_FMT.format(d);
+}
+
+const TIME_FMT = new Intl.DateTimeFormat("ar", {
+  hour: "numeric",
+  minute: "2-digit",
+  ...RIYADH,
+});
+
 /** «الأحد ٢٢ أغسطس، ١:٠٠ م» — للعرض */
 export function interviewLabel(iso: string | null): string {
   if (!iso) return "";

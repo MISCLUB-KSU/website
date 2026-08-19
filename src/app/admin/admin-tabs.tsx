@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ApplicationsTable } from "./applications-table";
 import { Dashboard } from "./dashboard";
 import { FlowChart } from "./flow";
+import { Interviews } from "./interviews";
 import type { Note, Row } from "./stats";
 import { useRowStore } from "./store";
 
@@ -23,6 +24,10 @@ const TABS = [
   { key: "dash", label: "اللوحة" },
   { key: "flow", label: "المسارات" },
   { key: "list", label: "الطلبات" },
+  /* ⚠️ **آخرًا لا أوّلًا.** ترتيبُ التبويبات يتبع ترتيبَ العمل: يُقرأ
+     الوارد، ثم يُفرز، ثم تُقابَل. ومن لم يدعُ أحدًا بعدُ يجد اللوحَ فارغًا
+     بسطرٍ يقول كيف يمتلئ. */
+  { key: "meet", label: "المقابلات" },
 ] as const;
 
 type Key = (typeof TABS)[number]["key"];
@@ -100,7 +105,7 @@ export function AdminTabs({
           ثابتتين. */}
       <div
         role="tabpanel"
-        className={`mt-s3 min-h-0 flex-1 ${tab === "flow" ? "overflow-y-auto" : ""}`}
+        className={`mt-s3 min-h-0 flex-1 ${tab === "flow" || tab === "meet" ? "overflow-y-auto" : ""}`}
       >
         {tab === "dash" && (
           <Dashboard
@@ -114,6 +119,14 @@ export function AdminTabs({
           <div className="tile p-s5 sm:p-s6">
             <FlowChart rows={rows} scopes={scopes} isAdmin={isAdmin} />
           </div>
+        )}
+        {tab === "meet" && (
+          <Interviews
+            rows={rows}
+            scopes={scopes}
+            isAdmin={isAdmin}
+            phase={phase}
+          />
         )}
         {tab === "list" && (
           <ApplicationsTable
