@@ -7,6 +7,7 @@ import { findPreference } from "@/content/preferences";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./login/actions";
 import { choiceAtStage, inScopes, type Note, type Row } from "./stats";
+import type { StaffRow } from "./staff-panel";
 
 /**
  * لوحة الطلبات.
@@ -127,6 +128,29 @@ export default async function AdminPage() {
     });
   }
   const notes = (noteRows ?? []) as Note[];
+
+  /**
+   * قائمةُ الطاقم — **للرئاسة وحدها، ولا تُجلب لغيرها أصلًا**.
+   *
+   * ⚠️ `RLS` تقصّها على كلّ حال: سياسةُ «كلٌّ يقرأ صفّه» تُرجع للقائد صفَّه
+   * وحدَه. لكنّ الاستعلامَ لا يُرسَل من الأساس لمن لا شاشةَ له — فما لا
+   * يُعرض لا يُجلب، وهو أرخصُ وأصدقُ من أن يُجلب ثم يُخفى.
+   */
+  const { data: staffRows, error: staffError } =
+    me.role === "admin"
+      ? await supabase
+          .from("staff")
+          .select("email, role, scopes, display_name, created_at")
+          .order("role", { ascending: true })
+          .order("created_at", { ascending: true })
+      : { data: null, error: null };
+
+  if (staffError) {
+    console.error("[admin] تعذّرت قراءة الطاقم", {
+      code: staffError.code,
+      message: staffError.message,
+    });
+  }
 
   /* ⚠️ **الافتراضُ ١ عند أيّ تعثّر.** مرحلةٌ أعلى بالغلط تفتح على القادة
      من لم يحن دورُهم، ومرحلةٌ أدنى تقفل شغلًا قائمًا — والأولى أضرّ. */
@@ -288,6 +312,7 @@ export default async function AdminPage() {
         scopes={(me.scopes ?? []) as string[]}
         isAdmin={me.role === "admin"}
         me={user.email?.toLowerCase() ?? ""}
+        staff={(staffRows ?? []) as StaffRow[]}
       />
     </main>
   );

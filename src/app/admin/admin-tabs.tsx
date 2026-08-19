@@ -6,6 +6,7 @@ import { ApplicationsTable } from "./applications-table";
 import { Dashboard } from "./dashboard";
 import { FlowChart } from "./flow";
 import { Interviews } from "./interviews";
+import { StaffPanel, type StaffRow } from "./staff-panel";
 import type { Note, Row } from "./stats";
 import { useRowStore } from "./store";
 
@@ -28,6 +29,11 @@ const TABS = [
      الوارد، ثم يُفرز، ثم تُقابَل. ومن لم يدعُ أحدًا بعدُ يجد اللوحَ فارغًا
      بسطرٍ يقول كيف يمتلئ. */
   { key: "meet", label: "المقابلات" },
+  /* ⚠️ **للرئاسة وحدها — ويُرشَّح من القائمة لا يُعطَّل.** تبويبٌ معطَّلٌ
+     أمام قائدٍ يقول له إن ثمّة بابًا مُنع منه؛ وغيابُه لا يقول شيئًا.
+     والمنعُ الحقيقيّ في سياسة `staff` لا في هذي القائمة — وإخفاءُ تبويبٍ
+     ليس أمانًا. */
+  { key: "staff", label: "الطاقم", adminOnly: true },
 ] as const;
 
 type Key = (typeof TABS)[number]["key"];
@@ -39,6 +45,7 @@ export function AdminTabs({
   scopes,
   isAdmin,
   me,
+  staff,
 }: {
   rows: readonly Row[];
   notes: readonly Note[];
@@ -48,7 +55,12 @@ export function AdminTabs({
   isAdmin: boolean;
   /** بريدُ القارئ — به يُعرف ما يملك تعديلَه من الملاحظات */
   me: string;
+  /** صفوفُ الطاقم — فارغةٌ لغير الرئاسة، فالخادمُ لا يجلبها لها */
+  staff: readonly StaffRow[];
 }) {
+  /* ⚠️ **يُرشَّح مرّةً ويُستعمل في الرسم والتحقّق معًا.** ولو رُشّح في
+     الرسم وحدَه لبقي `#staff` في العنوان يفتح لوحًا لا يملكه قارئُه. */
+  const tabs = TABS.filter((t) => isAdmin || !("adminOnly" in t && t.adminOnly));
   /**
    * ⚠️ **المخزنُ هنا لا في `ApplicationsTable` — واللوحُ يُفكّ عند التبديل.**
    *
@@ -70,12 +82,18 @@ export function AdminTabs({
   useEffect(() => {
     const read = () => {
       const h = window.location.hash.slice(1);
-      if (TABS.some((t) => t.key === h)) setTab(h as Key);
+      /* ⚠️ يُفحص هنا بـ`isAdmin` لا بمصفوفةٍ محسوبةٍ في الرسم: تلك تُبنى
+         كلَّ مرّةٍ فتُبطل قائمةَ الاعتماد، وهذي قيمةٌ ثابتةٌ للجلسة. */
+      const allowed = TABS.some(
+        (t) =>
+          t.key === h && (isAdmin || !("adminOnly" in t && t.adminOnly)),
+      );
+      if (allowed) setTab(h as Key);
     };
     read();
     window.addEventListener("hashchange", read);
     return () => window.removeEventListener("hashchange", read);
-  }, []);
+  }, [isAdmin]);
 
   const go = (k: Key) => {
     setTab(k);
@@ -86,7 +104,7 @@ export function AdminTabs({
     <StoreProvider value={store}>
     <div className="flex min-h-0 flex-1 flex-col">
       <div role="tablist" aria-label="أقسام اللوحة" className="seg shrink-0 self-start">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.key}
             role="tab"
@@ -105,7 +123,7 @@ export function AdminTabs({
           ثابتتين. */}
       <div
         role="tabpanel"
-        className={`mt-s3 min-h-0 flex-1 ${tab === "flow" || tab === "meet" ? "overflow-y-auto" : ""}`}
+        className={`mt-s3 min-h-0 flex-1 ${tab === "flow" || tab === "meet" || tab === "staff" ? "overflow-y-auto" : ""}`}
       >
         {tab === "dash" && (
           <Dashboard
@@ -120,6 +138,10 @@ export function AdminTabs({
             <FlowChart rows={rows} scopes={scopes} isAdmin={isAdmin} />
           </div>
         )}
+        {/* ⚠️ **`isAdmin` مع `tab` لا `tab` وحدَه.** التبويبُ مُرشَّحٌ من
+            القائمة، لكنّ حالةً قديمةً أو `hash` محقونًا قد تُبقي القيمة —
+            فيُشترط الدورُ عند الرسم أيضًا. */}
+        {tab === "staff" && isAdmin && <StaffPanel rows={staff} me={me} />}
         {tab === "meet" && (
           <Interviews
             rows={rows}

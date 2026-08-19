@@ -731,3 +731,155 @@ export async function setInterview(id: string, iso: string | null) {
     message: iso ? "حُفظ الموعد" : "مُسح الموعد",
   };
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   الطاقم — إضافةُ القادة وتعديلُهم
+
+   ⚠️ **لماذا شاشةٌ لا سطرُ SQL.** كان إدخالُ قائدٍ يمرّ بقالبٍ في
+   `supabase/seed/leaders.template.sql` يُملأ بأسماءٍ وبُرد ثم يُشغَّل على
+   قاعدةٍ حيّة. وثلاثةُ أثمانٍ لذلك:
+
+   · **لا يفعله إلّا من يعرف SQL** — أي شخصٌ واحدٌ في النادي.
+   · **وأسماءُ الأشخاص لا تدخل المستودع** (قاعدةُ النادي)، فيبقى القالبُ
+     فارغًا ويُملأ في ملفٍّ خارجه يضيع عند تبديل الدورة.
+   · **وخطأٌ مطبعيٌّ في نطاقٍ لا يُكتشف** إلّا حين يفتح القائدُ شاشةً
+     فارغةً ولا يعرف لماذا.
+
+   والصلاحيةُ موجودةٌ أصلًا: سياسةُ «الرئاسة تدير الطاقم» على `staff`
+   بـ`ALL` وشرطُها `current_staff_role() = 'admin'`. فالناقصُ لم يكن إذنًا
+   بل شاشة. وهذي الأفعالُ تمرّ **بعميل الجلسة**، فالقاعدةُ هي التي تأذن
+   لا هذي الدوالّ — وإخفاءُ تبويبٍ ليس منعًا.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/** الأدوارُ المسموحة — قائمةٌ مغلقة، فلا يُكتب دورٌ لا تعرفه السياسات */
+const STAFF_ROLES: readonly string[] = ["admin", "leader"];
+
+/**
+ * ⚠️ **النطاقُ يُفحص بشكله.** `inScopes` تطابق ببادئة، فنطاقٌ مكتوبٌ بخطأٍ
+ * مطبعيّ لا يطابق شيئًا — **ويفتح للقائد شاشةً فارغةً بلا رسالة**. فالشكلُ
+ * يُفحص هنا، والقيمُ تأتي من قائمةٍ في الواجهة لا من كتابةٍ حرّة.
+ */
+function validScope(s: string): boolean {
+  return /^(committee|project):[a-z0-9-]+$/.test(s);
+}
+
+export async function saveStaff(formData: FormData) {
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+  const role = String(formData.get("role") ?? "").trim();
+  const displayName = String(formData.get("display_name") ?? "").trim();
+  const scopes = formData
+    .getAll("scopes")
+    .map((s) => String(s).trim())
+    .filter(Boolean);
+
+  if (!email.includes("@") || email.length < 5) {
+    return { ok: false as const, message: "بريدٌ غير صحيح" };
+  }
+  if (!STAFF_ROLES.includes(role)) {
+    return { ok: false as const, message: "دورٌ غير معروف" };
+  }
+  if (scopes.some((s) => !validScope(s))) {
+    return { ok: false as const, message: "نطاقٌ بصيغةٍ غير معروفة" };
+  }
+  /* ⚠️ **قائدٌ بلا نطاقٍ يرى صفرًا.** `inScopes` على مصفوفةٍ فارغة تُرجع
+     «لا» دائمًا — فيدخل ويجد شاشةً فارغةً ويظنّ اللوحةَ معطوبة. والرئاسةُ
+     عكسُه: نطاقُها الكلّ، فمصفوفتُها فارغةٌ عمدًا. */
+  if (role === "leader" && scopes.length === 0) {
+    return { ok: false as const, message: "اختر نطاقًا واحدًا على الأقلّ" };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("staff")
+    .upsert(
+      {
+        email,
+        role,
+        scopes: role === "admin" ? [] : scopes,
+        display_name: displayName || null,
+      },
+      { onConflict: "email" },
+    )
+    .select("email, role, scopes, display_name, created_at");
+
+  if (error) {
+    /* بحقوله لا كائنًا كاملًا — `details` قد يحمل الصفَّ ببريده */
+    console.error("[admin] تعذّر حفظ صفّ الطاقم", {
+      code: error.code,
+      message: error.message,
+    });
+    return {
+      ok: false as const,
+      message:
+        error.code === "42501" ? "الرئاسة وحدها تدير الطاقم" : "تعذّر الحفظ",
+    };
+  }
+
+  return { ok: true as const, message: "حُفظ", row: data?.[0] ?? null };
+}
+
+/**
+ * حذفُ صفٍّ من الطاقم.
+ *
+ * ⚠️ **حارسان لا تفرضهما السياسةُ ويفرضهما العقل:**
+ *
+ * ١) **لا يحذف المرءُ نفسَه** — يفقد اللوحةَ في اللحظة نفسِها، ولا يملك
+ *    ردَّها إلّا بمن بقي من الرئاسة أو بمفتاح الخدمة.
+ * ٢) **ولا يُحذف آخرُ رئاسة** — فيبقى الطاقمُ بلا من يديره، ولا سبيلَ إلى
+ *    إضافة أحدٍ إلّا من لوحة Supabase. وهي «نقطةُ الفشل الواحدة» التي
+ *    كُتب ملفُّ التسليم لأجلها — فلا تُصنع بزرّ.
+ */
+export async function removeStaff(email: string) {
+  const target = email.trim().toLowerCase();
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if ((user?.email ?? "").toLowerCase() === target) {
+    return { ok: false as const, message: "لا تحذف نفسَك من الطاقم" };
+  }
+
+  const { data: admins, error: countError } = await supabase
+    .from("staff")
+    .select("email")
+    .eq("role", "admin");
+
+  if (countError) {
+    console.error("[admin] تعذّر عدُّ الرئاسة", {
+      code: countError.code,
+      message: countError.message,
+    });
+    return { ok: false as const, message: "تعذّر التحقّق" };
+  }
+
+  const list = admins ?? [];
+  if (list.length <= 1 && list.some((a) => a.email === target)) {
+    return { ok: false as const, message: "لا يُحذف آخرُ من يدير الطاقم" };
+  }
+
+  const { data, error } = await supabase
+    .from("staff")
+    .delete()
+    .eq("email", target)
+    .select("email");
+
+  if (error) {
+    console.error("[admin] تعذّر حذف صفّ الطاقم", {
+      code: error.code,
+      message: error.message,
+    });
+    return {
+      ok: false as const,
+      message:
+        error.code === "42501" ? "الرئاسة وحدها تدير الطاقم" : "تعذّر الحذف",
+    };
+  }
+  if (!data || data.length === 0) {
+    return { ok: false as const, message: "لم يُوجد" };
+  }
+
+  return { ok: true as const, message: "حُذف", email: target };
+}
