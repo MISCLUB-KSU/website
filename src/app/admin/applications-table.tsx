@@ -1,6 +1,14 @@
 "use client";
 
-import { useMemo, useOptimistic, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 
 import { COMMITTEES } from "@/content/committees";
 import { findPreference, questionBlocks } from "@/content/preferences";
@@ -18,9 +26,11 @@ import {
   editNote,
   notifyDecision,
   passOver,
+  passOverMany,
   sendPendingRejections,
   setPhase,
   setStatus,
+  setStatusMany,
 } from "./actions";
 import {
   DIRECT_STATUSES,
@@ -210,6 +220,10 @@ export function ApplicationsTable({
      يتحقّق من يوزّع الحسابات ممّا سيراه كلُّ قائدٍ قبل أن يسلّمه المفتاح.
      ولذلك يُقال في الشريط صراحةً إنها معاينة. */
   const [viewAs, setViewAs] = useState<string>("");
+  /* المحدَّدون للفعل الجماعيّ — بالمعرّف لا بالفهرس، فالترتيبُ يتغيّر */
+  const [picked2, setPicked2] = useState<ReadonlySet<string>>(new Set());
+  const searchRef = useRef<HTMLInputElement>(null);
+  const rosterRef = useRef<HTMLUListElement>(null);
   const [sort, setSort] = useState<(typeof SORTS)[number]["key"]>("newest");
   const [picked, setPicked] = useState<string | null>(null);
   const live = useHydrated();
@@ -352,6 +366,97 @@ export function ApplicationsTable({
      ظاهر. ولولا ذلك لبقي الملفّ يعرض متقدّمًا غائبًا عن القائمة. */
   const current = shown.find((s) => s.row.id === picked) ?? shown[0] ?? null;
 
+  /* ⚠️ **المحدَّدون يُقصّون على المعروض.** من حُدّد ثم أخفاه بحثٌ أو ترشيحٌ
+     يبقى في المجموعة ويُصيبه الفعلُ الجماعيّ وهو غائبٌ عن العين — وهذا
+     أسوأُ ما يقع في تحديدٍ متعدّد: تغيّرُ حالةِ من لم تره. */
+  const selected = useMemo(
+    () => shown.filter((x) => picked2.has(x.row.id)).map((x) => x.row.id),
+    [shown, picked2],
+  );
+
+  const toggle = useCallback((id: string) => {
+    setPicked2((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  /**
+   * لوحةُ المفاتيح — **لمن يفرز ستّةً وأربعين لا لمن يفتح واحدًا**.
+   *
+   * ⚠️ **ولا تعمل داخل حقلٍ يُكتب فيه.** ملاحظةُ مقابلةٍ فيها حرف «ج» كانت
+   * ستقفز بالاختيار وتضبط حالة، ورقمٌ في البحث كان سيغيّر قرارًا. فيُفحص
+   * هدفُ الحدث أوّلًا، وتُترك المعدِّلات (Ctrl/Cmd) للمتصفّح.
+   */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      const typing =
+        t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          t.tagName === "SELECT" ||
+          t.isContentEditable);
+
+      if (e.key === "/" && !typing) {
+        e.preventDefault();
+        searchRef.current?.focus();
+        return;
+      }
+      if (e.key === "Escape") {
+        /* ⚠️ **Escape داخل حقلٍ يخرج منه، ولا يُلغي التحديد.** لو ألغاه
+           لضاع تحديدُ عشرين بضغطةٍ يقصد بها الخروجَ من مربّع البحث. فأوّلُ
+           ضغطةٍ تُخرجه، والثانيةُ — وقد صار خارجَ الحقل — تُلغي. */
+        if (typing) {
+          (t as HTMLElement).blur();
+          return;
+        }
+        setPicked2(new Set());
+        return;
+      }
+      if (typing) return;
+
+      const at = shown.findIndex((x) => x.row.id === current?.row.id);
+      const go = (i: number) => {
+        const next = shown[Math.max(0, Math.min(shown.length - 1, i))];
+        if (next) setPicked(next.row.id);
+      };
+
+      if (e.key === "j" || e.key === "ArrowDown") {
+        e.preventDefault();
+        go(at + 1);
+      } else if (e.key === "k" || e.key === "ArrowUp") {
+        e.preventDefault();
+        go(at - 1);
+      } else if (e.key === "x") {
+        if (current) {
+          e.preventDefault();
+          toggle(current.row.id);
+        }
+      } else if (e.key === "1" || e.key === "2" || e.key === "3") {
+        const key = { "1": "new", "2": "reviewing", "3": "accepted" }[e.key];
+        if (current && key) {
+          e.preventDefault();
+          void setStatus(current.row.id, key);
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [shown, current, toggle]);
+
+  /* المختارُ يُجلب إلى المرأى حين يُنقل بالمفاتيح — وإلّا تحرّك اختيارٌ
+     لا يُرى في قائمةٍ من ستّةٍ وأربعين. */
+  useEffect(() => {
+    if (!current) return;
+    rosterRef.current
+      ?.querySelector(`[data-id="${current.row.id}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [current]);
+
   const counts = useMemo(() => {
     const m: Record<string, number> = {};
     for (const r of pool) m[r.status] = (m[r.status] ?? 0) + 1;
@@ -428,6 +533,7 @@ export function ApplicationsTable({
       <Toolbar
         q={q}
         setQ={setQ}
+        searchRef={searchRef}
         status={status}
         setStatus={setStatusFilter}
         sort={sort}
@@ -450,11 +556,21 @@ export function ApplicationsTable({
           قصيرةٍ يهبط الجدولُ إلى صفرٍ فلا يُبلَغ أصلًا (رُصد في الإنتاج:
           «ما أقدر أنزل تحت أبدًا»). فبأرضيّةٍ ثابتة يفيض اللوحُ على الصفحة
           فتُمرَّر قليلًا بدل أن يختفي — تدهورٌ لطيفٌ لا انهيار. */}
+      <BulkBar
+        ids={selected}
+        allShown={shown.length}
+        onClear={() => setPicked2(new Set())}
+        onAll={() => setPicked2(new Set(shown.map((x) => x.row.id)))}
+      />
+
       <div className="grid min-h-[24rem] flex-1 gap-s3 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)]">
         <Roster
           items={shown}
           currentId={current?.row.id ?? null}
           onPick={setPicked}
+          selected={picked2}
+          onToggle={toggle}
+          listRef={rosterRef}
         />
         {current ? (
           <Dossier
@@ -473,6 +589,154 @@ export function ApplicationsTable({
           </section>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ── الفعل الجماعيّ ──────────────────────────────────────────────────────── */
+
+/**
+ * شريطُ الأفعال الجماعيّة — يظهر عند أوّل تحديدٍ ويختفي بزواله.
+ *
+ * ⚠️ **الحاجةُ مقيسةٌ لا مفترَضة.** أكبرُ طابورٍ في الموسم ٤٦ (العلاقات
+ * العامة)، ودعوةُ خمسةَ عشرَ للمقابلة تعني **خمسَ عشرةَ نقرةً على خمس عشرة
+ * شاشة**. وهنا ثلاثُ نقرات: حدِّد · اضغط · أكِّد.
+ *
+ * ⚠️ **والتمريرُ بضغطتين ويقول ما سيقع.** «لا يناسب لجنتي» على عشرين
+ * دفعةً واحدة قرارٌ لا يُسترجع — فالنصُّ يقول العدد، والنتيجةُ تُفصَّل
+ * بعده: كم نزل وكم اعتُذر عنه نهائيًّا.
+ */
+function BulkBar({
+  ids,
+  allShown,
+  onClear,
+  onAll,
+}: {
+  ids: readonly string[];
+  allShown: number;
+  onClear: () => void;
+  onAll: () => void;
+}) {
+  const [armed, setArmed] = useState(false);
+  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const [pending, start] = useTransition();
+
+  if (ids.length === 0) {
+    return allShown > 1 ? (
+      <p className="text-fg-muted shrink-0 px-s2 text-[0.72rem]">
+        حدِّد عدّةً لتغييرِ حالتهم دفعةً · أو بالمفاتيح:{" "}
+        <b className="text-fg">j</b>/<b className="text-fg">k</b> تنقّل ·{" "}
+        <b className="text-fg">x</b> تحديد · <b className="text-fg">1‑3</b>{" "}
+        حالة · <b className="text-fg">/</b> بحث
+      </p>
+    ) : null;
+  }
+
+  const act = (run: () => Promise<{ ok: boolean; message: string }>) =>
+    start(async () => {
+      const res = await run();
+      setArmed(false);
+      setNote({ ok: res.ok, text: res.message });
+      if (res.ok) onClear();
+    });
+
+  return (
+    <div
+      className="tile shrink-0 px-s4 py-s2"
+      style={{
+        borderColor: "color-mix(in oklab, var(--d-cyan) 55%, transparent)",
+        background: "color-mix(in oklab, var(--d-cyan) 10%, transparent)",
+      }}
+    >
+      <div className="flex flex-wrap items-center gap-x-s3 gap-y-s2 text-[0.8rem]">
+        <b className="tabular-nums" dir="ltr">
+          {ids.length}
+        </b>
+        <span className="text-fg-muted">محدَّدون</span>
+
+        {ids.length < allShown && (
+          <button
+            type="button"
+            onClick={onAll}
+            className="text-accent min-h-9 text-[0.78rem] font-semibold underline underline-offset-4"
+          >
+            حدِّد المعروضين ({allShown})
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onClear}
+          className="text-fg-muted min-h-9 text-[0.78rem] underline underline-offset-4"
+        >
+          ألغِ التحديد
+        </button>
+
+        <span className="ms-auto flex flex-wrap items-center gap-x-s2 gap-y-s2">
+          {PHASE_STATUSES.map((st) => (
+            <button
+              key={st.key}
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                act(() =>
+                  setStatusMany(ids, st.key).then((r) => ({
+                    ok: r.ok,
+                    message: r.message,
+                  })),
+                )
+              }
+              className="min-h-10 rounded-xl border px-s3 text-[0.78rem] font-semibold transition-opacity hover:opacity-100 disabled:opacity-40"
+              style={{
+                borderColor: `color-mix(in oklab, ${st.color} 50%, transparent)`,
+              }}
+            >
+              {st.label}
+            </button>
+          ))}
+
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => {
+              if (!armed) {
+                setArmed(true);
+                setNote(null);
+                return;
+              }
+              act(() =>
+                passOverMany(ids).then((r) => ({
+                  ok: r.ok,
+                  message: r.message,
+                })),
+              );
+            }}
+            className="min-h-10 rounded-xl border px-s3 text-[0.78rem] font-semibold transition-opacity disabled:opacity-40"
+            style={{
+              borderColor: armed
+                ? "color-mix(in oklab, var(--danger) 65%, transparent)"
+                : "var(--line-strong)",
+              background: armed
+                ? "color-mix(in oklab, var(--danger) 14%, transparent)"
+                : "transparent",
+            }}
+          >
+            {pending
+              ? "…يُنفَّذ"
+              : armed
+                ? `تأكيد: مرِّر ${ids.length} — من انتهت رغباتُه يُعتذر عنه`
+                : "لا يناسب لجنتي"}
+          </button>
+        </span>
+      </div>
+
+      {note && (
+        <p
+          role="status"
+          className={`mt-s1 text-[0.78rem] ${note.ok ? "text-success" : "text-danger"}`}
+        >
+          {note.text}
+        </p>
+      )}
     </div>
   );
 }
@@ -1125,6 +1389,7 @@ function Toolbar({
   setStatus,
   sort,
   setSort,
+  searchRef,
   counts,
   total,
   showing,
@@ -1139,6 +1404,7 @@ function Toolbar({
 }: {
   q: string;
   setQ: (v: string) => void;
+  searchRef: React.RefObject<HTMLInputElement | null>;
   status: string;
   setStatus: (v: string) => void;
   sort: (typeof SORTS)[number]["key"];
@@ -1163,10 +1429,11 @@ function Toolbar({
         <label className="flex min-w-[13rem] grow items-center gap-x-s2 rounded-xl border border-line bg-bg-sunken px-s3">
           <span className="sr-only">ابحث في الطلبات</span>
           <input
+            ref={searchRef}
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="ابحث باسمٍ أو رقمٍ جامعيّ أو لجنة…"
+            placeholder="ابحث باسمٍ أو رقمٍ جامعيّ أو لجنة…  (اضغط / )"
             className="text-fg placeholder:text-fg-muted/70 min-h-10 w-full bg-transparent text-[0.85rem]"
           />
         </label>
@@ -1318,26 +1585,49 @@ function Roster({
   items,
   currentId,
   onPick,
+  selected,
+  onToggle,
+  listRef,
 }: {
   items: readonly { row: Row; pct: number }[];
   currentId: string | null;
   onPick: (id: string) => void;
+  selected: ReadonlySet<string>;
+  onToggle: (id: string) => void;
+  listRef: React.RefObject<HTMLUListElement | null>;
 }) {
   return (
     <section className="tile apps-roster min-h-0">
-      <ul className="min-h-0 flex-1 overflow-y-auto p-s2">
+      <ul ref={listRef} className="min-h-0 flex-1 overflow-y-auto p-s2">
         {items.map(({ row, pct }, i) => {
           const s = STATUSES.find((x) => x.key === row.status);
           const on = row.id === currentId;
+          const marked = selected.has(row.id);
           return (
-            <li key={row.id}>
+            /* ⚠️ **الصندوقُ خارج الزرّ لا داخله.** زرٌّ داخل زرٍّ تركيبٌ
+               غيرُ صالح: المتصفّحُ يفكّه فيسقط أحدُهما، وقارئُ الشاشة
+               يُعلن عنصرًا واحدًا لفعلين. فالصفُّ صارّ حاويًا لهما. */
+            <li key={row.id} data-id={row.id} className="flex items-center">
+              <label
+                className={`grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg transition-opacity ${
+                  marked ? "opacity-100" : "opacity-45 hover:opacity-100"
+                }`}
+              >
+                <span className="sr-only">حدِّد {row.full_name}</span>
+                <input
+                  type="checkbox"
+                  checked={marked}
+                  onChange={() => onToggle(row.id)}
+                  className="size-4 accent-[var(--d-cyan)]"
+                />
+              </label>
               <button
                 type="button"
                 onClick={() => onPick(row.id)}
                 /* ⚠️ `aria-current` سمةٌ مُعدَّدة لا منطقية — تمريرُ
                    `true` يُطلق تحذير React ويكتب قيمةً لا يعرفها القارئ. */
                 aria-current={on ? "true" : undefined}
-                className={`fade-up relative flex w-full items-center gap-x-s3 rounded-xl px-s3 py-s3 text-start transition-colors ${
+                className={`fade-up relative flex min-w-0 flex-1 items-center gap-x-s3 rounded-xl px-s3 py-s3 text-start transition-colors ${
                   on ? "bg-bg-sunken" : "hover:bg-bg-sunken"
                 }`}
                 style={{ ["--i" as string]: Math.min(i, 14) }}

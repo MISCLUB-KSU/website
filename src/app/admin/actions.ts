@@ -515,3 +515,135 @@ export async function setPhase(phase: number) {
   revalidatePath("/admin");
   return { ok: true as const, message: `فُتحت المرحلة ${phase}` };
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   الأفعال الجماعيّة
+   ══════════════════════════════════════════════════════════════════════ */
+
+/**
+ * سقفُ الدفعة الواحدة.
+ *
+ * ⚠️ **حارسٌ لا ذوق.** أكبرُ طابورٍ في الموسم ٤٦ (العلاقات العامة، مقيسٌ من
+ * القاعدة)، فمئةٌ تسع «حدِّد الكلّ» في أيّ جهةٍ بهامشٍ مضاعف. وما فوقها
+ * استدعاءٌ مصنوعٌ بيد، أو خللٌ في الواجهة يرسل مصفوفةً لا تنتهي.
+ */
+const BULK_MAX = 100;
+
+/**
+ * ضبطُ حالةِ عدّةِ طلباتٍ دفعةً واحدة.
+ *
+ * ⚠️ **استعلامٌ واحدٌ بـ`in` لا حلقةٌ من الاستدعاءات.** الحلقةُ تعني ٤٦
+ * ذهابًا وإيابًا إلى القاعدة وأربعين ثانيةً على شبكةٍ متوسّطة، و`in` تُنجزها
+ * في واحد. و`RLS` تقصّ الصفوف داخل الاستعلام نفسِه: ما ليس عند رتبة
+ * القائد **لا يُحدَّث ولا يُبلَّغ عنه بخطأ** — فيُعدّ الفرقُ ويُقال.
+ *
+ * ⚠️ **والفرقُ يُقال ولا يُبتلع.** «غُيّرت ١٢» وحدَها تجعل القائدَ يظنّ أن
+ * الخمسةَ عشرَ كلَّها تغيّرت. و«وتُخطّيت ٣» تدلّه أنّ ثلاثةً ليست عند رتبته
+ * — وهو تفسيرٌ يفهمه، لا عطلٌ يشكو منه.
+ */
+export async function setStatusMany(ids: readonly string[], status: string) {
+  if (!DIRECT_STATUSES.includes(status)) {
+    return { ok: false as const, changed: 0, skipped: 0, message: "حالةٌ لا تُضبط مباشرةً" };
+  }
+  const list = [...new Set(ids)].filter(Boolean);
+  if (list.length === 0) {
+    return { ok: false as const, changed: 0, skipped: 0, message: "لم تحدّد أحدًا" };
+  }
+  if (list.length > BULK_MAX) {
+    return {
+      ok: false as const,
+      changed: 0,
+      skipped: 0,
+      message: `الدفعة أكبر من ${BULK_MAX}`,
+    };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("applications")
+    .update({ status })
+    .in("id", list)
+    .select("id");
+
+  if (error) {
+    console.error("[admin] تعذّر ضبط دفعة", {
+      code: error.code,
+      message: error.message,
+    });
+    return { ok: false as const, changed: 0, skipped: 0, message: "تعذّر الحفظ" };
+  }
+
+  const changed = data?.length ?? 0;
+  const skipped = list.length - changed;
+  revalidatePath("/admin");
+  return {
+    ok: true as const,
+    changed,
+    skipped,
+    message:
+      skipped === 0
+        ? `غُيّرت ${changed}`
+        : `غُيّرت ${changed}، وتُخطّيت ${skipped} ليست عند رتبتك`,
+  };
+}
+
+/**
+ * تمريرُ عدّةِ متقدّمين دفعةً واحدة.
+ *
+ * ⚠️ **حلقةٌ هنا ولا مفرّ منها.** `pass_over` تقرأ رتبةَ كلّ صفٍّ ورغباتِه
+ * لتقرّر: أينزل أم يُعتذر عنه نهائيًّا؟ فالقرارُ صفٌّ صفّ، ولا يُختصر في
+ * `in` واحد. والسقفُ يحمي من دفعةٍ تطول فتُقطع الدالّةُ في منتصفها.
+ *
+ * ⚠️ **والنتائجُ تُفصَّل ولا تُجمَع.** «مُرّر ٢٠» يخفي أن سبعةً منهم انتهت
+ * رغباتُهم فاعتُذر عنهم **نهائيًّا** — وهو أثقلُ قرارٍ في اللوحة. فيُقال
+ * العددان منفصلين.
+ */
+export async function passOverMany(ids: readonly string[]) {
+  const list = [...new Set(ids)].filter(Boolean);
+  if (list.length === 0) {
+    return { ok: false as const, moved: 0, rejected: 0, skipped: 0, message: "لم تحدّد أحدًا" };
+  }
+  if (list.length > BULK_MAX) {
+    return {
+      ok: false as const,
+      moved: 0,
+      rejected: 0,
+      skipped: 0,
+      message: `الدفعة أكبر من ${BULK_MAX}`,
+    };
+  }
+
+  const supabase = await createClient();
+  let moved = 0;
+  let rejected = 0;
+  let skipped = 0;
+
+  for (const id of list) {
+    const { data, error } = await supabase.rpc("pass_over", { app_id: id });
+    if (error) {
+      console.error("[admin] تعذّر تمريرٌ في دفعة", {
+        code: error.code,
+        message: error.message,
+      });
+      skipped += 1;
+      continue;
+    }
+    const outcome = String(data ?? "");
+    if (outcome === "moved") moved += 1;
+    else if (outcome === "rejected") rejected += 1;
+    else skipped += 1;
+  }
+
+  revalidatePath("/admin");
+  const parts: string[] = [];
+  if (moved > 0) parts.push(`نزل ${moved}`);
+  if (rejected > 0) parts.push(`واعتُذر نهائيًّا عن ${rejected}`);
+  if (skipped > 0) parts.push(`وتُخطّي ${skipped}`);
+  return {
+    ok: skipped === 0,
+    moved,
+    rejected,
+    skipped,
+    message: parts.join(" · ") || "لم يتغيّر شيء",
+  };
+}
