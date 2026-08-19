@@ -6,7 +6,7 @@ import { findPreference } from "@/content/preferences";
 import { sendMail } from "@/lib/email/client";
 import { applicationDecision, isNotifiable } from "@/lib/email/templates";
 import { createClient } from "@/lib/supabase/server";
-import { DIRECT_STATUSES } from "./stats";
+import { DIRECT_STATUSES, type Note } from "./stats";
 
 /**
  * تغيير حالة الطلب.
@@ -27,6 +27,34 @@ const ALLOWED = [
   "referred",
 ] as const;
 type Status = (typeof ALLOWED)[number];
+
+/**
+ * ══════════════════════════════════════════════════════════════════════
+ * **قاعدةُ `revalidatePath` في هذا الملفّ — تُقرأ قبل تعديل أيّ فعلٍ هنا**
+ * ══════════════════════════════════════════════════════════════════════
+ *
+ * الصفحةُ `force-dynamic`، فـ`revalidatePath("/admin")` تعني: أعِد جلبَ
+ * **كلّ** الطلبات وكلّ الملاحظات، وأعِد بناء الشجرة. وقِيس ما يُنقل في كلّ
+ * مرّة: **٨١١ كB لـ٢٥٧ صفًّا** — منها ٣٣٧ كB `answers` و١١٤ كB `why`،
+ * وكلاهما لا تقرؤه القائمةُ أصلًا بل ملفٌّ واحدٌ مفتوح. أي أن **٧٣٪ ممّا
+ * يُنقل في كلّ ضغطةٍ لا يُقرأ**، والموسمُ المتوقَّع يزيد على ٦٠٠.
+ *
+ * فالقاعدة:
+ *
+ * · **فعلٌ يغيّر حقولًا يعرفها العميلُ أصلًا** (حالة · موعد · ملاحظة ·
+ *   ختمُ إرسال) → **لا `revalidatePath`**. يُرجع الفعلُ **ما كتبه فعلًا**
+ *   — لا ما طُلب منه — والعميلُ يرقّع صفوفَه بها. و`RLS` قد تردّ بعضَ
+ *   الدفعة، فالمُرجَعُ هو ما نجح لا ما أُرسل.
+ *
+ * · **فعلٌ ينقل صفًّا بين النطاقات أو يقلب الموسم** (`pass_over` ·
+ *   `set_phase`) → **`revalidatePath` باقية**. الصفُّ بعد التمرير يخرج من
+ *   نطاق القائد، **فالعميلُ لا يملك الحقيقةَ الجديدة أصلًا** — `RLS` تحجبها
+ *   عنه. وترقيعُه محليًّا يعني عرضَ صفٍّ لم يعد له.
+ *
+ * ⚠️ **ولا يُحذف `revalidatePath` من فعلٍ جديدٍ إلّا بعد أن يُكتب ترقيعُه في
+ * العميل.** حذفُها وحدَها لا يُظهر خطأً ولا يكسر بناءً — يجعل الشاشةَ
+ * **تسكت عن تغييرٍ وقع**، وهو صنفُ العطل الذي سُمّي هذا الفرعُ باسمه.
+ */
 
 export async function setStatus(id: string, status: string) {
   if (!(ALLOWED as readonly string[]).includes(status)) {
@@ -59,8 +87,8 @@ export async function setStatus(id: string, status: string) {
     return { ok: false as const, message: "الطلب غير متاح لك" };
   }
 
-  revalidatePath("/admin");
-  return { ok: true as const, message: "" };
+  /* لا إعادةَ جلب — العميلُ يرقّع `status` بنفسه. انظر القاعدة أعلاه */
+  return { ok: true as const, message: "", id, status };
 }
 
 /**
@@ -180,6 +208,8 @@ export async function sendPendingRejections(): Promise<{
   ok: boolean;
   sent: number;
   failed: number;
+  /** المختومون في هذي الدفعة — يرقّع بهم العميلُ `decision_mailed_at` */
+  stamped: { id: string; at: string }[];
   remaining: number;
   message: string;
 }> {
@@ -203,6 +233,7 @@ export async function sendPendingRejections(): Promise<{
       ok: false,
       sent: 0,
       failed: 0,
+      stamped: [],
       remaining: 0,
       message: "تعذّرت القراءة",
     };
@@ -214,6 +245,7 @@ export async function sendPendingRejections(): Promise<{
       ok: true,
       sent: 0,
       failed: 0,
+      stamped: [],
       remaining: 0,
       message: "لا رفضَ ينتظر الإرسال",
     };
@@ -225,6 +257,8 @@ export async function sendPendingRejections(): Promise<{
   let sent = 0;
   let failed = 0;
   let noKey = false;
+  /** من خرجت رسالتُه **وخُتم صفُّه** — وحدَهم يُرقَّعون في العميل */
+  const stamped: { id: string; at: string }[] = [];
 
   for (const [index, row] of batch.entries()) {
     /* تباطؤٌ **بين** الرسائل لا قبل الأولى — لا معنى لانتظارٍ قبل أوّل طلب */
@@ -254,10 +288,13 @@ export async function sendPendingRejections(): Promise<{
     }
 
     /* الختمُ بعد النجاح — وبعميل الجلسة، فتحكمه `RLS` كما تحكم القراءة */
+    const at = new Date().toISOString();
     const { error: stampError } = await supabase
       .from("applications")
-      .update({ decision_mailed_at: new Date().toISOString() })
+      .update({ decision_mailed_at: at })
       .eq("id", row.id);
+
+    if (!stampError) stamped.push({ id: row.id, at });
 
     if (stampError) {
       /* ⚠️ خرجت الرسالةُ ولم يُختم — تُرسَل ثانيةً في دفعةٍ لاحقة. يُسجَّل
@@ -286,16 +323,17 @@ export async function sendPendingRejections(): Promise<{
       ok: false,
       sent,
       failed,
+      stamped,
       remaining,
       message: "البريد غير موصول — يلزم ضبط RESEND_API_KEY وتوثيق النطاق",
     };
   }
 
-  revalidatePath("/admin");
   return {
     ok: failed === 0,
     sent,
     failed,
+    stamped,
     remaining,
     message:
       failed === 0
@@ -340,9 +378,15 @@ export async function addNote(applicationId: string, body: string) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
+  /* ⚠️ **يُقرأ الصفُّ بعد الكتابة لا يُبنى في العميل.** الكاتبُ واسمُه
+     و`created_at` كلُّها من **محفِّزٍ في القاعدة** (`stamp_note_author`) —
+     فملاحظةٌ يبنيها العميلُ من عنده تحمل اسمًا مخمَّنًا وتاريخًا محلّيًّا،
+     ثم تتبدّل تحت عين كاتبها عند أوّل جلبٍ حقيقيّ. */
+  const { data: created, error } = await supabase
     .from("application_notes")
-    .insert({ application_id: applicationId, body: text });
+    .insert({ application_id: applicationId, body: text })
+    .select("*")
+    .single();
 
   if (error) {
     /* بحقوله لا كائنًا كاملًا: `details` قد يحمل نصَّ الملاحظة كاملًا */
@@ -358,8 +402,7 @@ export async function addNote(applicationId: string, body: string) {
     };
   }
 
-  revalidatePath("/admin");
-  return { ok: true as const, message: "" };
+  return { ok: true as const, message: "", note: created as Note };
 }
 
 /**
@@ -380,7 +423,8 @@ export async function editNote(id: string, body: string) {
     .from("application_notes")
     .update({ body: text })
     .eq("id", id)
-    .select("id");
+    /* الصفُّ كاملًا: `touch_note` يختم `updated_at` فلا يُخمَّن هنا */
+    .select("*");
 
   if (error) {
     console.error("[admin] تعذّر تعديل ملاحظة", {
@@ -394,8 +438,7 @@ export async function editNote(id: string, body: string) {
     return { ok: false as const, message: "لا تُعدَّل إلّا ملاحظتُك" };
   }
 
-  revalidatePath("/admin");
-  return { ok: true as const, message: "" };
+  return { ok: true as const, message: "", note: data[0] as Note };
 }
 
 /** حذفُ ملاحظة — للكاتب وحده، بالمنطق نفسِه */
@@ -418,8 +461,7 @@ export async function deleteNote(id: string) {
     return { ok: false as const, message: "لا تُحذَف إلّا ملاحظتُك" };
   }
 
-  revalidatePath("/admin");
-  return { ok: true as const, message: "" };
+  return { ok: true as const, message: "", id };
 }
 
 /**
@@ -573,11 +615,16 @@ export async function setStatusMany(ids: readonly string[], status: string) {
     return { ok: false as const, changed: 0, skipped: 0, message: "تعذّر الحفظ" };
   }
 
-  const changed = data?.length ?? 0;
+  /* ⚠️ **المُرجَعُ ما غُيّر فعلًا لا ما أُرسل.** `RLS` تقصّ داخل الاستعلام،
+     فمن ليس عند رتبة القائد لا يُحدَّث — وترقيعُ العميل بالقائمة المُرسَلة
+     يلوّن صفوفًا لم تتغيّر في القاعدة. */
+  const changedIds = (data ?? []).map((r) => r.id as string);
+  const changed = changedIds.length;
   const skipped = list.length - changed;
-  revalidatePath("/admin");
   return {
     ok: true as const,
+    ids: changedIds,
+    status,
     changed,
     skipped,
     message:
@@ -677,6 +724,10 @@ export async function setInterview(id: string, iso: string | null) {
     return { ok: false as const, message: "ليس عند رتبتِك" };
   }
 
-  revalidatePath("/admin");
-  return { ok: true as const, message: iso ? "حُفظ الموعد" : "مُسح الموعد" };
+  return {
+    ok: true as const,
+    id,
+    interview_at: iso,
+    message: iso ? "حُفظ الموعد" : "مُسح الموعد",
+  };
 }

@@ -6,6 +6,7 @@ import { ApplicationsTable } from "./applications-table";
 import { Dashboard } from "./dashboard";
 import { FlowChart } from "./flow";
 import type { Note, Row } from "./stats";
+import { useRowStore } from "./store";
 
 /**
  * تبويبات اللوحة.
@@ -27,8 +28,8 @@ const TABS = [
 type Key = (typeof TABS)[number]["key"];
 
 export function AdminTabs({
-  rows,
-  notes,
+  rows: serverRows,
+  notes: serverNotes,
   phase,
   scopes,
   isAdmin,
@@ -43,6 +44,18 @@ export function AdminTabs({
   /** بريدُ القارئ — به يُعرف ما يملك تعديلَه من الملاحظات */
   me: string;
 }) {
+  /**
+   * ⚠️ **المخزنُ هنا لا في `ApplicationsTable` — واللوحُ يُفكّ عند التبديل.**
+   *
+   * لوحُ التبويب يُرسم بـ`{tab === "…" && …}`، فالانتقالُ يهدم حالةَ اللوح
+   * السابق. فلو سكن المخزنُ في القائمة لَقَبِل القائدُ عشرةً ثم انتقل إلى
+   * «اللوحة» فقرأت صفوفَ الخادم غيرَ المرقَّعة وقالت «حُسم ٠»، ثم عاد
+   * فارتدّت العشرة. والثلاثةُ تشتقّ من `rows` — فمصدرُها واحدٌ فوقها.
+   */
+  const { rows, notes, store, StoreProvider } = useRowStore(
+    serverRows,
+    serverNotes,
+  );
   const [tab, setTab] = useState<Key>("dash");
 
   /* ⚠️ **قراءة `hash` في `useEffect` لا في مُهيّئ `useState`.**
@@ -65,6 +78,7 @@ export function AdminTabs({
   };
 
   return (
+    <StoreProvider value={store}>
     <div className="flex min-h-0 flex-1 flex-col">
       <div role="tablist" aria-label="أقسام اللوحة" className="seg shrink-0 self-start">
         {TABS.map((t) => (
@@ -113,5 +127,6 @@ export function AdminTabs({
         )}
       </div>
     </div>
+    </StoreProvider>
   );
 }

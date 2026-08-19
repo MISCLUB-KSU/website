@@ -20,6 +20,7 @@ import {
 } from "@/content/questions";
 import { isolateLatin } from "@/lib/bidi";
 import { useHydrated } from "@/lib/use-hydrated";
+import { useStore } from "./store";
 import {
   addNote,
   deleteNote,
@@ -899,6 +900,7 @@ function BulkBar({
   onClear: () => void;
   onAll: () => void;
 }) {
+  const { patchRows } = useStore();
   const [armed, setArmed] = useState(false);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
@@ -964,10 +966,13 @@ function BulkBar({
               disabled={pending}
               onClick={() =>
                 act(() =>
-                  setStatusMany(ids, st.key).then((r) => ({
-                    ok: r.ok,
-                    message: r.message,
-                  })),
+                  setStatusMany(ids, st.key).then((r) => {
+                    /* ⚠️ **`r.ids` لا `ids`.** `RLS` تقصّ داخل الاستعلام،
+                       فمن ليس عند رتبة القائد لم يُحدَّث — وهو نفسُه
+                       الفرقُ الذي تقوله الرسالة «وتُخطّيت ٣». */
+                    if (r.ok) patchRows(r.ids, { status: r.status });
+                    return { ok: r.ok, message: r.message };
+                  }),
                 )
               }
               className="min-h-10 rounded-xl border px-s3 text-[0.78rem] font-semibold transition-opacity hover:opacity-100 disabled:opacity-40"
@@ -1192,6 +1197,7 @@ function NotesBlock({
   notes: readonly Note[];
   me: string;
 }) {
+  const { putNote, dropNote } = useStore();
   const [draft, setDraft] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
@@ -1205,8 +1211,13 @@ function NotesBlock({
     start(async () => {
       setError("");
       const res = await addNote(rowId, body);
-      if (res.ok) setDraft("");
-      else setError(res.message);
+      /* ⚠️ **الملاحظةُ من ردّ الخادم لا من المسوَّدة.** الكاتبُ واسمُه
+         و`created_at` تكتبها محفِّزاتٌ في القاعدة — فملاحظةٌ نبنيها هنا
+         تحمل اسمًا مخمَّنًا يتبدّل تحت عين كاتبها عند أوّل جلب. */
+      if (res.ok) {
+        putNote(res.note);
+        setDraft("");
+      } else setError(res.message);
     });
   };
 
@@ -1248,8 +1259,11 @@ function NotesBlock({
                           start(async () => {
                             setError("");
                             const res = await editNote(n.id, editDraft);
-                            if (res.ok) setEditing(null);
-                            else setError(res.message);
+                            if (res.ok) {
+                              /* `updated_at` من `touch_note` لا من هنا */
+                              putNote(res.note);
+                              setEditing(null);
+                            } else setError(res.message);
                           })
                         }
                         className="text-accent min-h-9 text-[0.8rem] font-semibold"
@@ -1289,7 +1303,8 @@ function NotesBlock({
                             start(async () => {
                               setError("");
                               const res = await deleteNote(n.id);
-                              if (!res.ok) setError(res.message);
+                              if (res.ok) dropNote(res.id);
+                              else setError(res.message);
                             })
                           }
                           className="text-fg-muted min-h-9 text-[0.76rem] underline underline-offset-4"
@@ -1578,6 +1593,7 @@ function Arc({
  * تُستردّ. فالأولى تُسلّح والثانية تُنفّذ، ويظهر العددُ في نصّ التأكيد.
  */
 function BulkRejectButton({ pending }: { pending: number }) {
+  const { patchRows } = useStore();
   const [armed, setArmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [left, setLeft] = useState<number | null>(null);
@@ -1599,6 +1615,11 @@ function BulkRejectButton({ pending }: { pending: number }) {
        ثابتًا (ختمٌ يفشل مرارًا مثلًا) — فتتوقّف وتقول ما جرى. */
     for (let round = 0; round < 60; round++) {
       const res = await sendPendingRejections();
+      /* ⚠️ **يُرقَّع في كلّ جولةٍ لا بعد الحلقة.** الحلقةُ قد تطول دقائقَ
+         على دفعةٍ كبيرة، والعدّادُ فوقها يتحرّك — فلو تأخّر الترقيعُ إلى
+         النهاية لبقي «ينتظر الإرسال» ثابتًا بينما تُرسَل الرسائل فعلًا. */
+      for (const st of res.stamped)
+        patchRows([st.id], { decision_mailed_at: st.at });
       sentTotal += res.sent;
       failedTotal += res.failed;
       setDone(sentTotal);
@@ -2473,6 +2494,7 @@ function Checklist({ items }: { items: readonly Item[] }) {
 function StatusPicker({ row, dark }: { row: Row; dark?: boolean }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState("");
+  const { patchRows } = useStore();
   /**
    * ⚠️ **الزرُّ يستجيب قبل الخادم — وإلّا بدا معطوبًا.**
    *
@@ -2515,7 +2537,10 @@ function StatusPicker({ row, dark }: { row: Row; dark?: boolean }) {
                   setError("");
                   showNow(s.key);
                   const res = await setStatus(row.id, s.key);
-                  if (!res.ok) setError(res.message);
+                  /* ⚠️ **بالمُرجَع لا بالمطلوب.** الخادمُ يُرجع ما كتبه
+                     فعلًا؛ وترقيعُنا بما طلبناه يلوّن صفًّا رُدّ. */
+                  if (res.ok) patchRows([res.id], { status: res.status });
+                  else setError(res.message);
                 })
               }
               className={`flex min-h-11 lg:min-h-10 items-center gap-x-s2 rounded-xl border px-s4 text-[0.82rem] font-semibold transition-all ${
@@ -2573,6 +2598,7 @@ function StatusPicker({ row, dark }: { row: Row; dark?: boolean }) {
  * ليس شيئًا يُضبط.
  */
 function InterviewField({ row, dark }: { row: Row; dark?: boolean }) {
+  const { patchRows } = useStore();
   const [pending, start] = useTransition();
   const [note, setNote] = useState("");
 
@@ -2582,6 +2608,7 @@ function InterviewField({ row, dark }: { row: Row; dark?: boolean }) {
     start(async () => {
       setNote("");
       const res = await setInterview(row.id, fromRiyadhInput(value));
+      if (res.ok) patchRows([res.id], { interview_at: res.interview_at });
       setNote(res.message);
     });
 
