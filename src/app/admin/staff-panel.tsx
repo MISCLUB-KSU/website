@@ -147,6 +147,17 @@ export function StaffPanel({
 
       {editing && (
         <StaffForm
+          /**
+           * 🔴 **`key` على البريد — وبلاها يُكتب على الشخص الخطأ.**
+           *
+           * النموذجُ غيرُ مضبوطٍ عمدًا (`defaultValue` و`defaultChecked`)،
+           * وحالةُ الدور `useState(row.role)`. فبلا `key` يرى React نفسَ
+           * المكوّن في نفس الموضع عند الانتقال من تعديل «أ» إلى تعديل «ب»
+           * **فيعيد استعمالَ نسخته**: القيمُ الابتدائيّة تُهمَل، وتبقى في
+           * الحقول قيمُ «أ» — ومنها **البريدُ**، وهو `readOnly` فيُرسَل كما
+           * هو. فيظنّ الرئيسُ أنه يعدّل «ب» **ويُحفظ على «أ»**، بلا رسالة.
+           */
+          key={editing.email || "__new__"}
           row={editing}
           pending={pending}
           onCancel={() => setEditing(null)}

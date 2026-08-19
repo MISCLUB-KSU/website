@@ -791,6 +791,43 @@ export async function saveStaff(formData: FormData) {
   }
 
   const supabase = await createClient();
+
+  /**
+   * 🔴 **حارسُ آخر رئاسة — وكان البابُ هنا مفتوحًا بينما القفلُ على الآخر.**
+   *
+   * `removeStaff` تمنع حذفَ آخر رئاسةٍ وحذفَ النفس. **ونزعُ الدور يفعل ما
+   * يفعله الحذفُ سواءً**: من صار «قائدًا» لم يعد يرى تبويبَ الطاقم ولا
+   * تأذن له السياسة — فيبقى الجدولُ بلا من يديره، ولا سبيلَ إلى ردّه إلّا
+   * من لوحة Supabase. فقفلٌ على بابٍ وبابٌ مفتوحٌ بجانبه لا يحرس شيئًا.
+   */
+  if (role !== "admin") {
+    const { data: current } = await supabase
+      .from("staff")
+      .select("role")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (current?.role === "admin") {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if ((user?.email ?? "").toLowerCase() === email) {
+        return { ok: false as const, message: "لا تنزع الرئاسةَ عن نفسِك" };
+      }
+
+      const { data: admins } = await supabase
+        .from("staff")
+        .select("email")
+        .eq("role", "admin");
+      if ((admins ?? []).length <= 1) {
+        return {
+          ok: false as const,
+          message: "لا تُنزع الرئاسةُ عن آخر من يديرها",
+        };
+      }
+    }
+  }
+
   const { data, error } = await supabase
     .from("staff")
     .upsert(
