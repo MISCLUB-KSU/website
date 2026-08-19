@@ -569,6 +569,26 @@ export function ApplicationsTable({
     [rows, current],
   );
 
+  /**
+   * كم مدعوًّا في **جهة المفتوح** — يُقال عند زرّ الدعوة لا في شريطٍ فوقه.
+   *
+   * ⚠️ **الرقمُ كان معروضًا ولم يكن يُقرأ في وقته.** شريطُ «مدعوّون
+   * للمقابلة» فوق الشاشة يعرض `١٥/١٥` ملوَّنًا، لكنّ القائدَ حين يضغط
+   * «دعوة لمقابلة» يكون ناظرًا إلى الملفّ لا إلى الشريط — فيدعو السادسَ
+   * عشرَ وهو لا يدري. والعددُ ينفع حيث يقع القرار.
+   */
+  const capInvited = useMemo(() => {
+    if (!current) return null;
+    const at = choiceAtStage(current.row);
+    return meters.find((m) => m.value === at)?.invited ?? null;
+  }, [current, meters]);
+
+  /** كم في نطاق القارئ أصلًا — به يُفرَّق «فرغ طابورُك» عن «لا طلبَ لك» */
+  const scopeTotal = useMemo(
+    () => meters.reduce((a, m) => a + m.total, 0),
+    [meters],
+  );
+
   const at = current ? shown.findIndex((x) => x.row.id === current.row.id) : -1;
   const step = useCallback(
     (delta: number) => {
@@ -810,6 +830,7 @@ export function ApplicationsTable({
         phase={phase}
         open={stagePending}
         waiting={stageWaiting}
+        scopeTotal={scopeTotal}
         isAdmin={isAdmin}
       />
 
@@ -900,6 +921,7 @@ export function ApplicationsTable({
             notes={notesByApp.get(current.row.id) ?? EMPTY_NOTES}
             me={me}
             clash={clash}
+            capInvited={capInvited}
             cvOpen={cvOpen}
             onCvToggle={() => setCvOpen((v) => !v)}
             onBack={() => setPicked(null)}
@@ -1174,6 +1196,7 @@ function PhaseBar({
   phase,
   open,
   waiting,
+  scopeTotal,
   isAdmin,
 }: {
   phase: number;
@@ -1181,6 +1204,8 @@ function PhaseBar({
   open: number;
   /** نزلوا ولم تُفتح رتبتُهم — في نطاقه أيضًا */
   waiting: number;
+  /** كم في نطاقه أصلًا — به يُفرَّق «فرغتَ» عن «لا طلبَ لك» */
+  scopeTotal: number;
   isAdmin: boolean;
 }) {
   const [armed, setArmed] = useState(false);
@@ -1195,13 +1220,37 @@ function PhaseBar({
         <span className="font-bold">
           المرحلة {phase} — {STAGE_LABELS[phase]}
         </span>
-        <span className="text-fg-muted">
-          <strong dir="ltr" className="tabular-nums">
-            {open}
-          </strong>{" "}
-          بلا قرارٍ عند هذي الرتبة
-        </span>
-        {waiting > 0 && (
+        {/**
+         * **لحظةُ الإغلاق — «٠ بلا قرار» ليست جوابًا على «هل انتهيت؟».**
+         *
+         * ⚠️ الصفرُ رقمٌ يُقرأ بين رقمين، ولا يقول للقائد إنه **فرغ**؛
+         * فيبقى يفتح اللوحةَ كلَّ يومٍ يتفقّد شيئًا انتهى. والجملةُ تقول
+         * الحالَ وتقول **ما بعدها** — ومن ينتظر فتحَ الرئاسة يعرف أن
+         * الانتظارَ ليس تقصيرًا منه.
+         *
+         * ⚠️ **و`scopeTotal` يفرّق حالتين يخلطهما الصفر:** من أنهى شغلَه،
+         * ومن لا طلبَ في نطاقه أصلًا (نطاقٌ خطأ في `staff`، أو جهةٌ لم
+         * يذكرها أحد). و«فرغ طابورُك» في الثانية تطمئنُ من يجب أن يقلق.
+         */}
+        {!isAdmin && open === 0 && scopeTotal === 0 ? (
+          <span className="text-fg-muted">
+            لا طلبَ في نطاقك بعد — راجع الرئاسةَ إن كان ينبغي أن يصلك شيء.
+          </span>
+        ) : !isAdmin && open === 0 ? (
+          <span className="font-semibold" style={{ color: "var(--st-accepted)" }}>
+            ✓ فرغ طابورُك — لا أحدَ بلا قرارٍ عند رتبتك
+            {waiting > 0 && ` · وينتظر ${waiting} فتحَ المرحلة ${phase + 1}`}
+          </span>
+        ) : (
+          <span className="text-fg-muted">
+            <strong dir="ltr" className="tabular-nums">
+              {open}
+            </strong>{" "}
+            بلا قرارٍ عند هذي الرتبة
+          </span>
+        )}
+        {/* ⚠️ لا يتكرّر: جملةُ «فرغ طابورُك» أعلاه تقول المنتظرين معها */}
+        {waiting > 0 && !(!isAdmin && open === 0 && scopeTotal > 0) && (
           <span className="text-fg-muted">
             ·{" "}
             <strong dir="ltr" className="tabular-nums">
@@ -1890,11 +1939,25 @@ function Toolbar({
           onClick={() => setInText(!inText)}
           aria-pressed={inText}
           title="يبحث أيضًا في «لماذا يريد الانضمام» وفي أجوبة أسئلة القادة — نافعٌ للبحث عن مهارةٍ أو اهتمام"
-          className={`min-h-11 lg:min-h-10 shrink-0 rounded-xl border px-s3 text-[0.78rem] font-semibold transition-colors ${
+          /* ⚠️ **بلا `bg-sunken` في حال الإطفاء.** الغائرُ الليليُّ `#101218`
+             شبهُ أسود، فالمفتاحُ كان يقع على لوح الشريط كأنه **ثقبٌ** لا
+             ضابط — وهو أدكنُ من كلّ ما حوله. فالحدُّ وحدَه يكفي ليُقرأ
+             ضابطًا، والخلفيّةُ تُملأ عند التشغيل وحدَه لتقول إنه مُشغَّل. */
+          className="min-h-11 lg:min-h-10 shrink-0 rounded-xl border px-s3 text-[0.78rem] font-semibold transition-colors"
+          style={
             inText
-              ? "border-accent text-accent"
-              : "border-line bg-bg-sunken text-fg-muted"
-          }`}
+              ? {
+                  borderColor: "var(--accent)",
+                  background:
+                    "color-mix(in oklab, var(--accent) 14%, transparent)",
+                  color: "var(--accent)",
+                }
+              : {
+                  borderColor: "var(--line-control)",
+                  background: "transparent",
+                  color: "var(--fg-muted)",
+                }
+          }
         >
           وفي النصوص
         </button>
@@ -2006,7 +2069,9 @@ function Toolbar({
           onClick={onHelp}
           aria-label="اختصارات اللوحة وكيف تعمل"
           title="اختصارات اللوحة (؟)"
-          className="border-line bg-bg-sunken text-fg-muted hover:text-fg min-h-11 lg:min-h-10 shrink-0 rounded-xl border px-s3 text-[0.82rem] font-bold transition-colors"
+          /* الحدُّ وحدَه كمفتاح «وفي النصوص» — لا غائرٌ شبهُ أسودَ بجانبه */
+          className="text-fg-muted hover:text-fg min-h-11 lg:min-h-10 shrink-0 rounded-xl border px-s3 text-[0.82rem] font-bold transition-colors"
+          style={{ borderColor: "var(--line-control)" }}
         >
           ؟
         </button>
@@ -2202,6 +2267,7 @@ function Dossier({
   notes,
   me,
   clash,
+  capInvited,
   cvOpen,
   onCvToggle,
   onBack,
@@ -2217,6 +2283,8 @@ function Dossier({
   me: string;
   /** أسماءُ من يتعارض موعدُهم مع موعده — تُقال عند الحقل لا في القائمة */
   clash: readonly string[];
+  /** كم مدعوًّا في جهته الآن — و`null` لمن لا جهةَ له في المقاييس */
+  capInvited: number | null;
   /** أمعاينةُ السيرة مفتوحة؟ الحالةُ في الأب فتبقى عبر المتقدّمين */
   cvOpen: boolean;
   onCvToggle: () => void;
@@ -2383,7 +2451,12 @@ function Dossier({
               borderColor: "color-mix(in oklab, var(--snow) 16%, transparent)",
             }}
           >
-            <StatusPicker row={row} clash={clash} dark />
+            <StatusPicker
+              row={row}
+              clash={clash}
+              capInvited={capInvited}
+              dark
+            />
           </div>
         </header>
 
@@ -2721,10 +2794,13 @@ function Checklist({ items }: { items: readonly Item[] }) {
 function StatusPicker({
   row,
   clash,
+  capInvited,
   dark,
 }: {
   row: Row;
   clash: readonly string[];
+  /** المدعوّون في جهته الآن — يُقال عند الزرّ لا في شريطٍ فوق الشاشة */
+  capInvited: number | null;
   dark?: boolean;
 }) {
   const [pending, start] = useTransition();
@@ -2811,6 +2887,30 @@ function StatusPicker({
           {error}
         </p>
       )}
+
+      {/**
+       * **بلوغُ الإرشاد يُقال عند الزرّ — وكان يُعرض فوق الشاشة وحدَه.**
+       *
+       * ⚠️ شريطُ «مدعوّون للمقابلة» يعرض `١٥/١٥` ملوَّنًا في رأس اللوحة،
+       * لكنّ القائدَ حين يضغط «دعوة لمقابلة» يكون ناظرًا إلى **الملفّ** لا
+       * إلى الشريط — فيدعو السادسَ عشرَ وهو لا يدري أنه تجاوز.
+       *
+       * ⚠️ **ولا يُعطَّل الزرُّ ولا يُمنع.** الإدارة قالت «يمديك أقلّ، وفي
+       * حالات استثناء يمديك أعلى» — فالمنعُ يخالف القرارَ نفسَه، والصمتُ
+       * يجعل التجاوزَ يقع بلا علم. فيُقال ويُترك القرار.
+       */}
+      {capInvited !== null &&
+        capInvited >= INTERVIEW_CAP &&
+        row.status !== "reviewing" && (
+          <p
+            role="status"
+            className="mt-s2 text-[0.76rem] leading-relaxed"
+            style={{ color: dark ? "var(--sky)" : "var(--warning)" }}
+          >
+            ⚠️ بلغت جهتُه <strong>{capInvited}</strong> مدعوًّا، والإرشاد{" "}
+            {INTERVIEW_CAP} — ولك أن تتجاوزه.
+          </p>
+        )}
 
       <InterviewField row={row} clash={clash} dark={dark} />
 
@@ -2932,12 +3032,25 @@ function InterviewField({
                في اللحظة التي فُتح لأجلها. والخروجُ يقع بأحد اثنين: حفظٌ
                ناجح، أو الانتقالُ إلى متقدّمٍ آخر (يُعاد تركيبُ الملفّ
                بـ`key`، فتعود الحالةُ إلى أصلها). */
-            className="text-fg min-h-11 rounded-xl border px-s3 text-[0.82rem] lg:min-h-10"
+            className="min-h-11 rounded-xl border px-s3 text-[0.82rem] lg:min-h-10"
+            /**
+             * 🔴 **اللونُ صريحٌ ولا يُترك لـ`text-fg` — وهذي كانت علّةً لا
+             * ذوقًا.** `.tile-ink` يضبط `color: var(--snow)` **ولا يعيد
+             * تعريف توكن `--fg`**؛ و`text-fg` يقرأ التوكن لا اللونَ
+             * الموروث. فداخل لوحٍ حبريٍّ داكن كان يعطي **لونَ الصفحة** —
+             * أي حبرًا داكنًا على داكن في الوضع الفاتح، **وهو الافتراض في
+             * هذا الموقع**. فالتاريخُ المكتوب كان يختفي.
+             *
+             * ⚠️ و`colorScheme` معه لا بدلَه: هو وحدَه يجعل المتصفّح يرسم
+             * نائبَ الحقل وأيقونةَ التقويم بلوحةٍ ليليّة، ولا يمسّ لونَ
+             * القيمة التي نضبطها هنا.
+             */
             style={{
+              color: dark ? "var(--snow)" : "var(--fg)",
               borderColor: dark
-                ? "rgba(255,255,255,.28)"
+                ? "rgba(255,255,255,.34)"
                 : "var(--line-strong)",
-              background: "transparent",
+              background: dark ? "rgba(255,255,255,.06)" : "transparent",
               colorScheme: dark ? "dark" : undefined,
             }}
           />
