@@ -275,6 +275,15 @@ export function ApplicationsTable({
   /** لوحُ الاختصارات — يُفتح بـ«؟» أو بالزرّ في الشريط */
   const [help, setHelp] = useState(false);
   /**
+   * معاينةُ السيرة داخل الملفّ — **والحالةُ هنا لا في `Dossier`**.
+   *
+   * ⚠️ `Dossier` يُعاد تركيبُه عند كل متقدّم (`key={row.id}`)، فحالتُه تموت
+   * معه. ولو سكنت هناك لَفتح القائدُ المعاينةَ لكلّ واحدٍ من التسعةِ
+   * والستّين — وهو بالضبط النقرُ الذي بُنيت لتلغيه. فتُفتح مرّةً، ثم
+   * `j`/`k` تمرّ على السِّيَر واحدةً بعد أخرى وهي مفتوحة.
+   */
+  const [cvOpen, setCvOpen] = useState(false);
+  /**
    * التمريرُ بالمفتاح **مسلَّحٌ على معرَّفٍ بعينه** لا على «مسلَّح/غير مسلَّح».
    *
    * ⚠️ لو كان منطقيًّا لَوقع هذا: يضغط `p` على فلان، ثم `j` فينتقل لغيره،
@@ -581,6 +590,10 @@ export function ApplicationsTable({
       } else if (e.code === "KeyK" || e.key === "ArrowUp") {
         e.preventDefault();
         go(at - 1);
+      } else if (e.code === "KeyC") {
+        /* معاينةُ السيرة — تبديلٌ لا فتحٌ لواحد، فتبقى على من بعده */
+        e.preventDefault();
+        setCvOpen((v) => !v);
       } else if (e.code === "KeyX") {
         if (current) {
           e.preventDefault();
@@ -796,6 +809,8 @@ export function ApplicationsTable({
             notes={notesByApp.get(current.row.id) ?? EMPTY_NOTES}
             me={me}
             clash={clash}
+            cvOpen={cvOpen}
+            onCvToggle={() => setCvOpen((v) => !v)}
             onBack={() => setPicked(null)}
             at={at}
             of={shown.length}
@@ -830,6 +845,7 @@ function KeysHelp({ onClose }: { onClose: () => void }) {
     { keys: "j / k", what: "انتقل للتالي · للسابق (والأسهم مثلُها)" },
     { keys: "1 · 2 · 3", what: "جديد · دعوةٌ لمقابلة · مقبول" },
     { keys: "p", what: "مرِّره لرغبته التالية — بضغطتين، والثانيةُ تأكيد" },
+    { keys: "c", what: "اعرض سيرته داخل الملفّ — وتبقى مفتوحةً لمن بعده" },
     { keys: "x", what: "حدِّده لفعلٍ جماعيّ (ثم اختر من الشريط)" },
     { keys: "/", what: "اقفز إلى البحث" },
     { keys: "Esc", what: "اخرج من الحقل · ألغِ التحديد · أغلق هذا اللوح" },
@@ -2065,6 +2081,8 @@ function Dossier({
   notes,
   me,
   clash,
+  cvOpen,
+  onCvToggle,
   onBack,
   at,
   of,
@@ -2078,6 +2096,9 @@ function Dossier({
   me: string;
   /** أسماءُ من يتعارض موعدُهم مع موعده — تُقال عند الحقل لا في القائمة */
   clash: readonly string[];
+  /** أمعاينةُ السيرة مفتوحة؟ الحالةُ في الأب فتبقى عبر المتقدّمين */
+  cvOpen: boolean;
+  onCvToggle: () => void;
   onBack: () => void;
   /** موضعُه في المعروض (صفريّ) وعددُ المعروض — «٣ من ٥٧» */
   at: number;
@@ -2360,6 +2381,21 @@ function Dossier({
                   href={row.cv_path ? `/admin/cv/${row.id}` : null}
                   label="السيرة الذاتية"
                 />
+                {/* ⚠️ **لا يظهر لمن لا سيرةَ له** — وهم الأكثر: تسعةٌ
+                    وستّون من ٢٥٩ رفعوا سيرةً (مقيسٌ من القاعدة، ١٩ أغسطس
+                    ٢٠٢٦). فزرٌّ دائمٌ يَعِد بما لا يوجد في ثلاثة أرباع
+                    الملفّات. */}
+                {row.cv_path && (
+                  <button
+                    type="button"
+                    onClick={onCvToggle}
+                    aria-expanded={cvOpen}
+                    className="border-line bg-bg-sunken text-fg min-h-11 lg:min-h-9 rounded-full border px-s4 text-[0.78rem] font-semibold"
+                  >
+                    {cvOpen ? "أخفِ المعاينة" : "اعرضها هنا"}{" "}
+                    <span className="opacity-50">c</span>
+                  </button>
+                )}
                 {/* المشاريع بابان: ملفٌّ مرفوع ورابطٌ منشور — وأحدهما يكفي،
                     فيُعرضان معًا ويغيب ما لم يُملأ. */}
                 <LinkPill
@@ -2373,6 +2409,39 @@ function Dossier({
                 <LinkPill href={row.portfolio} label="رابط الأعمال" external />
                 <LinkPill href={row.linkedin} label="لينكدإن" external />
               </div>
+
+              {/**
+               * **معاينةُ السيرة في مكانها — والبديلُ تبويبةٌ لكلّ متقدّم.**
+               *
+               * ⚠️ **تعمل لأن الرابط يُوقَّع بلا `download`** — فيخدم
+               * التخزينُ الملفَّ بنوعه (`application/pdf` أو صورة) بلا
+               * ترويسة `Content-Disposition: attachment`، فيرسمه المتصفّح
+               * داخل الإطار بدل أن ينزّله. ولو أُضيف `download: true` يومًا
+               * في `cv/[id]/route.ts` **لانقلبت هذي المعاينةُ تنزيلًا
+               * صامتًا عند كلّ فتح** — فلا يُضاف.
+               *
+               * ⚠️ **ومغلقةٌ افتراضيًّا.** التوقيعُ صالحٌ دقيقةً واحدة
+               * والملفُّ حتى ٢م.ب، فرسمُها مع كلّ `j` يحمّل الشبكةَ على من
+               * لا يقرأ السِّيَر أصلًا. فيفتحها من يريدها مرّةً وتبقى.
+               */}
+              {cvOpen && row.cv_path && (
+                <div className="mt-s3">
+                  {/* ⚠️ **`key` على المعرّف.** بلاها يعيد React استعمالَ
+                      الإطار نفسِه بين متقدّمين، فيبقى المستندُ السابق
+                      معروضًا حتى يكتمل تحميلُ الجديد — أي **سيرةُ غيرِه
+                      أمام عينه** وهو يقرّر. */}
+                  <iframe
+                    key={row.id}
+                    src={`/admin/cv/${row.id}`}
+                    title={`السيرة الذاتية — ${row.full_name}`}
+                    className="border-line bg-bg-sunken h-[26rem] w-full rounded-xl border lg:h-[32rem]"
+                  />
+                  <p className="text-fg-muted mt-s1 text-[0.72rem]">
+                    تعذّر العرض؟ افتحها من «السيرة الذاتية» أعلاه — بعض
+                    المتصفّحات لا ترسم PDF داخل الصفحة.
+                  </p>
+                </div>
+              )}
             </Block>
 
             <Block title="بياناتٌ أخرى">
