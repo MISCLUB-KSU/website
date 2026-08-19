@@ -2,7 +2,9 @@
 
 import { useMemo, useState, useTransition } from "react";
 
+import { COMMITTEES } from "@/content/committees";
 import { findPreference, questionBlocks } from "@/content/preferences";
+import { PROJECTS } from "@/content/projects";
 import {
   answerName,
   splitAnswer,
@@ -10,13 +12,22 @@ import {
 } from "@/content/questions";
 import { isolateLatin } from "@/lib/bidi";
 import { useHydrated } from "@/lib/use-hydrated";
-import { notifyDecision, sendPendingRejections, setStatus } from "./actions";
+import {
+  addNote,
+  deleteNote,
+  editNote,
+  notifyDecision,
+  sendPendingRejections,
+  setStatus,
+} from "./actions";
 import {
   INTERVIEW_CAP,
   PHASE_ONE_STATUSES,
   STATUSES,
+  arrivalStamp,
   inScopes,
   openOnly,
+  type Note,
   type Row,
 } from "./stats";
 
@@ -50,9 +61,12 @@ const NOTIFIABLE_STATUSES: readonly string[] = [
 
 type Props = {
   rows: readonly Row[];
+  notes: readonly Note[];
   /** نطاقاتُ القارئ — فارغةٌ للرئاسة، وهي ترى الكلّ */
   scopes: readonly string[];
   isAdmin: boolean;
+  /** بريدُ القارئ — به يُعرف ما يملك تعديلَه */
+  me: string;
 };
 
 /**
@@ -68,6 +82,24 @@ const PHASE_STATUSES = STATUSES.filter((s) =>
 
 /** طابورُ المرحلة الأولى، أو كلُّ من ذكرني في رغباته الثلاث */
 type Queue = "first" | "all";
+
+/**
+ * النطاقاتُ التسعة — **مبنيّةٌ من المحتوى لا مكتوبةٌ يدويًّا**.
+ *
+ * لجنةٌ واحدةٌ لكلٍّ من الأربع (وحداتُها تدخل بمطابقة البادئة)، ومشروعٌ
+ * لكلّ مشروعٍ مفتوح. ولو أُغلق مشروعٌ أو فُتح آخر تتبعُه هذي القائمةُ
+ * وحدَها — ونسخُها يدويًّا كان يعني معاينةً لجهةٍ لم تعد تستقبل.
+ */
+const SCOPE_OPTIONS: readonly { value: string; label: string }[] = [
+  ...COMMITTEES.map((c) => ({
+    value: `committee:${c.slug}`,
+    label: c.name,
+  })),
+  ...PROJECTS.filter((p) => p.applicationState === "open").map((p) => ({
+    value: `project:${p.slug}`,
+    label: p.name,
+  })),
+];
 
 type Meter = {
   value: string;
@@ -150,7 +182,13 @@ function completeness(row: Row): { items: Item[]; pct: number } {
 
 /* ── الجذر ──────────────────────────────────────────────────────────────── */
 
-export function ApplicationsTable({ rows, scopes, isAdmin }: Props) {
+export function ApplicationsTable({
+  rows,
+  notes,
+  scopes,
+  isAdmin,
+  me,
+}: Props) {
   const [q, setQ] = useState("");
   const [status, setStatusFilter] = useState<string>("all");
   /* ⚠️ **«الرغبة الأولى» هي الافتراض لا «الكلّ».** القائدُ يستقبل من ذكره
@@ -158,6 +196,11 @@ export function ApplicationsTable({ rows, scopes, isAdmin }: Props) {
      يُبطل ترتيبَ الرغبات كلَّه — وهو ما تقوم عليه خطّةُ الموسم. فالطابورُ
      يفتح على من اختارك **أوّلًا**، والبقيّةُ خلف تبديلٍ مقصود. */
   const [queue, setQueue] = useState<Queue>("first");
+  /* ⚠️ **معاينةٌ للرئاسة، لا تنازلٌ عن صلاحية.** الرئاسةُ ترى الكلَّ في
+     القاعدة ولا يغيّر هذا شيئًا من ذلك — يغيّر **ما تعرضه الشاشة** حتى
+     يتحقّق من يوزّع الحسابات ممّا سيراه كلُّ قائدٍ قبل أن يسلّمه المفتاح.
+     ولذلك يُقال في الشريط صراحةً إنها معاينة. */
+  const [viewAs, setViewAs] = useState<string>("");
   const [sort, setSort] = useState<(typeof SORTS)[number]["key"]>("newest");
   const [picked, setPicked] = useState<string | null>(null);
   const live = useHydrated();
@@ -165,10 +208,18 @@ export function ApplicationsTable({ rows, scopes, isAdmin }: Props) {
   /* ⚠️ **الرئاسةُ بلا نطاق، وكلُّ جهةٍ لها.** `inScopes` على مصفوفةٍ
      فارغة تُرجع «لا» دائمًا، فلولا هذا الاستثناء لفتحت الرئاسةُ طابورًا
      فارغًا على ٢٤٠ طلبًا. */
+  /* النطاقُ المعروض: المعاينةُ إن اختيرت، وإلّا نطاقُ القارئ نفسِه */
+  const asScopes = useMemo(
+    () => (viewAs ? [viewAs] : scopes),
+    [viewAs, scopes],
+  );
+  /* ورئاسةٌ تعاين تُعامَل معاملةَ القائد — وإلّا لَما رُشّح شيء */
+  const asAdmin = isAdmin && !viewAs;
+
   const pool = useMemo(() => {
-    if (queue === "all" || isAdmin) return rows;
-    return rows.filter((r) => inScopes(r.choice1, scopes));
-  }, [rows, queue, scopes, isAdmin]);
+    if (queue === "all" || asAdmin) return rows;
+    return rows.filter((r) => inScopes(r.choice1, asScopes));
+  }, [rows, queue, asScopes, asAdmin]);
 
   const scored = useMemo(
     () => pool.map((r) => ({ row: r, ...completeness(r) })),
@@ -180,6 +231,17 @@ export function ApplicationsTable({ rows, scopes, isAdmin }: Props) {
      يتغيّر كلّما بدّل القائدُ الطابور. */
   const rivalry = useMemo(() => competitionOf(rows), [rows]);
 
+  /* تُجمَّع مرّةً لا لكلّ ملفٍّ يُفتح — الترتيبُ تصاعديٌّ من الاستعلام */
+  const notesByApp = useMemo(() => {
+    const m = new Map<string, Note[]>();
+    for (const n of notes) {
+      const list = m.get(n.application_id);
+      if (list) list.push(n);
+      else m.set(n.application_id, [n]);
+    }
+    return m;
+  }, [notes]);
+
   /**
    * مدخلُ كلّ جهةٍ في نطاق القارئ — **الجهةُ وحدةُ العدّ لا القائد**.
    *
@@ -190,7 +252,7 @@ export function ApplicationsTable({ rows, scopes, isAdmin }: Props) {
     const m = new Map<string, { total: number; invited: number }>();
     for (const r of rows) {
       if (!r.choice1) continue;
-      if (!isAdmin && !inScopes(r.choice1, scopes)) continue;
+      if (!asAdmin && !inScopes(r.choice1, asScopes)) continue;
       const e = m.get(r.choice1) ?? { total: 0, invited: 0 };
       e.total += 1;
       if (r.status === "reviewing") e.invited += 1;
@@ -204,11 +266,11 @@ export function ApplicationsTable({ rows, scopes, isAdmin }: Props) {
     return [...m.entries()]
       .map(([value, v]) => ({
         value,
-        label: isAdmin ? prefName(value) : prefShort(value),
+        label: asAdmin ? prefName(value) : prefShort(value),
         ...v,
       }))
       .sort((a, b) => b.invited - a.invited || b.total - a.total);
-  }, [rows, scopes, isAdmin]);
+  }, [rows, asScopes, asAdmin]);
 
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -284,6 +346,25 @@ export function ApplicationsTable({ rows, scopes, isAdmin }: Props) {
     >
       <Kpis {...kpis} total={pool.length} />
 
+      {/* ⚠️ **يُقال إنها معاينة، ولا يُترك للاستنتاج.** رئاسةٌ نسيت أنها
+          تعاين تقرأ «٤٦ طلبًا» فتظنّها حصيلةَ النادي كلِّه — وهي حصيلةُ
+          لجنةٍ واحدة. والرقمُ الخطأُ هنا يُغلق فرزًا قبل أوانه. */}
+      {viewAs && (
+        <p
+          className="tile shrink-0 px-s4 py-s2 text-[0.78rem] font-medium"
+          style={{
+            borderColor: "color-mix(in oklab, var(--d-cyan) 55%, transparent)",
+            background: "color-mix(in oklab, var(--d-cyan) 12%, transparent)",
+          }}
+        >
+          معاينة — الشاشةُ كما يراها قائدُ{" "}
+          <strong>
+            {SCOPE_OPTIONS.find((o) => o.value === viewAs)?.label ?? viewAs}
+          </strong>
+          . صلاحيّتُك لم تتغيّر، والمعروضُ وحده تغيّر.
+        </p>
+      )}
+
       <IntakeMeters meters={meters} />
 
       <Toolbar
@@ -299,8 +380,11 @@ export function ApplicationsTable({ rows, scopes, isAdmin }: Props) {
         pendingRejections={pendingRejections}
         queue={queue}
         setQueue={setQueue}
-        showQueue={!isAdmin}
+        showQueue={!asAdmin}
         beyondFirst={rows.length - pool.length}
+        scopeOptions={isAdmin ? SCOPE_OPTIONS : null}
+        viewAs={viewAs}
+        setViewAs={setViewAs}
       />
 
       <div className="grid min-h-0 flex-1 gap-s3 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)]">
@@ -316,6 +400,8 @@ export function ApplicationsTable({ rows, scopes, isAdmin }: Props) {
             items={current.items}
             pct={current.pct}
             rivalry={rivalry}
+            notes={notesByApp.get(current.row.id) ?? EMPTY_NOTES}
+            me={me}
             onBack={() => setPicked(null)}
           />
         ) : (
@@ -325,6 +411,201 @@ export function ApplicationsTable({ rows, scopes, isAdmin }: Props) {
         )}
       </div>
     </div>
+  );
+}
+
+/* ── ملاحظات المراجعة ───────────────────────────────────────────────────── */
+
+/** مرجعٌ ثابتٌ للفارغ — مصفوفةٌ جديدةٌ كلَّ رسمةٍ تُبطل الحفظ في `Dossier` */
+const EMPTY_NOTES: readonly Note[] = [];
+
+/**
+ * «قبل ساعتين» — **بعد الترطيب وحده**.
+ *
+ * ⚠️ الوقتُ النسبيُّ يُحسب من ساعة الجهاز، وساعةُ الخادم غيرُها؛ فحسبُه في
+ * أوّل رسمةٍ يجعل نصَّ الخادم يخالف نصَّ العميل فيصرخ React بعدم تطابق.
+ * ولذلك يُعرض بعد الترطيب، وقبله يبقى مكانُه فارغًا.
+ */
+function ago(iso: string): string {
+  const mins = Math.round((Date.now() - Date.parse(iso)) / 60000);
+  if (!Number.isFinite(mins)) return "";
+  if (mins < 2) return "الآن";
+  if (mins < 60) return `قبل ${mins} دقيقة`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return hours === 1 ? "قبل ساعة" : `قبل ${hours} ساعة`;
+  const days = Math.round(hours / 24);
+  return days === 1 ? "قبل يوم" : `قبل ${days} يومًا`;
+}
+
+/**
+ * ملاحظاتُ الطاقم على متقدّمٍ واحد — **سجلٌّ يُضاف إليه**.
+ *
+ * ⚠️ **ولذلك لا حقلَ واحدًا يُكتب فوقه.** رئيسُ اللجنة ونائبُه يدخلان
+ * بالنطاق نفسِه ويقابلان في اليوم نفسِه؛ فحقلٌ مشتركٌ يعني أن يمحو أحدُهما
+ * ملاحظةَ الآخر بلا أن يعلم — وملاحظةُ مقابلةٍ ضاعت لا تُستعاد إلّا بإعادة
+ * المقابلة. والتعليلُ الكامل في هجرة `application_notes`.
+ *
+ * ⚠️ **والتعديلُ والحذفُ للكاتب وحده — تفرضه القاعدة لا هذي الشاشة.**
+ * وإخفاءُ الزرّ هنا راحةٌ للعين لا حراسة: من صنع الاستدعاء بيده تردّه
+ * السياسة، ومقيسٌ أن الردّ يقع فعلًا.
+ */
+function NotesBlock({
+  rowId,
+  notes,
+  me,
+}: {
+  rowId: string;
+  notes: readonly Note[];
+  me: string;
+}) {
+  const [draft, setDraft] = useState("");
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+  const [error, setError] = useState("");
+  const [pending, start] = useTransition();
+  const live = useHydrated();
+
+  const submit = () => {
+    const body = draft.trim();
+    if (!body) return;
+    start(async () => {
+      setError("");
+      const res = await addNote(rowId, body);
+      if (res.ok) setDraft("");
+      else setError(res.message);
+    });
+  };
+
+  return (
+    <Block title={`ملاحظات المراجعة${notes.length ? ` (${notes.length})` : ""}`}>
+      {notes.length === 0 && (
+        <p className="text-fg-muted text-[0.84rem]">
+          لا ملاحظةَ بعد — اكتب ما دار في المقابلة ليقرأه من يراجع بعدك.
+        </p>
+      )}
+
+      {notes.length > 0 && (
+        <ul className="mb-s3 flex flex-col gap-s2">
+          {notes.map((n) => {
+            const mine = n.author_email === me;
+            const open = editing === n.id;
+            return (
+              <li key={n.id} className="bg-bg-sunken rounded-xl p-s3">
+                <p className="text-fg-muted mb-s1 flex flex-wrap items-center gap-x-s2 text-[0.72rem]">
+                  <span className="font-semibold">{n.author_name}</span>
+                  {/* الوقتُ بعد الترطيب — انظر `ago` */}
+                  {live && <span>· {ago(n.created_at)}</span>}
+                  {live && n.updated_at && <span>· عُدّلت</span>}
+                </p>
+
+                {open ? (
+                  <>
+                    <textarea
+                      value={editDraft}
+                      onChange={(e) => setEditDraft(e.target.value)}
+                      rows={3}
+                      className="border-line text-fg w-full rounded-xl border bg-transparent p-s2 text-[0.86rem] leading-relaxed"
+                    />
+                    <div className="mt-s2 flex gap-x-s3">
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() =>
+                          start(async () => {
+                            setError("");
+                            const res = await editNote(n.id, editDraft);
+                            if (res.ok) setEditing(null);
+                            else setError(res.message);
+                          })
+                        }
+                        className="text-accent min-h-9 text-[0.8rem] font-semibold"
+                      >
+                        احفظ
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditing(null)}
+                        className="text-fg-muted min-h-9 text-[0.8rem]"
+                      >
+                        تراجع
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[0.88rem] leading-relaxed whitespace-pre-wrap">
+                      {n.body}
+                    </p>
+                    {mine && (
+                      <div className="mt-s1 flex gap-x-s3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditing(n.id);
+                            setEditDraft(n.body);
+                          }}
+                          className="text-fg-muted min-h-9 text-[0.76rem] underline underline-offset-4"
+                        >
+                          تعديل
+                        </button>
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() =>
+                            start(async () => {
+                              setError("");
+                              const res = await deleteNote(n.id);
+                              if (!res.ok) setError(res.message);
+                            })
+                          }
+                          className="text-fg-muted min-h-9 text-[0.76rem] underline underline-offset-4"
+                        >
+                          حذف
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <textarea
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        rows={3}
+        maxLength={2000}
+        placeholder="ما دار في المقابلة، وما لاحظتَه…"
+        className="border-line text-fg placeholder:text-fg-muted/70 mt-s2 w-full rounded-xl border bg-transparent p-s3 text-[0.86rem] leading-relaxed"
+      />
+      <div className="mt-s2 flex items-center gap-x-s3">
+        <button
+          type="button"
+          disabled={pending || draft.trim().length === 0}
+          onClick={submit}
+          className={`border-line-strong min-h-11 rounded-xl border px-s4 text-[0.82rem] font-semibold transition-opacity lg:min-h-10 ${
+            pending || draft.trim().length === 0
+              ? "opacity-40"
+              : "opacity-90 hover:opacity-100"
+          }`}
+        >
+          {pending ? "…يُحفظ" : "أضف ملاحظة"}
+        </button>
+        {/* ⚠️ **يُقال إنها تُرى.** من ظنّها خاصّةً كتب فيها ما لا يقوله
+            أمام زميله — والسجلُّ يُقرأ من كلّ من يرى الطلب. */}
+        <span className="text-fg-muted text-[0.72rem]">
+          يقرؤها كلُّ من يرى هذا الطلب
+        </span>
+      </div>
+
+      {error && (
+        <p role="alert" className="text-danger mt-s2 text-[0.8rem]">
+          {error}
+        </p>
+      )}
+    </Block>
   );
 }
 
@@ -649,6 +930,9 @@ function Toolbar({
   setQueue,
   showQueue,
   beyondFirst,
+  scopeOptions,
+  viewAs,
+  setViewAs,
 }: {
   q: string;
   setQ: (v: string) => void;
@@ -665,6 +949,10 @@ function Toolbar({
   /** الرئاسةُ ترى الكلَّ أصلًا، فالتبديلُ لها بلا أثر — فيُخفى */
   showQueue: boolean;
   beyondFirst: number;
+  /** للرئاسة وحدها — و`null` لغيرها فلا يُرسم المحدّد */
+  scopeOptions: readonly { value: string; label: string }[] | null;
+  viewAs: string;
+  setViewAs: (v: string) => void;
 }) {
   return (
     <div className="tile shrink-0">
@@ -682,6 +970,24 @@ function Toolbar({
 
         {/* ⚠️ **صفٌّ واحدٌ يُسحب على الجوّال لا التفافٌ على ثلاثة صفوف.**
             الستّةُ كانت تلتفّ فتأكل ≈250px أخرى فوق الطيّة. */}
+        {scopeOptions && (
+          <label className="flex items-center gap-x-s2 text-[0.8rem]">
+            <span className="text-fg-muted">أعاين كـ</span>
+            <select
+              value={viewAs}
+              onChange={(e) => setViewAs(e.target.value)}
+              className="border-line bg-bg-sunken text-fg min-h-11 rounded-xl border px-s3 text-[0.82rem] lg:min-h-10"
+            >
+              <option value="">الرئاسة — كلّ الطلبات</option>
+              {scopeOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
         {showQueue && (
           <div role="tablist" aria-label="الطابور" className="seg shrink-0">
             <button
@@ -897,12 +1203,16 @@ function Dossier({
   items,
   pct,
   rivalry,
+  notes,
+  me,
   onBack,
 }: {
   row: Row;
   items: readonly Item[];
   pct: number;
   rivalry: Competition;
+  notes: readonly Note[];
+  me: string;
   onBack: () => void;
 }) {
   const s = STATUSES.find((x) => x.key === row.status);
@@ -1112,6 +1422,11 @@ function Dossier({
           </div>
 
           <div className="flex flex-col gap-s5">
+            {/* ⚠️ **فوق كلِّ شيءٍ في هذا العمود.** المراجعُ العائدُ يسأل
+                «وش قلنا عنه المرّة اللي راحت؟» قبل أن يقرأ الملفّ من أوّله
+                — ولوحُ ملاحظاتٍ أسفلَ عمودٍ طويلٍ لا يُقرأ إلّا بحثًا. */}
+            <NotesBlock rowId={row.id} notes={notes} me={me} />
+
             <Checklist items={items} />
 
             <Block title="المرفقات والروابط">
@@ -1157,7 +1472,7 @@ function Dossier({
                 <div className="col-span-2">
                   <dt className="text-fg-muted text-[0.7rem]">تاريخ التقديم</dt>
                   <dd dir="ltr" className="tabular-nums">
-                    {new Date(row.created_at).toLocaleString("ar-SA")}
+                    {arrivalStamp(row.created_at)}
                   </dd>
                 </div>
               </dl>

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ApplicationsTable } from "./applications-table";
 import { Dashboard } from "./dashboard";
 import { FlowChart } from "./flow";
-import type { Row } from "./stats";
+import type { Note, Row } from "./stats";
 
 /**
  * تبويبات اللوحة.
@@ -28,12 +28,17 @@ type Key = (typeof TABS)[number]["key"];
 
 export function AdminTabs({
   rows,
+  notes,
   scopes,
   isAdmin,
+  me,
 }: {
   rows: readonly Row[];
+  notes: readonly Note[];
   scopes: readonly string[];
   isAdmin: boolean;
+  /** بريدُ القارئ — به يُعرف ما يملك تعديلَه من الملاحظات */
+  me: string;
 }) {
   const [tab, setTab] = useState<Key>("dash");
 
@@ -87,7 +92,13 @@ export function AdminTabs({
           </div>
         )}
         {tab === "list" && (
-          <ApplicationsTable rows={rows} scopes={scopes} isAdmin={isAdmin} />
+          <ApplicationsTable
+            rows={rows}
+            notes={notes}
+            scopes={scopes}
+            isAdmin={isAdmin}
+            me={me}
+          />
         )}
       </div>
     </div>

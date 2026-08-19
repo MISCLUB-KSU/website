@@ -6,7 +6,7 @@ import { ThemeToggle } from "./theme-toggle";
 import { findPreference } from "@/content/preferences";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./login/actions";
-import { inScopes, type Row } from "./stats";
+import { inScopes, type Note, type Row } from "./stats";
 
 /**
  * لوحة الطلبات.
@@ -105,6 +105,28 @@ export default async function AdminPage() {
   }
 
   const rows = (data ?? []) as Row[];
+
+  /**
+   * ملاحظاتُ الطاقم — **استعلامٌ واحدٌ لكلّ الطلبات لا واحدٌ لكلّ طلب**.
+   *
+   * `RLS` تقصّها على نطاق القارئ كما تقصّ الطلبات، فلا شرطَ هنا. وترتيبُها
+   * تصاعديٌّ ليُقرأ الأقدمُ أوّلًا — سردُ مقابلةٍ لا صندوقُ وارد.
+   *
+   * ⚠️ **وفشلُها لا يُسقط الصفحة.** ملاحظةٌ لا تظهر أهونُ من لوحةٍ لا
+   * تُفتح والفرزُ قائم — فيُسجَّل الخطأ وتُعرض الطلباتُ بلا ملاحظات.
+   */
+  const { data: noteRows, error: notesError } = await supabase
+    .from("application_notes")
+    .select("*")
+    .order("created_at", { ascending: true });
+
+  if (notesError) {
+    console.error("[admin] تعذّرت قراءة الملاحظات", {
+      code: notesError.code,
+      message: notesError.message,
+    });
+  }
+  const notes = (noteRows ?? []) as Note[];
   const scopeNames = ((me.scopes ?? []) as string[]).map(
     (scope) => findPreference(scope)?.fullLabel ?? scope,
   );
@@ -235,8 +257,10 @@ export default async function AdminPage() {
           ليست له. وترتيبُ طابور المرحلة الأولى يحتاج نطاقَه هو. */}
       <AdminTabs
         rows={rows}
+        notes={notes}
         scopes={(me.scopes ?? []) as string[]}
         isAdmin={me.role === "admin"}
+        me={user.email?.toLowerCase() ?? ""}
       />
     </main>
   );

@@ -316,3 +316,110 @@ export async function pendingRejectionCount(): Promise<number> {
     .is("decision_mailed_at", null);
   return count ?? 0;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   ملاحظات المراجعة والمقابلة
+   ══════════════════════════════════════════════════════════════════════ */
+
+/**
+ * إضافةُ ملاحظة.
+ *
+ * ⚠️ **الكاتبُ لا يُرسَل من هنا.** محفِّزُ `stamp_note_author` يقرأ البريد
+ * من الرمز ويجلب الاسمَ من `staff` — فلا يكتب أحدٌ باسم زميله ولو صنع
+ * الاستدعاءَ بيده. والسياسةُ تفحص النطاق، فلا تُكتب ملاحظةٌ على طلبٍ خارجه.
+ *
+ * ⚠️ **وبعميل الجلسة لا بمفتاح الخدمة** — كبقيّة أفعال اللوحة.
+ */
+export async function addNote(applicationId: string, body: string) {
+  const text = body.trim();
+  if (text.length === 0) {
+    return { ok: false as const, message: "اكتب الملاحظة أوّلًا" };
+  }
+  /* ⚠️ يُقصّ هنا وفي القاعدة معًا: القيدُ يحرس، وهذا يقول **لماذا** رُدّ
+     بدل أن يخرج خطأُ Postgres خامًا للقائد. */
+  if (text.length > 2000) {
+    return { ok: false as const, message: "الملاحظة أطول من ٢٠٠٠ حرف" };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("application_notes")
+    .insert({ application_id: applicationId, body: text });
+
+  if (error) {
+    /* بحقوله لا كائنًا كاملًا: `details` قد يحمل نصَّ الملاحظة كاملًا */
+    console.error("[admin] تعذّرت إضافة ملاحظة", {
+      code: error.code,
+      message: error.message,
+    });
+    /* `42501` انتهاكُ سياسة — أي طلبٌ خارج النطاق، لا عطلٌ في اللوحة */
+    return {
+      ok: false as const,
+      message:
+        error.code === "42501" ? "هذا الطلب خارج نطاقك" : "تعذّر الحفظ",
+    };
+  }
+
+  revalidatePath("/admin");
+  return { ok: true as const, message: "" };
+}
+
+/**
+ * تعديلُ ملاحظة — **للكاتب وحده**، تفرضه السياسة لا هذي الدالّة.
+ *
+ * ولا يُمرَّر `updated_at`: محفِّزُ `touch_note` يختمه، ويعيد الكاتبَ
+ * والطلبَ إلى ما كانا — فلا تُنقل ملاحظةٌ إلى طلبٍ آخر ولا تُنسب لغير من
+ * كتبها.
+ */
+export async function editNote(id: string, body: string) {
+  const text = body.trim();
+  if (text.length === 0 || text.length > 2000) {
+    return { ok: false as const, message: "نصٌّ غير صالح" };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("application_notes")
+    .update({ body: text })
+    .eq("id", id)
+    .select("id");
+
+  if (error) {
+    console.error("[admin] تعذّر تعديل ملاحظة", {
+      code: error.code,
+      message: error.message,
+    });
+    return { ok: false as const, message: "تعذّر الحفظ" };
+  }
+  /* صفر صفّ = ليست ملاحظتَه. لا يُفرَّق عن «غير موجودة» في الرسالة. */
+  if (!data || data.length === 0) {
+    return { ok: false as const, message: "لا تُعدَّل إلّا ملاحظتُك" };
+  }
+
+  revalidatePath("/admin");
+  return { ok: true as const, message: "" };
+}
+
+/** حذفُ ملاحظة — للكاتب وحده، بالمنطق نفسِه */
+export async function deleteNote(id: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("application_notes")
+    .delete()
+    .eq("id", id)
+    .select("id");
+
+  if (error) {
+    console.error("[admin] تعذّر حذف ملاحظة", {
+      code: error.code,
+      message: error.message,
+    });
+    return { ok: false as const, message: "تعذّر الحذف" };
+  }
+  if (!data || data.length === 0) {
+    return { ok: false as const, message: "لا تُحذَف إلّا ملاحظتُك" };
+  }
+
+  revalidatePath("/admin");
+  return { ok: true as const, message: "" };
+}

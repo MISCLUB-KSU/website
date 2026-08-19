@@ -169,6 +169,61 @@ export function demand(rows: readonly Row[]): DemandRow[] {
 
 export type DayPoint = { day: string; label: string; count: number };
 
+/* ── التواريخ ───────────────────────────────────────────────────────────
+   ⚠️ **ثلاثةُ أشياءَ تُثبَّت، وكلُّها كانت متروكةً للبيئة — فانكسر الترطيب.**
+
+   رُصد في المتصفّح: الخادمُ يرسم «٢٩ صفر» والعميلُ «١٢ أغسطس»، فتصرخ React
+   بعدم تطابق الترطيب وتعيد بناء الشجرة كلِّها. والسبب أن `ar-SA` **يحلّ
+   إلى تقويمٍ مختلفٍ باختلاف بناء ICU** — هجريٌّ في Node وميلاديٌّ في هذي
+   النسخة من Chromium — فالمخرَجُ يتبع الخادمَ الذي صادف تشغيلَه لا قرارًا.
+
+     ١. `calendar` — وإلّا اختلف التقويم كما وقع
+     ٢. `numberingSystem` — وإلّا اختلفت الأرقام بين بناءٍ وآخر
+     ٣. `timeZone` — **وهذا أخطرُها ولا يظهر في الترطيب.** الخادمُ على
+        Vercel بتوقيتٍ عالميّ، والقائدُ في الرياض (+٣). فطلبٌ وصل ١:٣٠
+        فجرًا بتوقيت الرياض يُحسب على **اليوم السابق** في الرسم — وذروةُ
+        التسجيل مساءً، أي أن الخطأ يقع حيث تكثر الطلبات لا حيث تندر.
+
+   والتقويمُ ميلاديٌّ عمدًا: مفتاحُ اليوم `2026-08-18` ميلاديّ، ووسمٌ هجريٌّ
+   فوق مفتاحٍ ميلاديّ يجعل الرسمَ يقول شيئًا وبنيتُه شيئًا آخر. */
+const RIYADH = {
+  timeZone: "Asia/Riyadh",
+  calendar: "gregory",
+  numberingSystem: "latn",
+} as const;
+
+/** «١٨ أغسطس» — وسمُ محور الرسم */
+const DAY_LABEL = new Intl.DateTimeFormat("ar", {
+  day: "numeric",
+  month: "short",
+  ...RIYADH,
+});
+
+/** `2026-08-18` بتوقيت الرياض — مفتاحُ التجميع، و`en-CA` تعطيه بهذا الشكل */
+const DAY_KEY = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  ...RIYADH,
+});
+
+function dayKey(d: Date): string {
+  return DAY_KEY.format(d);
+}
+
+/** وقتُ الوصول كاملًا — يُعرض في ملفّ المتقدّم */
+export function arrivalStamp(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return ARRIVAL.format(d);
+}
+
+const ARRIVAL = new Intl.DateTimeFormat("ar", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  ...RIYADH,
+});
+
 /**
  * الوصول يومًا بيوم — **بأيّامٍ فارغة لا بقفزٍ فوقها**.
  *
@@ -177,25 +232,28 @@ export type DayPoint = { day: string; label: string; count: number };
  */
 export function perDay(rows: readonly Row[]): DayPoint[] {
   if (rows.length === 0) return [];
-  const key = (d: Date) => d.toISOString().slice(0, 10);
   const counts = new Map<string, number>();
   let min = Infinity;
   let max = -Infinity;
   for (const r of rows) {
     const d = new Date(r.created_at);
-    const k = key(d);
+    const k = dayKey(d);
     counts.set(k, (counts.get(k) ?? 0) + 1);
-    const t = Date.parse(`${k}T00:00:00Z`);
+    /* ⚠️ **`+03:00` لا `Z`.** المفتاحُ يومٌ بتوقيت الرياض، فتثبيتُه على
+       منتصف ليلٍ عالميّ يزحزح كلَّ نقطةٍ ثلاثَ ساعات. */
+    const t = Date.parse(`${k}T00:00:00+03:00`);
     if (t < min) min = t;
     if (t > max) max = t;
   }
   const out: DayPoint[] = [];
+  /* ⚠️ الخطوةُ ٢٤ ساعةً ثابتة، وهي صحيحةٌ هنا وحدَها لأن السعودية بلا
+     توقيتٍ صيفيّ — لا يومَ فيها ٢٣ ساعةً ولا ٢٥. */
   for (let t = min; t <= max; t += 86_400_000) {
     const d = new Date(t);
     out.push({
-      day: key(d),
-      label: d.toLocaleDateString("ar-SA", { day: "numeric", month: "short" }),
-      count: counts.get(key(d)) ?? 0,
+      day: dayKey(d),
+      label: DAY_LABEL.format(d),
+      count: counts.get(dayKey(d)) ?? 0,
     });
   }
   return out;
@@ -260,3 +318,19 @@ export function inScopes(
 ): boolean {
   return scopes.some((s) => choice === s || choice.startsWith(`${s}/`));
 }
+
+/**
+ * ملاحظةُ طاقمٍ على طلب — سجلٌّ يُضاف إليه لا حقلٌ يُكتب فوقه.
+ *
+ * ⚠️ **الكاتبُ يُختم في القاعدة** (`stamp_note_author`)، فما هنا يُقرأ ولا
+ * يُرسَل: العميلُ يرسل `application_id` و`body` وحدهما.
+ */
+export type Note = {
+  id: string;
+  application_id: string;
+  author_email: string;
+  author_name: string;
+  body: string;
+  created_at: string;
+  updated_at: string | null;
+};
