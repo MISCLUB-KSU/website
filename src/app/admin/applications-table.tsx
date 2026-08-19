@@ -110,10 +110,12 @@ const SCOPE_OPTIONS: readonly { value: string; label: string }[] = [
 type Meter = {
   value: string;
   label: string;
-  /** كم وضعوا هذي الجهة رغبةً أولى */
+  /** كم هم عند هذي الجهة الآن */
   total: number;
-  /** كم منهم مدعوٌّ للمقابلة الآن */
+  /** كم منهم مدعوٌّ للمقابلة */
   invited: number;
+  /** وكم لم يُحسم أمرُه بعد — صفرٌ يعني أن الجهة فرغت */
+  pending: number;
 };
 
 const SORTS = [
@@ -265,15 +267,20 @@ export function ApplicationsTable({
    * يعرضه الطابورُ الآن، فتبديلُ العرض لا يحرّك الرقم.
    */
   const meters = useMemo<Meter[]>(() => {
-    const m = new Map<string, { total: number; invited: number }>();
+    const m = new Map<
+      string,
+      { total: number; invited: number; pending: number }
+    >();
     for (const r of rows) {
       /* على الجهة التي هو عندها الآن — فمن نزل يُحسب على مضيفه الجديد */
       const at = choiceAtStage(r);
       if (!at) continue;
       if (!asAdmin && (r.stage > phase || !inScopes(at, asScopes))) continue;
-      const e = m.get(at) ?? { total: 0, invited: 0 };
+      const e = m.get(at) ?? { total: 0, invited: 0, pending: 0 };
       e.total += 1;
       if (r.status === "reviewing") e.invited += 1;
+      /* «بلا قرار» = لم يُقبل ولم يُمرَّر. وهو الرقمُ الذي تُقفَل به مرحلة */
+      if (r.status === "new" || r.status === "reviewing") e.pending += 1;
       m.set(at, e);
     }
     /* ⚠️ **الاسمُ القصير للقائد، والكاملُ للرئاسة.** القائدُ يرى وحداتِ
@@ -787,7 +794,7 @@ function IntakeMeters({ meters }: { meters: Meter[] }) {
           return (
             <span
               key={m.value}
-              title={`${m.total} وضعوها رغبةً أولى`}
+              title={`${m.total} عندها الآن · ${m.pending} بلا قرار`}
               className="border-line flex items-center gap-x-s2 rounded-full border px-s3 py-s1 text-[0.76rem]"
               style={
                 full
@@ -804,6 +811,18 @@ function IntakeMeters({ meters }: { meters: Meter[] }) {
               <span dir="ltr" className="font-bold tabular-nums">
                 {m.invited}/{INTERVIEW_CAP}
               </span>
+              {/* ⚠️ **علامةُ الفراغ هي ما تُقفَل به المرحلة.** الرئاسةُ
+                  تمسح الشريطَ بعينها: كلُّها مُعلَّمة ⇒ لا أحدَ ينتظر
+                  قرارًا، فالفتحُ لا يسبق شغلًا قائمًا. */}
+              {m.pending === 0 && (
+                <span
+                  aria-label="فرغت"
+                  title="لا أحدَ بلا قرارٍ هنا"
+                  style={{ color: "var(--st-accepted)" }}
+                >
+                  ✓
+                </span>
+              )}
             </span>
           );
         })}
