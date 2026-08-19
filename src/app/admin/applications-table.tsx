@@ -311,8 +311,6 @@ export function ApplicationsTable({
      يُبطل ترتيبَ الرغبات كلَّه — وهو ما تقوم عليه خطّةُ الموسم. فالطابورُ
      يفتح على من اختارك **أوّلًا**، والبقيّةُ خلف تبديلٍ مقصود. */
   const [queue, setQueue] = useState<Queue>("first");
-  /** أيشمل البحثُ الدافعَ وأجوبةَ القادة؟ مطفأٌ افتراضيًّا — التعليل عند `extra` */
-  const [inText, setInText] = useState(false);
   /* ⚠️ **معاينةٌ للرئاسة، لا تنازلٌ عن صلاحية.** الرئاسةُ ترى الكلَّ في
      القاعدة ولا يغيّر هذا شيئًا من ذلك — يغيّر **ما تعرضه الشاشة** حتى
      يتحقّق من يوزّع الحسابات ممّا سيراه كلُّ قائدٍ قبل أن يسلّمه المفتاح.
@@ -499,29 +497,37 @@ export function ApplicationsTable({
     });
 
     /**
-     * **البحثُ في الدوافع — وضعٌ يُطلَب، لا توسيعٌ صامتٌ للبحث.**
+     * **مطابقاتُ النصّ الحرّ — الدافعُ وأجوبةُ القادة، في البحث دائمًا.**
      *
-     * ⚠️ **السببُ مقيسٌ لا مخشيّ.** التضمينُ في نصٍّ حرٍّ عربيٍّ يطابق داخلَ
-     * الكلمات: قِيس على القاعدة (١٩ أغسطس ٢٠٢٦) أن **«علي»** يطابق سبعةَ
-     * أسماء و**ثمانيةً وعشرين** دافعًا — «التعليم» و«عليها» و«عليّ». فطيُّه
-     * في البحث العاديّ يجعل من يبحث عن شخصٍ اسمه عليّ يرى ٣٥ صفًّا بدل ٧،
-     * **وضجيجًا أربعةَ أضعاف الإشارة**، بلا أن يفهم لماذا.
+     * أُضيفت خلف مفتاحٍ أوّلًا ثم رُفع المفتاح بطلب الإدارة (١٩ أغسطس ٢٠٢٦):
+     * ضابطٌ يُنسى مطفأً لا يُستعمل، والنصُّ هو المادّةُ الوحيدة عند كثيرين
+     * (**١٩٠ من ٢٥٩ بلا سيرةٍ ذاتيّة**، و٥٦٨ حرفًا وسطيًّا لكلّ متقدّم).
      *
-     * وفي المقابل «تصميم» يطابق **صفرَ اسمٍ واثني عشرَ دافعًا**، و«تسويق»
-     * صفرًا وستّة — أي أن الوضعين نافعان وكلٌّ في سؤاله. فيُفصلان بمفتاح،
-     * وتُقال المطابقةُ في الصفّ حتى لا يُقرأ الصفُّ بلا سبب ظهوره.
+     * ⚠️ **وثمنُه معلومٌ ومقيس، وهذان يحتويانه:**
      *
-     * وهو أنفعُ ما يكون لمن لا سيرةَ له — و**١٩٠ من ٢٥٩** بلا سيرة، فالدافعُ
-     * كلُّ ما عنهم.
+     * التضمينُ في نصٍّ عربيٍّ حرٍّ يطابق **داخلَ الكلمات**. وقِيس أن «علي»
+     * يطابق **٧ أسماء و٦٦ نصًّا** — «التعليم» و«عملي» و«علينا». وهي حالةٌ
+     * شاذّةٌ لا قاعدة: بقيّةُ الأسماء المقيسة (محمد · نور · ريم · سارة ·
+     * عبدالله · لمى · دانة) بين **صفرٍ وستّة**.
+     *
+     * فيُحتوى الشذوذُ بأمرين لا بإخفاء الميزة:
+     * ١) **مطابقاتُ الهويّة أوّلًا** — تُضاف هذي بعدها لا قبلها، فمن يبحث
+     *    عن شخصٍ يجده في الصدارة مهما تبعه.
+     * ٢) **وكلُّ صفٍّ منها يحمل مقتطفَه** — فيُقرأ سببُ ظهوره في سطره، ولا
+     *    يبدو الترشيحُ معطوبًا.
+     *
+     * ⚠️ **والكلمةُ العامّة لا تفرّق، ويقولها العدّاد.** «تنظيم» يطابق ١٨٤
+     * من ٢٦١ و«تطوير» ١٧٧ — لأن الأجوبةَ تردّد لغةَ السؤال. و«٥ من ٢٦١»
+     * لـ«excel» هو حيث ينفع هذا فعلًا. والعدّادُ فوق القائمة يكشف أيَّهما
+     * وقع، فلا يحتاج القائدُ تحذيرًا فوقه.
      */
-    const extra =
-      inText && needle
-        ? scored.filter(({ row: r }) => {
-            if (status !== "all" && r.status !== status) return false;
-            if (out.some((x) => x.row.id === r.id)) return false;
-            return freeText(r).some((t) => t.toLowerCase().includes(needle));
-          })
-        : [];
+    const extra = needle
+      ? scored.filter(({ row: r }) => {
+          if (status !== "all" && r.status !== status) return false;
+          if (out.some((x) => x.row.id === r.id)) return false;
+          return freeText(r).some((t) => t.toLowerCase().includes(needle));
+        })
+      : [];
 
     const s = [...out, ...extra];
     if (sort === "triage")
@@ -554,7 +560,7 @@ export function ApplicationsTable({
       ...x,
       hit: onlyText.has(x.row.id) ? textHit(x.row, needle) : "",
     }));
-  }, [scored, q, status, sort, inText]);
+  }, [scored, q, status, sort]);
 
   /* ⚠️ المختارُ **يتبع ما يُعرض**: لو أخفاه الترشيح انتقل الاختيار لأول
      ظاهر. ولولا ذلك لبقي الملفّ يعرض متقدّمًا غائبًا عن القائمة. */
@@ -911,8 +917,6 @@ export function ApplicationsTable({
         scopeOptions={isAdmin ? SCOPE_OPTIONS : null}
         viewAs={viewAs}
         setViewAs={setViewAs}
-        inText={inText}
-        setInText={setInText}
         onHelp={() => setHelp(true)}
       />
 
@@ -1958,8 +1962,6 @@ function Toolbar({
   scopeOptions,
   viewAs,
   setViewAs,
-  inText,
-  setInText,
   onHelp,
 }: {
   q: string;
@@ -1982,9 +1984,6 @@ function Toolbar({
   scopeOptions: readonly { value: string; label: string }[] | null;
   viewAs: string;
   setViewAs: (v: string) => void;
-  /** أيشمل البحثُ الدافعَ وأجوبةَ القادة؟ — التعليل عند حسابه في الجذر */
-  inText: boolean;
-  setInText: (v: boolean) => void;
   /** يفتح لوحَ الاختصارات — نفسُه الذي يفتحه مفتاح «؟» */
   onHelp: () => void;
 }) {
@@ -1993,47 +1992,18 @@ function Toolbar({
       <div className="flex flex-wrap items-center gap-x-s4 gap-y-s3 px-s4 py-s3">
         <label className="flex min-w-[13rem] grow items-center gap-x-s2 rounded-xl border border-line bg-bg-sunken px-s3">
           <span className="sr-only">ابحث في الطلبات</span>
+          {/* ⚠️ **«أو مهارة» في النائب، وإلّا لم يُعرف أن النصَّ يُبحث.**
+              رُفع المفتاحُ الذي كان يعلنها، فبقي النائبُ وحدَه يقول ما
+              يُقرأ — ومن لا يعلم أن الدوافعَ والأجوبةَ داخلةٌ لن يجرّب. */}
           <input
             ref={searchRef}
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="ابحث باسمٍ أو رقمٍ جامعيّ أو لجنة…  (اضغط / )"
+            placeholder="ابحث باسمٍ أو رقمٍ جامعيّ أو لجنةٍ أو مهارة…  (اضغط / )"
             className="text-fg placeholder:text-fg-muted/70 min-h-10 w-full bg-transparent text-[0.85rem]"
           />
         </label>
-
-        {/* ⚠️ **مفتاحٌ لا توسيعٌ صامت.** «علي» يطابق ٧ أسماء و٢٨ دافعًا
-            («التعليم» · «عليها») — فطيُّه في البحث العاديّ يغرق من يبحث عن
-            شخص. و«تصميم» يطابق صفرَ اسمٍ و١٢ دافعًا. سؤالان مختلفان،
-            فمفتاحان. والتعليلُ الكامل عند حسابه في الجذر. */}
-        <button
-          type="button"
-          onClick={() => setInText(!inText)}
-          aria-pressed={inText}
-          title="يبحث أيضًا في «لماذا يريد الانضمام» وفي أجوبة أسئلة القادة — نافعٌ للبحث عن مهارةٍ أو اهتمام"
-          /* ⚠️ **بلا `bg-sunken` في حال الإطفاء.** الغائرُ الليليُّ `#101218`
-             شبهُ أسود، فالمفتاحُ كان يقع على لوح الشريط كأنه **ثقبٌ** لا
-             ضابط — وهو أدكنُ من كلّ ما حوله. فالحدُّ وحدَه يكفي ليُقرأ
-             ضابطًا، والخلفيّةُ تُملأ عند التشغيل وحدَه لتقول إنه مُشغَّل. */
-          className="min-h-11 lg:min-h-10 shrink-0 rounded-xl border px-s3 text-[0.78rem] font-semibold transition-colors"
-          style={
-            inText
-              ? {
-                  borderColor: "var(--accent)",
-                  background:
-                    "color-mix(in oklab, var(--accent) 14%, transparent)",
-                  color: "var(--accent)",
-                }
-              : {
-                  borderColor: "var(--line-control)",
-                  background: "transparent",
-                  color: "var(--fg-muted)",
-                }
-          }
-        >
-          وفي النصوص
-        </button>
 
         {/* ⚠️ **صفٌّ واحدٌ يُسحب على الجوّال لا التفافٌ على ثلاثة صفوف.**
             الستّةُ كانت تلتفّ فتأكل ≈250px أخرى فوق الطيّة. */}
@@ -2142,7 +2112,8 @@ function Toolbar({
           onClick={onHelp}
           aria-label="اختصارات اللوحة وكيف تعمل"
           title="اختصارات اللوحة (؟)"
-          /* الحدُّ وحدَه كمفتاح «وفي النصوص» — لا غائرٌ شبهُ أسودَ بجانبه */
+          /* ⚠️ حدٌّ بلا خلفيّة: الغائرُ الليليّ `#101218` شبهُ أسود، فزرٌّ
+             يلبسه يقع على لوح الشريط كأنه ثقبٌ لا ضابط (مرصودٌ بلقطة). */
           className="text-fg-muted hover:text-fg min-h-11 lg:min-h-10 shrink-0 rounded-xl border px-s3 text-[0.82rem] font-bold transition-colors"
           style={{ borderColor: "var(--line-control)" }}
         >
