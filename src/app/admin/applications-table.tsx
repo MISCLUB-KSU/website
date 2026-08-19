@@ -351,6 +351,24 @@ export function ApplicationsTable({
   const [keyNote, setKeyNote] = useState<{ ok: boolean; text: string } | null>(
     null,
   );
+  /**
+   * آخرُ حالةٍ غُيّرت **بمفتاح** — ومنها التراجع.
+   *
+   * ⚠️ **للمفتاح دون الزرّ، وهذا مقصود.** الزرُّ مكتوبٌ عليه ما يفعل،
+   * ويُضاء فورَ الضغط، فالخطأُ فيه يُرى ساعتَه. أمّا المفتاحُ فيقع
+   * **والتركيزُ في مكانٍ آخر**: ضغطةٌ على `3` وهو يظنّ نفسَه في حقلٍ تقبل
+   * متقدّمًا لا يقصده. وأنا من جعل القبولَ ضغطةً واحدة (`bec1208`)،
+   * فالتراجعُ ثمنُ تلك السرعة لا زينةٌ فوقها.
+   *
+   * ⚠️ **ولا يُعرض إن كانت الحالةُ السابقة `rejected` أو `referred`** —
+   * `setStatus` ترفضهما هدفًا، فزرُّ تراجعٍ يَعِد بما سيُردّ.
+   */
+  const [undo, setUndo] = useState<{
+    id: string;
+    from: string;
+    name: string;
+  } | null>(null);
+  const { patchRows } = useStore();
   const live = useHydrated();
 
   /* ⚠️ **الرئاسةُ بلا نطاق، وكلُّ جهةٍ لها.** `inScopes` على مصفوفةٍ
@@ -657,6 +675,7 @@ export function ApplicationsTable({
           return;
         }
         setPassArm(null);
+        setUndo(null);
         setPicked2(new Set());
         return;
       }
@@ -743,15 +762,52 @@ export function ApplicationsTable({
           Digit2: "reviewing",
           Digit3: "accepted",
         }[e.code];
+        /**
+         * 🔴 **كان يكتب في القاعدة ولا يحرّك الشاشة — عطبٌ أُدخل في
+         * `c3c4e6c` ووصل الإنتاج.**
+         *
+         * ذاك الالتزامُ رفع `revalidatePath` من `setStatus` ونقل التحديثَ
+         * إلى ترقيعٍ في العميل — ورُقّع كلُّ مسار: الزرّ، والدفعة، والموعد،
+         * والملاحظات. **إلّا هذا.** فبقي `void setStatus(...)` بلا ترقيعٍ
+         * ولا جلب: الصفُّ يتغيّر في القاعدة، والقائدُ يرى حالتَه كما كانت
+         * فيضغط ثانيةً وثالثة.
+         *
+         * وهو بعينه صنفُ العطل الذي سُمّي هذا الفرعُ باسمه: **فشلٌ لا يصرخ**.
+         */
         if (current && key) {
           e.preventDefault();
-          void setStatus(current.row.id, key);
+          const row = current.row;
+          const from = row.status;
+          if (from === key) return;
+          setKeyNote(null);
+          void setStatus(row.id, key).then((res) => {
+            if (!res.ok) {
+              setKeyNote({ ok: false, text: res.message });
+              return;
+            }
+            patchRows([res.id], { status: res.status });
+            setUndo(
+              DIRECT_STATUSES.includes(from)
+                ? { id: row.id, from, name: row.full_name }
+                : null,
+            );
+          });
         }
+      } else if (e.code === "KeyZ") {
+        /* التراجعُ يبقى بعد التنقّل: من ضغط خطأً ثم انتقل يظلّ قادرًا */
+        if (!undo) return;
+        e.preventDefault();
+        const u = undo;
+        setUndo(null);
+        void setStatus(u.id, u.from).then((res) => {
+          if (res.ok) patchRows([res.id], { status: res.status });
+          else setKeyNote({ ok: false, text: res.message });
+        });
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [shown, current, toggle, help, passArm]);
+  }, [shown, current, toggle, help, passArm, undo, patchRows]);
 
   /* المختارُ يُجلب إلى المرأى حين يُنقل بالمفاتيح — وإلّا تحرّك اختيارٌ
      لا يُرى في قائمةٍ من ستّةٍ وأربعين. */
@@ -883,6 +939,22 @@ export function ApplicationsTable({
         </p>
       )}
 
+      {/* ⚠️ **التراجعُ يُرى ولا يبقى في الذاكرة وحدها.** من ضغط خطأً لا
+          يخطر له أن ثمّة مفتاحًا يردّه — فيُقال بالاسم وبالمفتاح معًا. */}
+      {undo && (
+        <p
+          role="status"
+          className="tile shrink-0 px-s4 py-s2 text-[0.8rem] font-medium"
+          style={{
+            borderColor: "color-mix(in oklab, var(--d-cyan) 55%, transparent)",
+            background: "color-mix(in oklab, var(--d-cyan) 10%, transparent)",
+          }}
+        >
+          غُيّرت حالةُ <strong>{undo.name}</strong> · اضغط <b>z</b> لتردّها إلى
+          «{STATUSES.find((s) => s.key === undo.from)?.label ?? undo.from}»
+        </p>
+      )}
+
       {/* نتيجةُ التمرير بالمفتاح — تُقرأ ثم تزول بأوّل تمريرٍ تالٍ */}
       {keyNote && (
         <p
@@ -958,6 +1030,7 @@ function KeysHelp({ onClose }: { onClose: () => void }) {
     { keys: "j / k", what: "انتقل للتالي · للسابق (والأسهم مثلُها)" },
     { keys: "1 · 2 · 3", what: "جديد · دعوةٌ لمقابلة · مقبول" },
     { keys: "p", what: "مرِّره لرغبته التالية — بضغطتين، والثانيةُ تأكيد" },
+    { keys: "z", what: "تراجَع عن آخر حالةٍ غيّرتَها بمفتاح" },
     { keys: "c", what: "اعرض سيرته داخل الملفّ — وتبقى مفتوحةً لمن بعده" },
     { keys: "x", what: "حدِّده لفعلٍ جماعيّ (ثم اختر من الشريط)" },
     { keys: "/", what: "اقفز إلى البحث" },
