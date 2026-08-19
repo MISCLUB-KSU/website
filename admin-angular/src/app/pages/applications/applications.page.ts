@@ -3,6 +3,7 @@ import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 
 import {
+  DIRECT_STATUSES,
   STATUSES,
   statusLabel,
   type Application,
@@ -45,7 +46,17 @@ export class ApplicationsPage {
   readonly email = this.auth.email;
   readonly staff = this.auth.staff;
 
-  readonly statuses = STATUSES;
+  /**
+   * ⛔ **الثلاثةُ المباشرة وحدها — لا «معتذَر عنه» ولا «محال للثانية».**
+   *
+   * «معتذَر عنه» صارت تعني «انتهت رغباتُه كلُّها»، وهو حكمٌ تملكه القاعدةُ
+   * وحدها عبر `pass_over`؛ وضبطُها من قائمةٍ منسدلة يقفز فوق السلّم فيُخرج
+   * من له رغبتان باقيتان. و«محال للثانية» زالت — النزولُ صار `stage + 1`.
+   *
+   * وهذي اللوحةُ مختبرُ تعلّمٍ لا لوحةَ النادي (اللوحةُ في `/admin`)، لكنها
+   * تشير إلى قاعدة الإنتاج — فالقصُّ هنا حراسةٌ لا تنظيمُ عرض.
+   */
+  readonly statuses = STATUSES.filter((s) => DIRECT_STATUSES.includes(s.value));
   readonly label = statusLabel;
 
   readonly query = signal("");

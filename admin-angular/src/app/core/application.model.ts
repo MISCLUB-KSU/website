@@ -58,17 +58,20 @@ export type Application = {
  * حالاتُ الطلب — **بالقيم نفسِها المخزَّنة في القاعدة**، لا بترجمةٍ حرّة.
  * الوسمُ للعرض وحده، والقيمةُ هي ما يُكتب في العمود.
  */
-export const STATUSES = [
-  { value: "new", label: "جديد" },
-  { value: "reviewing", label: "قيد المراجعة" },
-  { value: "shortlisted", label: "مرشَّح" },
-  { value: "accepted", label: "مقبول" },
-  { value: "rejected", label: "مرفوض" },
-] as const;
-
-export type StatusValue = (typeof STATUSES)[number]["value"];
-
-/** وسمُ الحالة للعرض — والمجهولةُ تُعرض كما هي لا تُبتلع */
-export function statusLabel(value: string): string {
-  return STATUSES.find((s) => s.value === value)?.label ?? value;
-}
+/**
+ * حالاتُ الطلب — **من مصدر الموقع نفسِه، لا نسخةٌ ثانية هنا**.
+ *
+ * ⚠️ **وهذا تصحيحُ عطبٍ وقع.** كانت القائمةُ مكتوبةً هنا يدويًّا، فافترقت
+ * عن نسخة الموقع في ثلاثة مواضعَ خلال شهرٍ واحد: `shortlisted` **ترفضها
+ * القاعدة**، و`referred` مفقودةٌ وهي التي وعدت بها الإدارةُ القادة، و«مرفوض»
+ * حيث تقول الأخرى «معتذَر عنه» — والتلطيفُ كان مقصودًا. ولم ينكشف شيءٌ منها
+ * إلّا بلقطةٍ عابرة.
+ *
+ * والملفُّ المصدرُ بياناتٌ صرفة بلا استيرادٍ يخصّ Next، فيُقرأ من هنا كما
+ * تُقرأ `preferences.ts`.
+ */
+export {
+  APPLICATION_STATUSES as STATUSES,
+  DIRECT_STATUSES,
+  statusLabel,
+} from "../../../../src/content/statuses";
