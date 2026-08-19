@@ -193,7 +193,20 @@ function competitionOf(rows: readonly Row[]): Competition {
    بطاقةٍ مستقلّة حتى لا يكون الرقم صندوقًا أسود يُحكم به على متقدّم. */
 const WHY_ENOUGH = 120;
 
-type Item = { label: string; ok: boolean; weight: number };
+type Item = {
+  label: string;
+  ok: boolean;
+  weight: number;
+  /**
+   * نصيبُ البند من وزنه (٠..١) — لبندٍ يُنجَز على أجزاء.
+   *
+   * ⚠️ **وبلاها كان بندُ الأجوبة يساوي بين من ترك واحدًا ومن ترك الكلّ.**
+   * كان `ok: requiredAsked.every(...)` — أي صفرًا من عشرين لمن أجاب ثلاثةً
+   * من أربعة. ومقيسٌ من القاعدة (١٩ أغسطس ٢٠٢٦) أن **٩٩ من ٢٦١** تركوا
+   * جوابًا واحدًا على الأقلّ فارغًا، فالحالةُ الوسطى هي الغالبة لا النادرة.
+   */
+  part?: number;
+};
 
 function completeness(row: Row): { items: Item[]; pct: number } {
   const asked = askedQuestions(row);
@@ -212,14 +225,20 @@ function completeness(row: Row): { items: Item[]; pct: number } {
      منه — وهو نقضُ قاعدة «من لم يُسأل لا يُخصم» المكتوبة أعلاه. */
   const requiredAsked = asked.filter((a) => a.required);
   if (requiredAsked.length > 0) {
+    const done = requiredAsked.filter((a) => a.value.trim().length > 0).length;
     items.push({
-      label: "أجوبة القادة",
-      ok: requiredAsked.every((a) => a.value.trim().length > 0),
+      /* العددُ في الوسم: «٣ من ٤» تقول للقائد **ما الناقص** لا «لم يكتمل» */
+      label: `أجوبة القادة (${done} من ${requiredAsked.length})`,
+      ok: done === requiredAsked.length,
+      part: done / requiredAsked.length,
       weight: 20,
     });
   }
   const max = items.reduce((a, b) => a + b.weight, 0);
-  const got = items.reduce((a, b) => a + (b.ok ? b.weight : 0), 0);
+  const got = items.reduce(
+    (a, b) => a + b.weight * (b.part ?? (b.ok ? 1 : 0)),
+    0,
+  );
   return { items, pct: max ? Math.round((got / max) * 100) : 0 };
 }
 
@@ -246,12 +265,33 @@ function triageRank(row: Row): number {
  * ⚠️ بلا المقتطف يرى صفًّا لا يطابق اسمُه ولا لجنتُه ما كتب، فيظنّ الترشيحَ
  * معطوبًا. والدافعُ قد يبلغ مئاتِ الحروف، فيُقصّ حول الموضع لا من أوّله.
  */
-function whySnippet(why: string, needle: string): string {
-  const at = why.toLowerCase().indexOf(needle);
+function snip(text: string, needle: string): string {
+  const at = text.toLowerCase().indexOf(needle);
   if (at === -1) return "";
   const from = Math.max(0, at - 24);
-  const to = Math.min(why.length, at + needle.length + 48);
-  return `${from > 0 ? "…" : ""}${why.slice(from, to).trim()}${to < why.length ? "…" : ""}`;
+  const to = Math.min(text.length, at + needle.length + 48);
+  return `${from > 0 ? "…" : ""}${text.slice(from, to).trim()}${to < text.length ? "…" : ""}`;
+}
+
+/** كلُّ نصٍّ حرٍّ في الصفّ: الدافعُ ثم أجوبةُ القادة */
+function freeText(row: Row): string[] {
+  return [row.why ?? "", ...Object.values(row.answers ?? {})];
+}
+
+/**
+ * أوّلُ نصٍّ حرٍّ يطابق — ومقتطفٌ منه.
+ *
+ * ⚠️ **ولا يُبنى بـ`askedQuestions`.** تلك تمرّ على كتل الأسئلة لتردّ كلَّ
+ * جوابٍ إلى سؤاله، وهي محسوبةٌ أصلًا في `completeness` لكلّ صفّ — فاستدعاؤها
+ * ثانيةً **مع كلّ حرفٍ يُكتب في البحث** يضاعف عملًا لا يظهر منه إلّا مقتطف.
+ * والقيمُ الخام تكفي للمطابقة والاقتطاف.
+ */
+function textHit(row: Row, needle: string): string {
+  for (const text of freeText(row)) {
+    const found = snip(text, needle);
+    if (found) return found;
+  }
+  return "";
 }
 
 /* ── الجذر ──────────────────────────────────────────────────────────────── */
@@ -271,8 +311,8 @@ export function ApplicationsTable({
      يُبطل ترتيبَ الرغبات كلَّه — وهو ما تقوم عليه خطّةُ الموسم. فالطابورُ
      يفتح على من اختارك **أوّلًا**، والبقيّةُ خلف تبديلٍ مقصود. */
   const [queue, setQueue] = useState<Queue>("first");
-  /** أيشمل البحثُ نصَّ الدافع؟ مطفأٌ افتراضيًّا — التعليل عند `extra` */
-  const [inWhy, setInWhy] = useState(false);
+  /** أيشمل البحثُ الدافعَ وأجوبةَ القادة؟ مطفأٌ افتراضيًّا — التعليل عند `extra` */
+  const [inText, setInText] = useState(false);
   /* ⚠️ **معاينةٌ للرئاسة، لا تنازلٌ عن صلاحية.** الرئاسةُ ترى الكلَّ في
      القاعدة ولا يغيّر هذا شيئًا من ذلك — يغيّر **ما تعرضه الشاشة** حتى
      يتحقّق من يوزّع الحسابات ممّا سيراه كلُّ قائدٍ قبل أن يسلّمه المفتاح.
@@ -457,11 +497,11 @@ export function ApplicationsTable({
      * كلُّ ما عنهم.
      */
     const extra =
-      inWhy && needle
+      inText && needle
         ? scored.filter(({ row: r }) => {
             if (status !== "all" && r.status !== status) return false;
             if (out.some((x) => x.row.id === r.id)) return false;
-            return (r.why ?? "").toLowerCase().includes(needle);
+            return freeText(r).some((t) => t.toLowerCase().includes(needle));
           })
         : [];
 
@@ -491,12 +531,12 @@ export function ApplicationsTable({
 
     /* ⚠️ **المقتطفُ لمن ظهر بالدافع وحدَه.** من طابق اسمُه أو لجنتُه ظهورُه
        مفهوم، فلا يُقتطع سطرُه لأجل تفسيرٍ لا يحتاجه. */
-    const onlyWhy = new Set(extra.map((x) => x.row.id));
+    const onlyText = new Set(extra.map((x) => x.row.id));
     return s.map((x) => ({
       ...x,
-      hit: onlyWhy.has(x.row.id) ? whySnippet(x.row.why ?? "", needle) : "",
+      hit: onlyText.has(x.row.id) ? textHit(x.row, needle) : "",
     }));
-  }, [scored, q, status, sort, inWhy]);
+  }, [scored, q, status, sort, inText]);
 
   /* ⚠️ المختارُ **يتبع ما يُعرض**: لو أخفاه الترشيح انتقل الاختيار لأول
      ظاهر. ولولا ذلك لبقي الملفّ يعرض متقدّمًا غائبًا عن القائمة. */
@@ -794,8 +834,8 @@ export function ApplicationsTable({
         scopeOptions={isAdmin ? SCOPE_OPTIONS : null}
         viewAs={viewAs}
         setViewAs={setViewAs}
-        inWhy={inWhy}
-        setInWhy={setInWhy}
+        inText={inText}
+        setInText={setInText}
         onHelp={() => setHelp(true)}
       />
 
@@ -1796,8 +1836,8 @@ function Toolbar({
   scopeOptions,
   viewAs,
   setViewAs,
-  inWhy,
-  setInWhy,
+  inText,
+  setInText,
   onHelp,
 }: {
   q: string;
@@ -1820,9 +1860,9 @@ function Toolbar({
   scopeOptions: readonly { value: string; label: string }[] | null;
   viewAs: string;
   setViewAs: (v: string) => void;
-  /** أيشمل البحثُ نصَّ الدافع؟ — التعليل عند حسابه في الجذر */
-  inWhy: boolean;
-  setInWhy: (v: boolean) => void;
+  /** أيشمل البحثُ الدافعَ وأجوبةَ القادة؟ — التعليل عند حسابه في الجذر */
+  inText: boolean;
+  setInText: (v: boolean) => void;
   /** يفتح لوحَ الاختصارات — نفسُه الذي يفتحه مفتاح «؟» */
   onHelp: () => void;
 }) {
@@ -1847,16 +1887,16 @@ function Toolbar({
             فمفتاحان. والتعليلُ الكامل عند حسابه في الجذر. */}
         <button
           type="button"
-          onClick={() => setInWhy(!inWhy)}
-          aria-pressed={inWhy}
-          title="يبحث أيضًا في نصّ «لماذا يريد الانضمام» — نافعٌ للبحث عن مهارةٍ أو اهتمام"
+          onClick={() => setInText(!inText)}
+          aria-pressed={inText}
+          title="يبحث أيضًا في «لماذا يريد الانضمام» وفي أجوبة أسئلة القادة — نافعٌ للبحث عن مهارةٍ أو اهتمام"
           className={`min-h-11 lg:min-h-10 shrink-0 rounded-xl border px-s3 text-[0.78rem] font-semibold transition-colors ${
-            inWhy
+            inText
               ? "border-accent text-accent"
               : "border-line bg-bg-sunken text-fg-muted"
           }`}
         >
-          وفي الدوافع
+          وفي النصوص
         </button>
 
         {/* ⚠️ **صفٌّ واحدٌ يُسحب على الجوّال لا التفافٌ على ثلاثة صفوف.**
@@ -2631,7 +2671,18 @@ function Checklist({ items }: { items: readonly Item[] }) {
   return (
     <Block title="بنود الاكتمال">
       <ul className="flex flex-col gap-s2">
-        {items.map((it, i) => (
+        {items.map((it, i) => {
+          /* ⚠️ **ثلاثُ حالاتٍ لا حالتان.** «—» لمن لم يبدأ و«✓» لمن أتمّ
+             سواءٌ عندهما «◐» لمن أجاب بعضًا — ولو جُمعا لعاد البندُ يكذب
+             على من ترك سؤالًا واحدًا كأنه لم يجب شيئًا. */
+          const partial = !it.ok && (it.part ?? 0) > 0;
+          const mark = it.ok ? "✓" : partial ? "◐" : "—";
+          const tone = it.ok
+            ? "var(--color-success)"
+            : partial
+              ? "var(--st-reviewing)"
+              : "var(--fg-muted)";
+          return (
           <li
             key={it.label}
             className="fade-up flex items-center gap-x-s2 text-[0.82rem]"
@@ -2641,15 +2692,18 @@ function Checklist({ items }: { items: readonly Item[] }) {
               aria-hidden
               className="flex size-[18px] shrink-0 items-center justify-center rounded-md text-[0.68rem] font-bold"
               style={{
-                background: it.ok
-                  ? "color-mix(in oklab, var(--color-success) 18%, transparent)"
-                  : "var(--bg-sunken)",
-                color: it.ok ? "var(--color-success)" : "var(--fg-muted)",
+                background:
+                  it.ok || partial
+                    ? `color-mix(in oklab, ${tone} 18%, transparent)`
+                    : "var(--bg-sunken)",
+                color: tone,
               }}
             >
-              {it.ok ? "✓" : "—"}
+              {mark}
             </span>
-            <span className={it.ok ? "" : "text-fg-muted"}>{it.label}</span>
+            <span className={it.ok || partial ? "" : "text-fg-muted"}>
+              {it.label}
+            </span>
             <span
               dir="ltr"
               className="text-fg-muted ms-auto text-[0.72rem] tabular-nums"
@@ -2657,7 +2711,8 @@ function Checklist({ items }: { items: readonly Item[] }) {
               {it.weight}
             </span>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </Block>
   );
