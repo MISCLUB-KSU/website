@@ -1773,7 +1773,7 @@ function Toolbar({
             الستّةُ كانت تلتفّ فتأكل ≈250px أخرى فوق الطيّة. */}
         {scopeOptions && (
           <label className="flex items-center gap-x-s2 text-[0.8rem]">
-            <span className="text-fg-muted">أشوف كـ</span>
+            <span className="text-fg-muted">أعرض كـ</span>
             <select
               value={viewAs}
               onChange={(e) => setViewAs(e.target.value)}
@@ -2639,50 +2639,148 @@ function InterviewField({
   const { patchRows } = useStore();
   const [pending, start] = useTransition();
   const [note, setNote] = useState("");
+  /**
+   * ⚠️ **الحقلُ الخام لا يُعرض إلّا عند التحرير — وهذا سببُه.**
+   *
+   * `datetime-local` الفارغ يرسم نائبَه بنفسه: **`dd/mm/yyyy, --:--`** —
+   * نصٌّ لاتينيٌّ بصيغةٍ إنجليزيّة، لا يُترجَم ولا يُستبدل ولا يُنسَّق
+   * (المتصفّحُ يرسمه من لغة النظام لا من `lang` الصفحة). فيقع في شاشةٍ
+   * عربيّةٍ كاملة كأنه عطبٌ في الرسم، ولا يقول للقائد **ماذا يُفعل به**.
+   *
+   * فصار: نصٌّ عربيٌّ يقول الحال، وزرٌّ يقول الفعل — والحقلُ الخام يظهر
+   * لحظةَ الحاجة إليه وحدَها.
+   */
+  const [editing, setEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   if (row.status === "accepted" || row.status === "rejected") return null;
 
-  const save = (value: string) =>
+  const save = (iso: string | null) =>
     start(async () => {
       setNote("");
-      const res = await setInterview(row.id, fromRiyadhInput(value));
-      if (res.ok) patchRows([res.id], { interview_at: res.interview_at });
+      const res = await setInterview(row.id, iso);
+      if (res.ok) {
+        patchRows([res.id], { interview_at: res.interview_at });
+        setEditing(false);
+      }
       setNote(res.message);
     });
+
+  const open = () => {
+    setEditing(true);
+    /* التقويمُ يُفتح بعد أن يُركَّب الحقل — و`showPicker` ترمي على متصفّحٍ
+       لا يعرفها أو خارج تفاعلِ مستخدم، فتُبتلع: الحقلُ ظاهرٌ على كل حال. */
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.focus();
+      try {
+        el.showPicker();
+      } catch {
+        /* لا شيء — النقرُ على الحقل يفتحه */
+      }
+    });
+  };
+
+  const muted = dark ? "rgba(255,255,255,.5)" : "var(--fg-muted)";
+  const chip = `min-h-11 lg:min-h-10 rounded-full px-s3 text-[0.78rem] font-semibold transition-opacity disabled:opacity-40`;
+  const chipStyle = dark
+    ? { background: "rgba(255,255,255,.12)" }
+    : { background: "var(--bg-sunken)" };
 
   return (
     <div
       className="mt-s4 border-t pt-s3"
       style={{ borderColor: dark ? "rgba(255,255,255,.14)" : "var(--line)" }}
     >
-      <label className="flex flex-wrap items-center gap-x-s3 gap-y-s2 text-[0.8rem]">
+      <div className="flex flex-wrap items-center gap-x-s3 gap-y-s2 text-[0.8rem]">
         <span
           className="font-semibold"
           style={{ color: dark ? "rgba(255,255,255,.72)" : "var(--fg-muted)" }}
         >
           موعد المقابلة
         </span>
-        <input
-          type="datetime-local"
-          disabled={pending}
-          defaultValue={toRiyadhInput(row.interview_at)}
-          onChange={(e) => save(e.target.value)}
-          className="text-fg min-h-11 rounded-xl border px-s3 text-[0.82rem] lg:min-h-10"
-          style={{
-            borderColor: dark ? "rgba(255,255,255,.28)" : "var(--line-strong)",
-            background: "transparent",
-            colorScheme: dark ? "dark" : undefined,
-          }}
-        />
+
+        {editing ? (
+          <input
+            ref={inputRef}
+            type="datetime-local"
+            /* ⚠️ **`ltr` صراحةً.** صيغةُ الحقل لاتينيّةٌ يرسمها المتصفّح،
+               وتركُها ترث `rtl` من الصفحة يقلب ترتيبَ خاناتها بصريًّا. */
+            dir="ltr"
+            disabled={pending}
+            defaultValue={toRiyadhInput(row.interview_at)}
+            onChange={(e) => {
+              /**
+               * ⚠️ **الفراغُ لا يُحفظ من هنا — والمسحُ زرٌّ مستقلّ.**
+               *
+               * `datetime-local` يُرجع `""` ما دام أيُّ خانةٍ ناقصة. فمن
+               * بدأ يكتب اليومَ قبل الشهر أطلق حدثًا بقيمةٍ فارغة —
+               * **فيُمسح موعدٌ محفوظٌ وهو ينوي تعديله**، ولا شيء يقول له.
+               * فالفراغُ هنا يُتجاهَل، والمسحُ فعلٌ مقصودٌ بزرّه.
+               */
+              const iso = fromRiyadhInput(e.target.value);
+              if (iso) save(iso);
+            }}
+            /* ⚠️ **لا إغلاقَ عند `blur`.** فتحُ تقويم المتصفّح ينقل التركيزَ
+               عن الحقل في بعض المتصفّحات — فإغلاقُه على `blur` يُخفي الحقلَ
+               في اللحظة التي فُتح لأجلها. والخروجُ يقع بأحد اثنين: حفظٌ
+               ناجح، أو الانتقالُ إلى متقدّمٍ آخر (يُعاد تركيبُ الملفّ
+               بـ`key`، فتعود الحالةُ إلى أصلها). */
+            className="text-fg min-h-11 rounded-xl border px-s3 text-[0.82rem] lg:min-h-10"
+            style={{
+              borderColor: dark
+                ? "rgba(255,255,255,.28)"
+                : "var(--line-strong)",
+              background: "transparent",
+              colorScheme: dark ? "dark" : undefined,
+            }}
+          />
+        ) : row.interview_at ? (
+          <>
+            <span className="font-semibold" style={{ color: "var(--st-reviewing)" }}>
+              ◷ {interviewLabel(row.interview_at)}
+            </span>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={open}
+              className={chip}
+              style={chipStyle}
+            >
+              غيّر
+            </button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => save(null)}
+              className={chip}
+              style={chipStyle}
+            >
+              امسح
+            </button>
+          </>
+        ) : (
+          <>
+            <span style={{ color: muted }}>لم يُحدَّد</span>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={open}
+              className={chip}
+              style={chipStyle}
+            >
+              حدِّد موعدًا
+            </button>
+          </>
+        )}
+
         {/* ⚠️ **بتوقيت الرياض يُقال صراحةً.** القائدُ المسافرُ يكتب ما يراه
             على ساعته ويظنّه محفوظًا كما كتبه. */}
-        <span
-          className="text-[0.72rem]"
-          style={{ color: dark ? "rgba(255,255,255,.5)" : "var(--fg-muted)" }}
-        >
+        <span className="text-[0.72rem]" style={{ color: muted }}>
           {pending ? "…يُحفظ" : note || "بتوقيت الرياض"}
         </span>
-      </label>
+      </div>
 
       {/**
        * ⚠️ **تنبيهٌ لا منع.** لا عمودَ لمدّة المقابلة، والثلاثون دقيقةً
@@ -2691,7 +2789,7 @@ function InterviewField({
        * من كتب الشيفرة؛ والسكوتُ يجعله يحجز اثنين في وقتٍ واحدٍ ولا يدري
        * إلّا والطالبان على الباب.
        *
-       * ⚠️ **والأسماءُ تُقال لا العدد.** «يتعارض مع موعدٍ آخر» يدفعه يبحث
+       * ⚠️ **والأسماءُ تُقال لا العدد** — «يتعارض مع موعدٍ آخر» يدفعه يبحث
        * في خمسة عشر موعدًا عن أيِّها؛ والاسمُ يحسمها في سطر.
        */}
       {clash.length > 0 && (

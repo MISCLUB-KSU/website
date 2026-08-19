@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useState } from "react";
 
+import { isolateLatin } from "@/lib/bidi";
 import { useHydrated } from "@/lib/use-hydrated";
 import { findPreference } from "@/content/preferences";
 import {
@@ -327,7 +328,25 @@ function Progress({
       {rows.length === 0 ? (
         <p className="text-fg-muted mt-s3 text-[0.8rem]">لا جهةَ في نطاقك.</p>
       ) : (
-        <ul className="mt-s3 flex min-h-0 flex-1 flex-col justify-center gap-s3">
+        /* ⚠️ **`safe center` و`overflow-y-auto` — وبلا هذين يتداخل اللوح.**
+
+           كان `justify-center` وحدَه، والصفُّ في شبكة اللوحة **بارتفاعٍ
+           مقيَّد** (`gridTemplateRows` بـ`fr`). فمتى تجاوزت الجهاتُ الخمسُ
+           الارتفاعَ المتاح، دفع التوسيطُ الفائضَ **من الطرفين معًا**:
+           فطفا أوّلُ سطرٍ فوق العنوان، وآخرُ سطرٍ تحت ذيل اللوح — وكلاهما
+           يُرسم فوق جارِه لأن `overflow: hidden` على `.tile` يقصّ عند حدّ
+           اللوح لا داخل القائمة. (رُصد بلقطةٍ من الإنتاج: «أين وصل الموسم»
+           يتداخل مع أوّل جهةٍ وآخرِها.)
+
+           و`safe` تعني: وسِّط ما دام يتّسع، **وإذا فاض فابدأ من الأوّل** —
+           فلا يُقصّ رأسُ القائمة. ومن لا يعرفها من المتصفّحات يُسقط
+           التصريحَ كلَّه فيرجع إلى `flex-start`، وهو السلوكُ الآمن نفسُه.
+           و`overflow-y-auto` هو الضمانةُ الأخيرة: يُمرَّر داخل القائمة ولا
+           يخرج منها. */
+        <ul
+          className="mt-s3 flex min-h-0 flex-1 flex-col gap-s3 overflow-y-auto"
+          style={{ justifyContent: "safe center" }}
+        >
           {shown.map((r, i) => (
             <li
               key={r.value}
@@ -335,7 +354,12 @@ function Progress({
               style={{ ["--i" as string]: i }}
             >
               <p className="mb-s1 flex items-baseline justify-between gap-x-s2 text-[0.7rem] leading-tight">
-                <span className="truncate">{leaf(r.label)}</span>
+                {/* ⚠️ **الاسمُ اللاتينيُّ يُعزَل داخل السطر العربيّ.**
+                    «MISthon» و«Job Shadowing» و«MISCollab» أسماءُ جهاتٍ
+                    لاتينيّة في فقرةٍ `rtl`، فبلا عزلٍ يزحزحها الترتيبُ
+                    ثنائيُّ الاتّجاه عن موضعها — وتُقرأ ملتصقةً بالرقم الذي
+                    يقابلها. */}
+                <span className="truncate">{isolateLatin(leaf(r.label))}</span>
                 <span
                   dir="ltr"
                   className="shrink-0 tabular-nums"
