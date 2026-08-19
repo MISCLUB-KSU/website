@@ -622,8 +622,10 @@ function BulkBar({
   const [pending, start] = useTransition();
 
   if (ids.length === 0) {
+    /* ⚠️ **لا يظهر على الجوّال: لا لوحةَ مفاتيحَ تُشرح.** ٣٥px تُدفع بها
+       القائمةُ لأجل نصٍّ لا يُطبَّق على الجهاز الذي يقرؤه. */
     return allShown > 1 ? (
-      <p className="text-fg-muted shrink-0 px-s2 text-[0.72rem]">
+      <p className="text-fg-muted hidden shrink-0 px-s2 text-[0.72rem] lg:block">
         حدِّد عدّةً لتغييرِ حالتهم دفعةً · أو بالمفاتيح:{" "}
         <b className="text-fg">j</b>/<b className="text-fg">k</b> تنقّل ·{" "}
         <b className="text-fg">x</b> تحديد · <b className="text-fg">1‑3</b>{" "}
@@ -1170,7 +1172,10 @@ function Kpis({
        فوق الطيّة قبل أوّل طلب، والبطاقاتُ الأربعُ **ملخَّصٌ** لا وجهة —
        ولها تبويبُها «اللوحة» أصلًا. والسحبُ الأفقيّ يُبقيها في متناول
        الإبهام بارتفاعِ بطاقةٍ واحدة. الحاسبُ يبقى شبكةَ أربعة. */
-    <ul className="-mx-s4 flex shrink-0 snap-x snap-mandatory gap-s3 overflow-x-auto px-s4 pb-s2 [scrollbar-width:none] lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0 lg:pb-0">
+    /* ⚠️ **تُخفى على الجوّال — ٧٨px مقيسة.** الأربعةُ كلُّها معروضةٌ في
+       تبويب «اللوحة» بتفصيلٍ أوفى، وهنا تدفع القائمةَ تحت الطيّة على شاشةٍ
+       ٨٤٤px. والقائدُ يفتح «الطلبات» ليفرز لا ليقرأ نِسبًا. */
+    <ul className="-mx-s4 hidden shrink-0 snap-x snap-mandatory gap-s3 overflow-x-auto px-s4 pb-s2 [scrollbar-width:none] sm:flex lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0 lg:pb-0">
       {cards.map((c, i) => {
         const pct = c.of ? Math.round((c.value / c.of) * 100) : 0;
         return (
@@ -1458,6 +1463,11 @@ function Toolbar({
           </label>
         )}
 
+        {/* ⚠️ **مبدّلُ الطابور ورقائقُ الحالة في صفٍّ واحدٍ يُسحب على
+            الجوّال.** كانا صفّين ملتفّين (≈٩٠px)، وكلاهما يُمسح بالإصبع
+            أفقيًّا لا رأسيًّا. و`sm:contents` تُذيب هذي الحاوية على
+            الشاشات الواسعة فيعود التخطيطُ الأصليّ بلا نسخةٍ ثانية منه. */}
+        <div className="-mx-s4 flex shrink-0 items-center gap-x-s2 overflow-x-auto px-s4 [scrollbar-width:none] sm:contents">
         {showQueue && (
           <div role="tablist" aria-label="الطابور" className="seg shrink-0">
             <button
@@ -1487,7 +1497,7 @@ function Toolbar({
           </div>
         )}
 
-        <div className="-mx-s4 flex gap-x-s2 overflow-x-auto px-s4 pb-s1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:gap-y-s2 sm:overflow-visible sm:px-0 sm:pb-0">
+        <div className="flex gap-x-s2 sm:flex-wrap sm:gap-y-s2">
           <Chip
             label="الكلّ"
             count={total}
@@ -1508,10 +1518,16 @@ function Toolbar({
             />
           ))}
         </div>
+        </div>
 
         <BulkRejectButton pending={pendingRejections} />
 
-        <label className="flex items-center gap-x-s2 text-[0.8rem]">
+        {/* ⚠️ **الترتيبُ والعدّادُ يُخفيان على الجوّال.** شريطُ الأدوات قيس
+            ٢٥٠px — أكبرَ كتلةٍ في الرأس كلِّه — لأنه يلتفّ إلى أربعة صفوف.
+            والبحثُ ومبدّلُ الطابور ورقائقُ الحالة هي ما يُستعمل بالإصبع؛
+            والترتيبُ ضبطٌ يُعدَّل مرّةً ثم يُنسى، و«٤٦ من ٤٦» رقمٌ مكرَّرٌ
+            في الرقائق فوقه. */}
+        <label className="hidden items-center gap-x-s2 text-[0.8rem] sm:flex">
           <span className="text-fg-muted">الترتيب</span>
           <select
             value={sort}
@@ -1526,7 +1542,7 @@ function Toolbar({
           </select>
         </label>
 
-        <p className="text-fg-muted ms-auto text-[0.78rem]">
+        <p className="text-fg-muted ms-auto hidden text-[0.78rem] sm:block">
           <span dir="ltr" className="tabular-nums">
             {showing}
           </span>{" "}
