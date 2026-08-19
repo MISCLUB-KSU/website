@@ -297,6 +297,32 @@ export function ApplicationsTable({
       .sort((a, b) => b.invited - a.invited || b.total - a.total);
   }, [rows, asScopes, asAdmin, phase]);
 
+  /**
+   * أرقامُ شريط المرحلة — **على نطاق القارئ لا على النادي كلِّه**.
+   *
+   * ⚠️ **عطبٌ رُصد في لقطةٍ قبل النشر:** كان الشريطُ يعدّ من `rows` كلِّها،
+   * فيقول لقائد الإعلامية «٦٢ بلا قرار» وطابورُه ٢٣ — والفرقُ من ذكروه
+   * ثانيةً وثالثةً وليسوا شغلَه الآن. رقمٌ كهذا يجعل القائدَ يظنّ أن أمامه
+   * ثلاثةَ أضعاف ما أمامه.
+   *
+   * و«بلا قرار» يُجمع من العدّادات نفسِها فلا يفترق رقمٌ عن رقم.
+   */
+  const stagePending = useMemo(
+    () => meters.reduce((a, m) => a + m.pending, 0),
+    [meters],
+  );
+
+  /** ومن نزل ولم تُفتح رتبتُه بعد — بالنطاق نفسِه */
+  const stageWaiting = useMemo(
+    () =>
+      rows.filter(
+        (r) =>
+          r.stage > phase &&
+          (asAdmin || inScopes(choiceAtStage(r), asScopes)),
+      ).length,
+    [rows, phase, asAdmin, asScopes],
+  );
+
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
     const out = scored.filter(({ row: r }) => {
@@ -390,7 +416,12 @@ export function ApplicationsTable({
         </p>
       )}
 
-      <PhaseBar rows={rows} phase={phase} isAdmin={isAdmin} />
+      <PhaseBar
+        phase={phase}
+        open={stagePending}
+        waiting={stageWaiting}
+        isAdmin={isAdmin}
+      />
 
       <IntakeMeters meters={meters} />
 
@@ -455,31 +486,21 @@ export function ApplicationsTable({
  * نحن فيها لا يفهم لماذا لا يستطيع العملَ على من يراه في «كلُّ من ذكرك».
  */
 function PhaseBar({
-  rows,
   phase,
+  open,
+  waiting,
   isAdmin,
 }: {
-  rows: readonly Row[];
   phase: number;
+  /** بلا قرارٍ عند الرتبة المفتوحة — في نطاق القارئ */
+  open: number;
+  /** نزلوا ولم تُفتح رتبتُهم — في نطاقه أيضًا */
+  waiting: number;
   isAdmin: boolean;
 }) {
   const [armed, setArmed] = useState(false);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
-
-  const open = useMemo(
-    () =>
-      rows.filter(
-        (r) =>
-          r.stage === phase && (r.status === "new" || r.status === "reviewing"),
-      ).length,
-    [rows, phase],
-  );
-  /* من ينتظر فتحَ التالية — الرقمُ الذي يبرّر الفتح */
-  const waiting = useMemo(
-    () => rows.filter((r) => r.stage > phase).length,
-    [rows, phase],
-  );
 
   const next = phase + 1;
 
