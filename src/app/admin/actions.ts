@@ -6,6 +6,7 @@ import { findPreference } from "@/content/preferences";
 import { sendMail } from "@/lib/email/client";
 import { applicationDecision, isNotifiable } from "@/lib/email/templates";
 import { createClient } from "@/lib/supabase/server";
+import { PHASE_ONE_STATUSES } from "./stats";
 
 /**
  * تغيير حالة الطلب.
@@ -30,6 +31,18 @@ type Status = (typeof ALLOWED)[number];
 export async function setStatus(id: string, status: string) {
   if (!(ALLOWED as readonly string[]).includes(status)) {
     return { ok: false as const, message: "حالة غير معروفة" };
+  }
+
+  /* ⛔ **بوّابةُ المرحلة الأولى — والفحصُ هنا لا في الواجهة وحدها.**
+     إخفاءُ زرٍّ ليس منعًا: الفعلُ الخادميّ يُستدعى بيدٍ، والقرارُ الذي
+     يُكتب `rejected` اليوم لا رجعةَ فيه — لأن الصفَّ لا يحفظ عند أيّ
+     رغبةٍ رُفض، فلا يُعرف بعد إضافة `stage` من يستحقّ النزول إلى رغبته
+     الثانية. تُرفع هذي البوّابةُ مع السلّم. */
+  if (!PHASE_ONE_STATUSES.includes(status)) {
+    return {
+      ok: false as const,
+      message: "الاعتذار مقفولٌ في هذي المرحلة — اتركه «جديدًا» إن لم ترده",
+    };
   }
 
   const supabase = await createClient();

@@ -26,7 +26,15 @@ const TABS = [
 
 type Key = (typeof TABS)[number]["key"];
 
-export function AdminTabs({ rows }: { rows: readonly Row[] }) {
+export function AdminTabs({
+  rows,
+  scopes,
+  isAdmin,
+}: {
+  rows: readonly Row[];
+  scopes: readonly string[];
+  isAdmin: boolean;
+}) {
   const [tab, setTab] = useState<Key>("dash");
 
   /* ⚠️ **قراءة `hash` في `useEffect` لا في مُهيّئ `useState`.**
@@ -78,7 +86,9 @@ export function AdminTabs({ rows }: { rows: readonly Row[] }) {
             <FlowChart rows={rows} />
           </div>
         )}
-        {tab === "list" && <ApplicationsTable rows={rows} />}
+        {tab === "list" && (
+          <ApplicationsTable rows={rows} scopes={scopes} isAdmin={isAdmin} />
+        )}
       </div>
     </div>
   );

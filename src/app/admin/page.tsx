@@ -6,7 +6,7 @@ import { ThemeToggle } from "./theme-toggle";
 import { findPreference } from "@/content/preferences";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./login/actions";
-import type { Row } from "./stats";
+import { inScopes, type Row } from "./stats";
 
 /**
  * لوحة الطلبات.
@@ -110,6 +110,16 @@ export default async function AdminPage() {
   );
   const lastAt = rows[0] ? relative(rows[0].created_at) : null;
 
+  /* ⚠️ **رقمان لا واحد، وإلّا كذب أحدُهما.** القائد يستقبل من ذكره في
+     رغباته الثلاث، وطابورَ عمله اليوم من ذكره **أوّلًا** — فرقمٌ واحدٌ في
+     الترويسة يقول «٧٨» بينما الشاشةُ تحته تعرض ٤٦، فيظنّ أن اللوحة
+     تُخفي. والرئاسةُ بلا نطاق: كلُّ جهةٍ لها، فرقمُها واحد. */
+  const firstChoice =
+    me.role === "admin"
+      ? rows.length
+      : rows.filter((r) => inScopes(r.choice1, (me.scopes ?? []) as string[]))
+          .length;
+
   /* وصل أقلُّ ممّا في القاعدة ⇒ الردُّ قُصّ. انظر التعليل عند الاستعلام. */
   const truncated = typeof count === "number" && rows.length < count;
 
@@ -146,7 +156,12 @@ export default async function AdminPage() {
                 : scopeNames.join(" · ") || "بلا نطاق"}
             </p>
             <p className="text-[0.86rem] font-bold">
-              {rows.length} طلبًا
+              {firstChoice} رغبةً أولى
+              {firstChoice !== rows.length && (
+                <span className="ms-s2 text-[0.72rem] font-normal opacity-60">
+                  · {rows.length} يصلونك
+                </span>
+              )}
               {lastAt && (
                 /* ⚠️ يُطوى دون `sm`: التفافُه إلى سطرٍ ثالث هو ما جعل
                    الترويسة تتضخّم على شاشةٍ 374px. والعددُ يبقى. */
@@ -215,7 +230,14 @@ export default async function AdminPage() {
         </p>
       )}
 
-      <AdminTabs rows={rows} />
+      {/* ⚠️ **النطاقُ يُمرَّر ولا يُستنتج من الصفوف.** القائدُ يستقبل من
+          ذكره في رغباته الثلاث، فالجهاتُ الظاهرة في `choice1` تشمل جهاتٍ
+          ليست له. وترتيبُ طابور المرحلة الأولى يحتاج نطاقَه هو. */}
+      <AdminTabs
+        rows={rows}
+        scopes={(me.scopes ?? []) as string[]}
+        isAdmin={me.role === "admin"}
+      />
     </main>
   );
 }

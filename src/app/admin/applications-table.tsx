@@ -11,7 +11,14 @@ import {
 import { isolateLatin } from "@/lib/bidi";
 import { useHydrated } from "@/lib/use-hydrated";
 import { notifyDecision, sendPendingRejections, setStatus } from "./actions";
-import { STATUSES, openOnly, type Row } from "./stats";
+import {
+  INTERVIEW_CAP,
+  PHASE_ONE_STATUSES,
+  STATUSES,
+  inScopes,
+  openOnly,
+  type Row,
+} from "./stats";
 
 /**
  * الحالاتُ التي يُراسَل عليها الطالب — نسخةُ العميل من `NOTIFIABLE`.
@@ -41,7 +48,35 @@ const NOTIFIABLE_STATUSES: readonly string[] = [
  * · لا حقلَ يُخفى: الدافع والأجوبة والروابط والهوية كلُّها معروضة.
  */
 
-type Props = { rows: readonly Row[] };
+type Props = {
+  rows: readonly Row[];
+  /** نطاقاتُ القارئ — فارغةٌ للرئاسة، وهي ترى الكلّ */
+  scopes: readonly string[];
+  isAdmin: boolean;
+};
+
+/**
+ * الحالاتُ المعروضة اليوم — الخمسُ مقصوصةٌ على ثلاث.
+ *
+ * ⛔ «معتذَر عنه» و«محال للثانية» مقفولتان حتى يصل السلّم، والتعليلُ
+ * كاملًا عند `PHASE_ONE_STATUSES` في `stats.ts`. وتُقصّ هنا مرّةً واحدةً
+ * فتتبعها أزرارُ القرار ورقائقُ الترشيح معًا — فلا تفترق شاشةٌ عن أخرى.
+ */
+const PHASE_STATUSES = STATUSES.filter((s) =>
+  PHASE_ONE_STATUSES.includes(s.key),
+);
+
+/** طابورُ المرحلة الأولى، أو كلُّ من ذكرني في رغباته الثلاث */
+type Queue = "first" | "all";
+
+type Meter = {
+  value: string;
+  label: string;
+  /** كم وضعوا هذي الجهة رغبةً أولى */
+  total: number;
+  /** كم منهم مدعوٌّ للمقابلة الآن */
+  invited: number;
+};
 
 const SORTS = [
   { key: "newest", label: "الأحدث" },
@@ -115,19 +150,65 @@ function completeness(row: Row): { items: Item[]; pct: number } {
 
 /* ── الجذر ──────────────────────────────────────────────────────────────── */
 
-export function ApplicationsTable({ rows }: Props) {
+export function ApplicationsTable({ rows, scopes, isAdmin }: Props) {
   const [q, setQ] = useState("");
   const [status, setStatusFilter] = useState<string>("all");
+  /* ⚠️ **«الرغبة الأولى» هي الافتراض لا «الكلّ».** القائدُ يستقبل من ذكره
+     ثانيةً وثالثةً أيضًا، وقبولُ أحدهم قبل أن يقابله قائدُ رغبته الأولى
+     يُبطل ترتيبَ الرغبات كلَّه — وهو ما تقوم عليه خطّةُ الموسم. فالطابورُ
+     يفتح على من اختارك **أوّلًا**، والبقيّةُ خلف تبديلٍ مقصود. */
+  const [queue, setQueue] = useState<Queue>("first");
   const [sort, setSort] = useState<(typeof SORTS)[number]["key"]>("newest");
   const [picked, setPicked] = useState<string | null>(null);
   const live = useHydrated();
 
+  /* ⚠️ **الرئاسةُ بلا نطاق، وكلُّ جهةٍ لها.** `inScopes` على مصفوفةٍ
+     فارغة تُرجع «لا» دائمًا، فلولا هذا الاستثناء لفتحت الرئاسةُ طابورًا
+     فارغًا على ٢٤٠ طلبًا. */
+  const pool = useMemo(() => {
+    if (queue === "all" || isAdmin) return rows;
+    return rows.filter((r) => inScopes(r.choice1, scopes));
+  }, [rows, queue, scopes, isAdmin]);
+
   const scored = useMemo(
-    () => rows.map((r) => ({ row: r, ...completeness(r) })),
-    [rows],
+    () => pool.map((r) => ({ row: r, ...completeness(r) })),
+    [pool],
   );
 
+  /* ⚠️ **المزاحمةُ على كلّ الصفوف لا على البِركة.** «يزاحمك ثمانية» حقيقةٌ
+     عن الجهة، لا عن الشاشة المعروضة — وحسبُها على المرشَّح يجعل الرقم
+     يتغيّر كلّما بدّل القائدُ الطابور. */
   const rivalry = useMemo(() => competitionOf(rows), [rows]);
+
+  /**
+   * مدخلُ كلّ جهةٍ في نطاق القارئ — **الجهةُ وحدةُ العدّ لا القائد**.
+   *
+   * يُحسب من `rows` لا من `pool`: المدعوّون حقيقةٌ عن الوحدة لا عمّا
+   * يعرضه الطابورُ الآن، فتبديلُ العرض لا يحرّك الرقم.
+   */
+  const meters = useMemo<Meter[]>(() => {
+    const m = new Map<string, { total: number; invited: number }>();
+    for (const r of rows) {
+      if (!r.choice1) continue;
+      if (!isAdmin && !inScopes(r.choice1, scopes)) continue;
+      const e = m.get(r.choice1) ?? { total: 0, invited: 0 };
+      e.total += 1;
+      if (r.status === "reviewing") e.invited += 1;
+      m.set(r.choice1, e);
+    }
+    /* ⚠️ **الاسمُ القصير للقائد، والكاملُ للرئاسة.** القائدُ يرى وحداتِ
+       لجنةٍ واحدة، فتكرارُ اسم اللجنة ثلاثَ مرّاتٍ يبتلع السطر ولا يفرّق
+       شيئًا. والرئاسةُ ترى سبعَ عشرة جهةً من لجانٍ شتّى، وفيها أسماءُ
+       وحداتٍ متشابهة («وحدة التصميم» و«التصميم الجرافيكي») — فيلزمها
+       الكامل. */
+    return [...m.entries()]
+      .map(([value, v]) => ({
+        value,
+        label: isAdmin ? prefName(value) : prefShort(value),
+        ...v,
+      }))
+      .sort((a, b) => b.invited - a.invited || b.total - a.total);
+  }, [rows, scopes, isAdmin]);
 
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -160,20 +241,20 @@ export function ApplicationsTable({ rows }: Props) {
 
   const counts = useMemo(() => {
     const m: Record<string, number> = {};
-    for (const r of rows) m[r.status] = (m[r.status] ?? 0) + 1;
+    for (const r of pool) m[r.status] = (m[r.status] ?? 0) + 1;
     return m;
-  }, [rows]);
+  }, [pool]);
 
   const kpis = useMemo(
     () => ({
       waiting: (counts.new ?? 0) + (counts.reviewing ?? 0),
       decided: (counts.accepted ?? 0) + (counts.rejected ?? 0),
-      withCv: rows.filter((r) => r.cv_path).length,
+      withCv: pool.filter((r) => r.cv_path).length,
       avg: scored.length
         ? Math.round(scored.reduce((a, b) => a + b.pct, 0) / scored.length)
         : 0,
     }),
-    [counts, scored, rows],
+    [counts, scored, pool],
   );
 
   /* ⚠️ **يُحسب من الصفوف الواصلة لا باستعلامٍ ثانٍ.** الصفوفُ مقصوصةٌ
@@ -201,7 +282,9 @@ export function ApplicationsTable({ rows }: Props) {
       data-open={openOnPhone ? "true" : "false"}
       className={`apps flex h-full min-h-0 flex-col gap-s3 ${live ? "dash-live" : ""}`}
     >
-      <Kpis {...kpis} total={rows.length} />
+      <Kpis {...kpis} total={pool.length} />
+
+      <IntakeMeters meters={meters} />
 
       <Toolbar
         q={q}
@@ -211,9 +294,13 @@ export function ApplicationsTable({ rows }: Props) {
         sort={sort}
         setSort={setSort}
         counts={counts}
-        total={rows.length}
+        total={pool.length}
         showing={shown.length}
         pendingRejections={pendingRejections}
+        queue={queue}
+        setQueue={setQueue}
+        showQueue={!isAdmin}
+        beyondFirst={rows.length - pool.length}
       />
 
       <div className="grid min-h-0 flex-1 gap-s3 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)]">
@@ -236,6 +323,63 @@ export function ApplicationsTable({ rows }: Props) {
             <p className="text-fg-muted">لا طلبَ يطابق البحث.</p>
           </section>
         )}
+      </div>
+    </div>
+  );
+}
+
+/* ── مدخلُ الجهات ────────────────────────────────────────────────────────── */
+
+/**
+ * كم دُعي إلى المقابلة في كل جهة — **والرقمُ يُعرض ولا يمنع**.
+ *
+ * ⚠️ **الجهةُ وحدةُ العدّ، لا القائد.** رئيسُ لجنةٍ نطاقُه ثلاثُ وحدات
+ * يرى ثلاثةَ عدّادات: لكلِّ وحدةٍ مدخلُها. وعدّادٌ واحدٌ له كان يعني أن
+ * تبتلع وحدةٌ نصيبَ أختها ولا يظهر ذلك في رقمٍ واحد.
+ *
+ * ⚠️ **ورئيسُ اللجنة ونائبُه يريان العدّادَ نفسَه، وهذا صواب** — الوحدةُ
+ * لها مدخلٌ واحدٌ مهما تعدّد من يضغط. ولو أردنا فصلَ نصيب كلٍّ منهما
+ * لاحتجنا عمودًا يسجّل مَن دعا، وهو ما لا تحتاجه المرحلة.
+ */
+function IntakeMeters({ meters }: { meters: Meter[] }) {
+  if (meters.length === 0) return null;
+  return (
+    <div className="tile shrink-0 px-s4 py-s3">
+      <div className="flex flex-wrap items-center gap-x-s3 gap-y-s2">
+        <p className="text-fg-muted text-[0.7rem] font-semibold tracking-[0.1em]">
+          مدعوّون للمقابلة
+        </p>
+        {meters.map((m) => {
+          const full = m.invited >= INTERVIEW_CAP;
+          return (
+            <span
+              key={m.value}
+              title={`${m.total} وضعوها رغبةً أولى`}
+              className="border-line flex items-center gap-x-s2 rounded-full border px-s3 py-s1 text-[0.76rem]"
+              style={
+                full
+                  ? {
+                      borderColor:
+                        "color-mix(in oklab, var(--warning) 55%, transparent)",
+                      background:
+                        "color-mix(in oklab, var(--warning) 12%, transparent)",
+                    }
+                  : undefined
+              }
+            >
+              <span className="opacity-80">{m.label}</span>
+              <span dir="ltr" className="font-bold tabular-nums">
+                {m.invited}/{INTERVIEW_CAP}
+              </span>
+            </span>
+          );
+        })}
+        {/* ⚠️ **يُقال إنه إرشادٌ لا سقف.** الإدارة قالت «يمديك أقلّ، وفي
+            حالات استثناء يمديك أعلى» — فلونٌ تحذيريٌّ بلا هذي الكلمة
+            يُقرأ منعًا، فيتوقّف قائدٌ عن دعوةٍ يملكها. */}
+        <span className="text-fg-muted ms-auto text-[0.72rem]">
+          إرشادٌ لا سقف — تجاوزه عند الحاجة
+        </span>
       </div>
     </div>
   );
@@ -501,6 +645,10 @@ function Toolbar({
   total,
   showing,
   pendingRejections,
+  queue,
+  setQueue,
+  showQueue,
+  beyondFirst,
 }: {
   q: string;
   setQ: (v: string) => void;
@@ -512,6 +660,11 @@ function Toolbar({
   total: number;
   showing: number;
   pendingRejections: number;
+  queue: Queue;
+  setQueue: (v: Queue) => void;
+  /** الرئاسةُ ترى الكلَّ أصلًا، فالتبديلُ لها بلا أثر — فيُخفى */
+  showQueue: boolean;
+  beyondFirst: number;
 }) {
   return (
     <div className="tile shrink-0">
@@ -529,6 +682,35 @@ function Toolbar({
 
         {/* ⚠️ **صفٌّ واحدٌ يُسحب على الجوّال لا التفافٌ على ثلاثة صفوف.**
             الستّةُ كانت تلتفّ فتأكل ≈250px أخرى فوق الطيّة. */}
+        {showQueue && (
+          <div role="tablist" aria-label="الطابور" className="seg shrink-0">
+            <button
+              role="tab"
+              type="button"
+              aria-selected={queue === "first"}
+              className="seg-item"
+              onClick={() => setQueue("first")}
+            >
+              رغبةٌ أولى
+            </button>
+            <button
+              role="tab"
+              type="button"
+              aria-selected={queue === "all"}
+              className="seg-item"
+              onClick={() => setQueue("all")}
+              title="من ذكرك رغبةً ثانيةً أو ثالثة — للاطّلاع، ودورُهم بعد المرحلة الأولى"
+            >
+              كلُّ من ذكرك
+              {beyondFirst > 0 && (
+                <span dir="ltr" className="ms-s2 tabular-nums opacity-60">
+                  +{beyondFirst}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+
         <div className="-mx-s4 flex gap-x-s2 overflow-x-auto px-s4 pb-s1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:gap-y-s2 sm:overflow-visible sm:px-0 sm:pb-0">
           <Chip
             label="الكلّ"
@@ -536,7 +718,10 @@ function Toolbar({
             active={status === "all"}
             onClick={() => setStatus("all")}
           />
-          {STATUSES.map((s) => (
+          {/* ⚠️ **الرقائقُ تتبع الأزرار.** لو عُرضت الخمسُ هنا والقرارُ
+              ثلاثةٌ هناك، لبحث القائدُ عن «معتذَر عنه» فوجد صفرًا دائمًا
+              وظنّ اللوحة معطوبة. */}
+          {PHASE_STATUSES.map((s) => (
             <Chip
               key={s.key}
               label={s.label}
@@ -1100,7 +1285,7 @@ function StatusPicker({ row, dark }: { row: Row; dark?: boolean }) {
         قرار المراجعة
       </p>
       <div className="flex flex-wrap gap-s2">
-        {STATUSES.map((s) => {
+        {PHASE_STATUSES.map((s) => {
           const on = s.key === row.status;
           /* ⚠️ **الإحالة مستحيلةٌ بلا وجهة.** من دخل برابطٍ مباشر لا رغبةَ
              ثانيةَ له (`choice2` فارغة)، فالزرّ يُعطَّل ويُقال السبب — لا
@@ -1351,6 +1536,11 @@ function LinkPill({
 /** للبحث وحده — نصٌّ صِرف بلا عناصر */
 function prefName(value: string) {
   return findPreference(value)?.fullLabel ?? value;
+}
+
+/** الاسمُ داخل مجموعته — «وحدة الزيارات» لا «لجنة العلاقات… — وحدة الزيارات» */
+function prefShort(value: string) {
+  return findPreference(value)?.label ?? value;
 }
 
 /** قيمةٌ لا يعرفها النظام تُعلَّم ولا تُبتلع صامتة، وتُعزَل `ltr` */
