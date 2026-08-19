@@ -29,12 +29,15 @@ type Key = (typeof TABS)[number]["key"];
 export function AdminTabs({
   rows,
   notes,
+  phase,
   scopes,
   isAdmin,
   me,
 }: {
   rows: readonly Row[];
   notes: readonly Note[];
+  /** أعلى رتبةٍ فُتح العملُ عليها — من `settings` */
+  phase: number;
   scopes: readonly string[];
   isAdmin: boolean;
   /** بريدُ القارئ — به يُعرف ما يملك تعديلَه من الملاحظات */
@@ -95,6 +98,7 @@ export function AdminTabs({
           <ApplicationsTable
             rows={rows}
             notes={notes}
+            phase={phase}
             scopes={scopes}
             isAdmin={isAdmin}
             me={me}

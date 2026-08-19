@@ -6,7 +6,7 @@ import { findPreference } from "@/content/preferences";
 import { sendMail } from "@/lib/email/client";
 import { applicationDecision, isNotifiable } from "@/lib/email/templates";
 import { createClient } from "@/lib/supabase/server";
-import { PHASE_ONE_STATUSES } from "./stats";
+import { DIRECT_STATUSES } from "./stats";
 
 /**
  * تغيير حالة الطلب.
@@ -33,15 +33,13 @@ export async function setStatus(id: string, status: string) {
     return { ok: false as const, message: "حالة غير معروفة" };
   }
 
-  /* ⛔ **بوّابةُ المرحلة الأولى — والفحصُ هنا لا في الواجهة وحدها.**
-     إخفاءُ زرٍّ ليس منعًا: الفعلُ الخادميّ يُستدعى بيدٍ، والقرارُ الذي
-     يُكتب `rejected` اليوم لا رجعةَ فيه — لأن الصفَّ لا يحفظ عند أيّ
-     رغبةٍ رُفض، فلا يُعرف بعد إضافة `stage` من يستحقّ النزول إلى رغبته
-     الثانية. تُرفع هذي البوّابةُ مع السلّم. */
-  if (!PHASE_ONE_STATUSES.includes(status)) {
+  /* ⛔ **`rejected` لا تُضبط بيد — والفحصُ هنا لا في الواجهة وحدها.**
+     صارت تعني «انتهت رغباتُه كلُّها»، وهو حكمٌ تملكه القاعدةُ وحدها.
+     وضبطُها من هنا يقفز فوق السلّم فيُخرج من له رغبتان باقيتان. */
+  if (!DIRECT_STATUSES.includes(status)) {
     return {
       ok: false as const,
-      message: "الاعتذار مقفولٌ في هذي المرحلة — اتركه «جديدًا» إن لم ترده",
+      message: "الاعتذار يمرّ بـ«لا يناسب لجنتي» — لا يُضبط مباشرةً",
     };
   }
 
@@ -422,4 +420,98 @@ export async function deleteNote(id: string) {
 
   revalidatePath("/admin");
   return { ok: true as const, message: "" };
+}
+
+/**
+ * **«لا يناسب لجنتي»** — تمريرُ المتقدّم إلى رغبته التالية.
+ *
+ * ⚠️ **ليست رفضًا من النادي.** من له رغبةٌ تالية ينزل إليها وتعود حالتُه
+ * «جديدًا» عند قائدها؛ ومن لا رغبةَ بعدها يُعتذر عنه نهائيًّا. والقاعدةُ
+ * وحدها تعرف أيَّهما — ولذلك لا يُضبط `rejected` بيد.
+ *
+ * ⚠️ **وتمرّ بدالّةٍ لا بتحديث.** الصفُّ بعد `stage + 1` يخرج من نطاق
+ * القائد، فشرطُ `with check` يردّ التحديثَ الذي أذِنّا به للتوّ. والدالّة
+ * تتحقّق من النطاق والمرحلة **قبل** النقل ثم تنقل.
+ */
+export async function passOver(id: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("pass_over", { app_id: id });
+
+  if (error) {
+    console.error("[admin] تعذّر التمرير", {
+      code: error.code,
+      message: error.message,
+    });
+    return { ok: false as const, message: "تعذّر التمرير" };
+  }
+
+  /* رموزُ الدالّة تُترجَم هنا — ولا يُعرض رمزٌ إنجليزيٌّ لقائد */
+  const outcome = String(data ?? "");
+  if (outcome === "moved") {
+    revalidatePath("/admin");
+    return { ok: true as const, message: "نزل إلى رغبته التالية" };
+  }
+  if (outcome === "rejected") {
+    revalidatePath("/admin");
+    return { ok: true as const, message: "لا رغبةَ بعدها — اعتُذر عنه" };
+  }
+  if (outcome === "decided") {
+    return { ok: false as const, message: "قرارُه نهائيٌّ ولا يُنقض بتمرير" };
+  }
+  if (outcome === "denied") {
+    return { ok: false as const, message: "ليس عند رتبتِك الآن" };
+  }
+  return { ok: false as const, message: "الطلب غير متاح" };
+}
+
+/**
+ * **فتحُ المرحلة التالية** — للرئاسة وحدها، تفرضه سياسةُ `settings`.
+ *
+ * ⚠️ **قرارُ موسمٍ لا تصرّفُ قائد.** فتحُ المرحلة الثانية يجعل من نزلوا
+ * مرئيّين لقادة رغبتهم التالية دفعةً واحدة؛ وفتحُها قبل أن يفرغ قادةُ
+ * الأولى يعني أن يملأ قادةُ الثانية نصيبَهم من دفعةٍ ناقصة — وهو الظلمُ
+ * الذي وُجد السلّمُ ليمنعه.
+ *
+ * ⚠️ **ولا تُرجَع مرحلةٌ إلى الوراء من هنا.** من نزل لا يصعد بإغلاق
+ * المرحلة، فإرجاعُها يُخفي أشخاصًا عن قادتهم بلا أن يردَّهم إلى أحد.
+ * وتصحيحُ خطأٍ في الفتح يُراجَع في القاعدة بيدٍ واعية.
+ */
+export async function setPhase(phase: number) {
+  if (![1, 2, 3].includes(phase)) {
+    return { ok: false as const, message: "مرحلةٌ غير معروفة" };
+  }
+
+  const supabase = await createClient();
+  const { data: current } = await supabase
+    .from("settings")
+    .select("phase")
+    .maybeSingle();
+
+  if (current && phase < current.phase) {
+    return {
+      ok: false as const,
+      message: "لا تُرجَع مرحلةٌ فُتحت — من نزل لا يصعد",
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("settings")
+    .update({ phase, updated_at: new Date().toISOString() })
+    .eq("id", true)
+    .select("phase");
+
+  if (error) {
+    console.error("[admin] تعذّر ضبط المرحلة", {
+      code: error.code,
+      message: error.message,
+    });
+    return { ok: false as const, message: "تعذّر الحفظ" };
+  }
+  /* صفر صفّ = ليس من الرئاسة. السياسةُ هي التي ردّت، لا هذي الدالّة. */
+  if (!data || data.length === 0) {
+    return { ok: false as const, message: "الرئاسة وحدها تفتح مرحلة" };
+  }
+
+  revalidatePath("/admin");
+  return { ok: true as const, message: `فُتحت المرحلة ${phase}` };
 }

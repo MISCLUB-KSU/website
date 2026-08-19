@@ -6,7 +6,7 @@ import { ThemeToggle } from "./theme-toggle";
 import { findPreference } from "@/content/preferences";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./login/actions";
-import { inScopes, type Note, type Row } from "./stats";
+import { choiceAtStage, inScopes, type Note, type Row } from "./stats";
 
 /**
  * لوحة الطلبات.
@@ -127,6 +127,14 @@ export default async function AdminPage() {
     });
   }
   const notes = (noteRows ?? []) as Note[];
+
+  /* ⚠️ **الافتراضُ ١ عند أيّ تعثّر.** مرحلةٌ أعلى بالغلط تفتح على القادة
+     من لم يحن دورُهم، ومرحلةٌ أدنى تقفل شغلًا قائمًا — والأولى أضرّ. */
+  const { data: cfg } = await supabase
+    .from("settings")
+    .select("phase")
+    .maybeSingle();
+  const phase = cfg?.phase ?? 1;
   const scopeNames = ((me.scopes ?? []) as string[]).map(
     (scope) => findPreference(scope)?.fullLabel ?? scope,
   );
@@ -136,11 +144,14 @@ export default async function AdminPage() {
      رغباته الثلاث، وطابورَ عمله اليوم من ذكره **أوّلًا** — فرقمٌ واحدٌ في
      الترويسة يقول «٧٨» بينما الشاشةُ تحته تعرض ٤٦، فيظنّ أن اللوحة
      تُخفي. والرئاسةُ بلا نطاق: كلُّ جهةٍ لها، فرقمُها واحد. */
-  const firstChoice =
+  const atMyStage =
     me.role === "admin"
       ? rows.length
-      : rows.filter((r) => inScopes(r.choice1, (me.scopes ?? []) as string[]))
-          .length;
+      : rows.filter(
+          (r) =>
+            r.stage <= phase &&
+            inScopes(choiceAtStage(r), (me.scopes ?? []) as string[]),
+        ).length;
 
   /* وصل أقلُّ ممّا في القاعدة ⇒ الردُّ قُصّ. انظر التعليل عند الاستعلام. */
   const truncated = typeof count === "number" && rows.length < count;
@@ -178,8 +189,8 @@ export default async function AdminPage() {
                 : scopeNames.join(" · ") || "بلا نطاق"}
             </p>
             <p className="text-[0.86rem] font-bold">
-              {firstChoice} رغبةً أولى
-              {firstChoice !== rows.length && (
+              {atMyStage} عندك الآن
+              {atMyStage !== rows.length && (
                 <span className="ms-s2 text-[0.72rem] font-normal opacity-60">
                   · {rows.length} يصلونك
                 </span>
@@ -258,6 +269,7 @@ export default async function AdminPage() {
       <AdminTabs
         rows={rows}
         notes={notes}
+        phase={phase}
         scopes={(me.scopes ?? []) as string[]}
         isAdmin={me.role === "admin"}
         me={user.email?.toLowerCase() ?? ""}

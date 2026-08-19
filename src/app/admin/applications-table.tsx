@@ -17,14 +17,18 @@ import {
   deleteNote,
   editNote,
   notifyDecision,
+  passOver,
   sendPendingRejections,
+  setPhase,
   setStatus,
 } from "./actions";
 import {
+  DIRECT_STATUSES,
   INTERVIEW_CAP,
-  PHASE_ONE_STATUSES,
+  STAGE_LABELS,
   STATUSES,
   arrivalStamp,
+  choiceAtStage,
   inScopes,
   openOnly,
   type Note,
@@ -62,6 +66,8 @@ const NOTIFIABLE_STATUSES: readonly string[] = [
 type Props = {
   rows: readonly Row[];
   notes: readonly Note[];
+  /** أعلى رتبةٍ فُتح العملُ عليها */
+  phase: number;
   /** نطاقاتُ القارئ — فارغةٌ للرئاسة، وهي ترى الكلّ */
   scopes: readonly string[];
   isAdmin: boolean;
@@ -70,15 +76,15 @@ type Props = {
 };
 
 /**
- * الحالاتُ المعروضة اليوم — الخمسُ مقصوصةٌ على ثلاث.
+ * الحالاتُ التي تُضبط بزرّ — الخمسُ مقصوصةٌ على ثلاث.
  *
- * ⛔ «معتذَر عنه» و«محال للثانية» مقفولتان حتى يصل السلّم، والتعليلُ
- * كاملًا عند `PHASE_ONE_STATUSES` في `stats.ts`. وتُقصّ هنا مرّةً واحدةً
- * فتتبعها أزرارُ القرار ورقائقُ الترشيح معًا — فلا تفترق شاشةٌ عن أخرى.
+ * ⛔ «معتذَر عنه» لا زرَّ لها: مسارُها «لا يناسب لجنتي» وحده، فالقاعدةُ
+ * هي التي تقرّر أهو نزولٌ إلى رغبةٍ تالية أم اعتذارٌ نهائيّ. و«محال
+ * للثانية» زالت — النزولُ صار `stage + 1`.
+ *
+ * وتُقصّ هنا مرّةً واحدةً فتتبعها أزرارُ القرار ورقائقُ الترشيح معًا.
  */
-const PHASE_STATUSES = STATUSES.filter((s) =>
-  PHASE_ONE_STATUSES.includes(s.key),
-);
+const PHASE_STATUSES = STATUSES.filter((s) => DIRECT_STATUSES.includes(s.key));
 
 /** طابورُ المرحلة الأولى، أو كلُّ من ذكرني في رغباته الثلاث */
 type Queue = "first" | "all";
@@ -185,6 +191,7 @@ function completeness(row: Row): { items: Item[]; pct: number } {
 export function ApplicationsTable({
   rows,
   notes,
+  phase,
   scopes,
   isAdmin,
   me,
@@ -216,10 +223,19 @@ export function ApplicationsTable({
   /* ورئاسةٌ تعاين تُعامَل معاملةَ القائد — وإلّا لَما رُشّح شيء */
   const asAdmin = isAdmin && !viewAs;
 
+  /* ⚠️ **`choiceAtStage` لا `choice1`.** الطابورُ يعرض من هو **عندك
+     الآن** — ومن نزل إليك كرغبةٍ ثانية هو عندك بقدر من اختارك أوّلًا.
+     وتثبيتُه على `choice1` كان يُخفي المرحلةَ الثانية كلَّها عن أصحابها. */
+  /* ⚠️ **و`stage <= phase` معها.** القاعدةُ تمنع العملَ على رتبةٍ لم
+     تُفتح؛ فعرضُها في الطابور يضع أمام القائد أشخاصًا كلُّ زرٍّ عليهم
+     يُردّ — «الطلب غير متاح» بلا سببٍ مفهوم. والمنعُ يُقال بألّا يُعرضوا،
+     ويبقون في «كلُّ من ذكرك» لمن أراد أن يستبق. */
   const pool = useMemo(() => {
     if (queue === "all" || asAdmin) return rows;
-    return rows.filter((r) => inScopes(r.choice1, asScopes));
-  }, [rows, queue, asScopes, asAdmin]);
+    return rows.filter(
+      (r) => r.stage <= phase && inScopes(choiceAtStage(r), asScopes),
+    );
+  }, [rows, queue, asScopes, asAdmin, phase]);
 
   const scored = useMemo(
     () => pool.map((r) => ({ row: r, ...completeness(r) })),
@@ -251,12 +267,14 @@ export function ApplicationsTable({
   const meters = useMemo<Meter[]>(() => {
     const m = new Map<string, { total: number; invited: number }>();
     for (const r of rows) {
-      if (!r.choice1) continue;
-      if (!asAdmin && !inScopes(r.choice1, asScopes)) continue;
-      const e = m.get(r.choice1) ?? { total: 0, invited: 0 };
+      /* على الجهة التي هو عندها الآن — فمن نزل يُحسب على مضيفه الجديد */
+      const at = choiceAtStage(r);
+      if (!at) continue;
+      if (!asAdmin && (r.stage > phase || !inScopes(at, asScopes))) continue;
+      const e = m.get(at) ?? { total: 0, invited: 0 };
       e.total += 1;
       if (r.status === "reviewing") e.invited += 1;
-      m.set(r.choice1, e);
+      m.set(at, e);
     }
     /* ⚠️ **الاسمُ القصير للقائد، والكاملُ للرئاسة.** القائدُ يرى وحداتِ
        لجنةٍ واحدة، فتكرارُ اسم اللجنة ثلاثَ مرّاتٍ يبتلع السطر ولا يفرّق
@@ -270,7 +288,7 @@ export function ApplicationsTable({
         ...v,
       }))
       .sort((a, b) => b.invited - a.invited || b.total - a.total);
-  }, [rows, asScopes, asAdmin]);
+  }, [rows, asScopes, asAdmin, phase]);
 
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -365,6 +383,8 @@ export function ApplicationsTable({
         </p>
       )}
 
+      <PhaseBar rows={rows} phase={phase} isAdmin={isAdmin} />
+
       <IntakeMeters meters={meters} />
 
       <Toolbar
@@ -410,6 +430,138 @@ export function ApplicationsTable({
           </section>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ── المرحلة ─────────────────────────────────────────────────────────────── */
+
+/**
+ * شريطُ المرحلة — يقرؤه الجميع، ولا يفتح المرحلةَ إلّا الرئاسة.
+ *
+ * ⚠️ **والقرارُ لا يُتّخذ أعمى.** «الرئاسةُ تقفل المرحلة» جملةٌ سهلة، لكن
+ * على أيّ أساس؟ فيُعرض ما تبقّى **بلا قرارٍ عند الرتبة المفتوحة**: صفرٌ
+ * يعني أن كلَّ قائدٍ فرغ، وعددٌ كبيرٌ يعني أن الفتحَ سيسبق شغلًا قائمًا —
+ * فيملأ قادةُ الرتبة التالية نصيبَهم من دفعةٍ ناقصة.
+ *
+ * ⚠️ **ويُقال للقائد أيضًا وإن لم يملك الزرّ.** من لا يعرف أيَّ مرحلةٍ
+ * نحن فيها لا يفهم لماذا لا يستطيع العملَ على من يراه في «كلُّ من ذكرك».
+ */
+function PhaseBar({
+  rows,
+  phase,
+  isAdmin,
+}: {
+  rows: readonly Row[];
+  phase: number;
+  isAdmin: boolean;
+}) {
+  const [armed, setArmed] = useState(false);
+  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const [pending, start] = useTransition();
+
+  const open = useMemo(
+    () =>
+      rows.filter(
+        (r) =>
+          r.stage === phase && (r.status === "new" || r.status === "reviewing"),
+      ).length,
+    [rows, phase],
+  );
+  /* من ينتظر فتحَ التالية — الرقمُ الذي يبرّر الفتح */
+  const waiting = useMemo(
+    () => rows.filter((r) => r.stage > phase).length,
+    [rows, phase],
+  );
+
+  const next = phase + 1;
+
+  return (
+    <div className="tile shrink-0 px-s4 py-s3">
+      <div className="flex flex-wrap items-center gap-x-s4 gap-y-s2 text-[0.8rem]">
+        <span className="font-bold">
+          المرحلة {phase} — {STAGE_LABELS[phase]}
+        </span>
+        <span className="text-fg-muted">
+          <strong dir="ltr" className="tabular-nums">
+            {open}
+          </strong>{" "}
+          بلا قرارٍ عند هذي الرتبة
+        </span>
+        {waiting > 0 && (
+          <span className="text-fg-muted">
+            ·{" "}
+            <strong dir="ltr" className="tabular-nums">
+              {waiting}
+            </strong>{" "}
+            نزلوا وينتظرون فتحَ التالية
+          </span>
+        )}
+
+        {isAdmin && next <= 3 && (
+          <div className="ms-auto flex items-center gap-x-s3">
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => {
+                if (!armed) {
+                  setArmed(true);
+                  setNote(null);
+                  return;
+                }
+                start(async () => {
+                  const res = await setPhase(next);
+                  setArmed(false);
+                  setNote({ ok: res.ok, text: res.message });
+                });
+              }}
+              className={`min-h-11 rounded-xl border px-s4 text-[0.8rem] font-semibold transition-opacity lg:min-h-10 ${
+                pending ? "opacity-50" : "opacity-90 hover:opacity-100"
+              }`}
+              style={{
+                borderColor: armed
+                  ? "color-mix(in oklab, var(--warning) 60%, transparent)"
+                  : "var(--line-strong)",
+                background: armed
+                  ? "color-mix(in oklab, var(--warning) 12%, transparent)"
+                  : "transparent",
+              }}
+            >
+              {pending
+                ? "…تُفتح"
+                : armed
+                  ? open > 0
+                    ? `تأكيد رغم ${open} بلا قرار — افتح المرحلة ${next}`
+                    : `تأكيد: افتح المرحلة ${next}`
+                  : `افتح المرحلة ${next}`}
+            </button>
+            {armed && !pending && (
+              <button
+                type="button"
+                onClick={() => setArmed(false)}
+                className="text-fg-muted min-h-11 px-s2 text-[0.78rem] underline underline-offset-4 lg:min-h-10"
+              >
+                تراجع
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ⚠️ **لا تُرجَع مرحلة.** يُقال قبل الضغط لا بعده. */}
+      {isAdmin && armed && (
+        <p className="text-fg-muted mt-s2 text-[0.76rem]">
+          لا تُرجَع مرحلةٌ فُتحت — من نزل لا يصعد بإغلاقها.
+        </p>
+      )}
+      {note && (
+        <p
+          role="status"
+          className={`mt-s2 text-[0.8rem] ${note.ok ? "text-success" : "text-danger"}`}
+        >
+          {note.text}
+        </p>
+      )}
     </div>
   );
 }
@@ -997,7 +1149,7 @@ function Toolbar({
               className="seg-item"
               onClick={() => setQueue("first")}
             >
-              رغبةٌ أولى
+              عندي الآن
             </button>
             <button
               role="tab"
@@ -1005,7 +1157,7 @@ function Toolbar({
               aria-selected={queue === "all"}
               className="seg-item"
               onClick={() => setQueue("all")}
-              title="من ذكرك رغبةً ثانيةً أو ثالثة — للاطّلاع، ودورُهم بعد المرحلة الأولى"
+              title="كلُّ من ذكرك في رغباته الثلاث — للاطّلاع؛ ولا يُعمل إلّا على من هو عند رتبتك"
             >
               كلُّ من ذكرك
               {beyondFirst > 0 && (
@@ -1253,9 +1405,26 @@ function Dossier({
               {/* ⚠️ **يُقال صراحةً لا يُستنتج.** من دخل برابطٍ مباشر لم يُعرض
                   عليه بديل، فرغبتُه الأولى ليست تفضيلًا. ولولا هذا السطر
                   لقرأها المراجع كما يقرأ رغبةَ من فاضل بين سبعة عشر خيارًا. */}
-              {row.status === "referred" && row.choice2 && (
-                <p className="mt-s2 text-[0.84rem] font-semibold">
-                  ← محال إلى <PreferenceName value={row.choice2} />
+              {/* ⚠️ **الرتبةُ تُقال، ولا تُترك للقائد يحزرها.** من نزل
+                  إليك كرغبةٍ ثانية لم يخترك أوّلًا — وقراءتُه كأنه فاضل
+                  بينك وبين غيرك واختارك تظلمه وتظلم قرارَك. */}
+              {row.stage > 1 && (
+                <p
+                  className="mt-s2 inline-flex items-center gap-x-s2 rounded-full border px-s3 py-s1 text-[0.74rem] font-semibold"
+                  style={{
+                    borderColor:
+                      "color-mix(in oklab, var(--st-referred) 55%, transparent)",
+                    background:
+                      "color-mix(in oklab, var(--st-referred) 16%, transparent)",
+                  }}
+                >
+                  <span
+                    aria-hidden
+                    className="size-[7px] rounded-full"
+                    style={{ background: "var(--st-referred)" }}
+                  />
+                  نزل إليك — {STAGE_LABELS[row.stage]} عنده، وأولاه{" "}
+                  <PreferenceName value={row.choice1} />
                 </p>
               )}
               {row.source === "direct" && (
@@ -1656,7 +1825,113 @@ function StatusPicker({ row, dark }: { row: Row; dark?: boolean }) {
         </p>
       )}
 
+      <PassOverButton row={row} dark={dark} />
+
       <NotifyButton row={row} dark={dark} />
+    </div>
+  );
+}
+
+/**
+ * **«لا يناسب لجنتي»** — ولا تقول «معتذَر عنه».
+ *
+ * ⚠️ **الفرقُ ليس لفظيًّا.** لو بقي الزرُّ «معتذَر عنه» لظنّ القائدُ أنه
+ * يُخرج المتقدّمَ من النادي وهو يرقّيه إلى رغبته التالية — **فيتردّد
+ * شفقةً فيعطّل السلّم كلَّه**، أو يضغطه ظانًّا أنه أنهى أمره. والنتيجةُ
+ * تُقال بعد الضغط لا قبله، لأن القاعدةَ وحدها تعرف أبقيت له رغبةٌ أم لا.
+ *
+ * ⚠️ **وضغطتان لا واحدة.** النزولُ يُخرج المتقدّمَ من يدك فورًا — لا
+ * تستطيع استرجاعه بنفسك بعدها، فالتأكيدُ يُقال فيه ما سيحدث.
+ */
+function PassOverButton({ row, dark }: { row: Row; dark?: boolean }) {
+  const [armed, setArmed] = useState(false);
+  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const [pending, start] = useTransition();
+
+  /* قرارٌ نهائيّ: لا تمريرَ بعده — والدالّةُ ترفضه أيضًا */
+  if (row.status === "accepted" || row.status === "rejected") return null;
+
+  /* هل بعدها رغبة؟ يُقال للقائد قبل أن يضغط — والقاعدةُ هي الفاصل */
+  const next = [row.choice2, row.choice3][row.stage - 1] ?? "";
+  const last = row.stage >= 3 || !next.trim();
+
+  return (
+    <div
+      className="mt-s4 border-t pt-s3"
+      style={{ borderColor: dark ? "rgba(255,255,255,.14)" : "var(--line)" }}
+    >
+      <div className="flex flex-wrap items-center gap-x-s3 gap-y-s2">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => {
+            if (!armed) {
+              setArmed(true);
+              setNote(null);
+              return;
+            }
+            start(async () => {
+              const res = await passOver(row.id);
+              setArmed(false);
+              setNote({ ok: res.ok, text: res.message });
+            });
+          }}
+          className={`inline-flex min-h-11 items-center rounded-xl border px-s4 text-[0.82rem] font-semibold transition-opacity lg:min-h-10 ${
+            pending ? "opacity-50" : "opacity-85 hover:opacity-100"
+          }`}
+          style={{
+            borderColor: armed
+              ? "color-mix(in oklab, var(--danger) 60%, transparent)"
+              : dark
+                ? "rgba(255,255,255,.28)"
+                : "var(--line-strong)",
+            background: armed
+              ? "color-mix(in oklab, var(--danger) 14%, transparent)"
+              : "transparent",
+          }}
+        >
+          {pending
+            ? "…يُمرَّر"
+            : armed
+              ? last
+                ? "تأكيد: لا رغبةَ بعدها — يُعتذر عنه نهائيًّا"
+                : `تأكيد: ينزل إلى ${prefName(next)} ويخرج من يدك`
+              : "لا يناسب لجنتي"}
+        </button>
+
+        {armed && !pending && (
+          <button
+            type="button"
+            onClick={() => setArmed(false)}
+            className="min-h-11 px-s2 text-[0.8rem] underline underline-offset-4 opacity-70 lg:min-h-10"
+          >
+            تراجع
+          </button>
+        )}
+
+        {!armed && !note && (
+          <span
+            className="text-[0.74rem]"
+            style={{
+              color: dark ? "rgba(255,255,255,.55)" : "var(--fg-muted)",
+            }}
+          >
+            {last
+              ? "آخرُ رغباته — الضغطُ اعتذارٌ نهائيّ"
+              : `ينزل إلى ${prefName(next)}`}
+          </span>
+        )}
+      </div>
+
+      {note && (
+        <p
+          role="status"
+          className={`mt-s2 text-[0.8rem] ${note.ok ? (dark ? "text-snow" : "text-success") : dark ? "text-snow" : "text-danger"}`}
+        >
+          {note.ok ? "✓ " : ""}
+          {note.text}
+        </p>
+      )}
     </div>
   );
 }
