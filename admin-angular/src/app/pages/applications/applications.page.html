@@ -109,17 +109,27 @@
               </td>
               <td dir="ltr" class="num">{{ row.student_id }}</td>
               <td>{{ row.university }}</td>
-              <td>{{ row.choice1 }}</td>
+              <td>{{ choiceLabel(row.choice1) }}</td>
               <td class="when">{{ when(row.created_at) }}</td>
               <td>
+<!--
+                  ⚠️ **الاختيارُ على `option` لا `[value]` على `select`.**
+                  الأخيرة تُسنِد قيمةَ العنصر قبل أن تُصيَّر خياراتُه (`@for`
+                  يعمل بعدها)، فتسقط الإسنادُ صامتًا وتعود القائمةُ إلى أوّل
+                  خيار — أي **«جديد» على كلّ صفّ مهما كانت حالتُه**. رُصد في
+                  لقطةٍ للجدول: العدّادات أعلاه تقرأ ١ مراجعة و١ مقبول،
+                  والصفوفُ الثلاثة تقول «جديد». وهو خداعٌ لا عرضٌ ناقص:
+                  القائدُ يرى قرارًا لم يُتّخذ.
+                -->
                 <select
                   class="status"
-                  [value]="row.status"
                   [disabled]="saving() === row.id"
                   (change)="change(row, $any($event.target).value)"
                 >
                   @for (s of statuses; track s.value) {
-                    <option [value]="s.value">{{ s.label }}</option>
+                    <option [value]="s.value" [selected]="s.value === row.status">
+                      {{ s.label }}
+                    </option>
                   }
                 </select>
               </td>
@@ -160,7 +170,7 @@
       <section class="block">
         <h3>الرغبات</h3>
         <ol class="choices">
-          <li>{{ row.choice1 }}</li>
+          <li>{{ choiceLabel(row.choice1) }}</li>
           @if (row.choice2) { <li>{{ row.choice2 }}</li> }
           @if (row.choice3) { <li>{{ row.choice3 }}</li> }
         </ol>

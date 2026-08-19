@@ -7,6 +7,12 @@ import {
   statusLabel,
   type Application,
 } from "../../core/application.model";
+/* ⚠️ **مصدرٌ واحدٌ للرغبات مع موقع النادي — لا نسخةٌ ثانية هنا.**
+   الملفُّ بياناتٌ صرفة بلا استيرادٍ يخصّ Next، فيُقرأ من الاثنين. ونسخُه
+   كان يعني قائمتين تفترقان بعد أوّل تعديلٍ يُنسى في إحداهما — وهو بالضبط
+   ما حذّرتُ منه حين سُئلتُ عن تضارب التقنيات. */
+import { findPreference } from "../../../../../src/content/preferences";
+
 import { ApplicationsService } from "../../core/applications.service";
 import { AuthService } from "../../core/auth.service";
 
@@ -76,6 +82,16 @@ export class ApplicationsPage {
       );
     });
   });
+
+  /**
+   * اسمُ الجهة كما يقرؤه القائد — لا `project:misthon` الخام.
+   *
+   * وعند القيمة المجهولة تُعاد كما هي: جهةٌ حُذفت من `projects.ts` بعد أن
+   * قُدّم عليها تبقى مقروءةً بقيمتها، ولا يُخفى الصفُّ ولا يُفرَّغ عمودُه.
+   */
+  choiceLabel(value: string): string {
+    return findPreference(value)?.fullLabel ?? value;
+  }
 
   /** تاريخٌ عربيٌّ مقروء — لا `toLocaleString` خام يخرج بصيغةٍ مختلطة */
   when(iso: string): string {
