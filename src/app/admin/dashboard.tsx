@@ -504,7 +504,14 @@ function StatusTile({
           caption="طلبًا"
         />
 
-        <ul className="flex min-h-0 flex-1 flex-col justify-around gap-y-s2">
+        {/* ⚠️ **`overflow-y-auto` كـ«أين وصل الموسم».** `justify-around`
+            توزّع الفائضَ على الطرفين مثلَ `justify-center` تمامًا — فمتى
+            ضاق الصفُّ في الشبكة طفا أوّلُ سطرٍ فوق العنوان وآخرُه تحت حدّ
+            اللوح، لأن `overflow: hidden` على `.tile` يقصّ عند حدّ اللوح لا
+            داخل القائمة. وهو العطبُ نفسُه المرصود بلقطةٍ في `5dd5e8c`،
+            وهذي آخرُ قائمةٍ في اللوحة كانت بلا حاوٍ (مسحٌ لكلّ `flex-1`
+            فيها: البواقي إمّا `overflow-y-auto` أو رسومٌ بـ`items-end`). */}
+        <ul className="flex min-h-0 flex-1 flex-col justify-around gap-y-s2 overflow-y-auto">
           {LIVE_STATUSES.map((s, i) => {
             const v = counts[s.key] ?? 0;
             const pct = total ? Math.round((v / total) * 100) : 0;
