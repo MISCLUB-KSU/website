@@ -133,6 +133,19 @@ type Meter = {
 };
 
 const SORTS = [
+  /**
+   * ⚠️ **افتراضُ القائد — لا «الأحدث».**
+   *
+   * «الأحدث» ترتيبُ **صندوقِ وارد**: يجيب «ما الجديد؟». وشغلُ القائد عكسُه
+   * تمامًا — طابورٌ له آخِرٌ يجب أن يفرغ، ومن دخل أوّلًا وُعد بنتيجةٍ خلال
+   * أسبوعين قبل غيره. فترتيبُ الأحدث يدفن **الأطولَ انتظارًا** في الذيل،
+   * وهم بالضبط من يجب أن يُبدأ بهم.
+   *
+   * فهذا يرتّب على سؤالين لا على وقت الوصول: **هل بقي فيه شغل؟** (من لم
+   * يُقرأ، ثم من دُعي ولم يُحسم، ثم المحسوم أخيرًا) ثم **من أطال
+   * الانتظار؟** (الأقدمُ أوّلًا داخل كل مرتبة).
+   */
+  { key: "triage", label: "الأولى بالبدء" },
   { key: "newest", label: "الأحدث" },
   { key: "oldest", label: "الأقدم" },
   /* ⚠️ **من له موعدٌ أوّلًا ثم الأقرب.** بلا هذا الشرط تتصدّر القائمةَ
@@ -206,6 +219,23 @@ function completeness(row: Row): { items: Item[]; pct: number } {
   return { items, pct: max ? Math.round((got / max) * 100) : 0 };
 }
 
+/**
+ * مرتبةُ البدء — **الأصغرُ يُقرأ أوّلًا**.
+ *
+ * ⚠️ **بلا `Date.now()` عمدًا.** هذا يُحسب في الرسم، والرسمُ يقع على الخادم
+ * ثم يُعاد على العميل. فساعةٌ في المقارنة تعني ترتيبين مختلفين للحظتين
+ * مختلفتين — أي **اختلافُ ترطيبٍ** يعيد React رسمَ القائمة كلَّها ويصرخ في
+ * الطرفية. والحالةُ وحدها تكفي: «فات موعدُه» ظاهرٌ في الصفّ بعلامته.
+ */
+function triageRank(row: Row): number {
+  /* محسومٌ = لا شغلَ فيه. يبقى في القائمة ليُراجَع، ويُدفع إلى الذيل */
+  if (row.status === "accepted" || row.status === "rejected") return 2;
+  /* دُعي للمقابلة ولم يُحسم — شغلٌ بدأ ولم ينتهِ */
+  if (row.status === "reviewing") return 1;
+  /* لم يُفتح بعد — وهذا أوّلُ ما يُبدأ به */
+  return 0;
+}
+
 /* ── الجذر ──────────────────────────────────────────────────────────────── */
 
 export function ApplicationsTable({
@@ -232,8 +262,26 @@ export function ApplicationsTable({
   const [picked2, setPicked2] = useState<ReadonlySet<string>>(new Set());
   const searchRef = useRef<HTMLInputElement>(null);
   const rosterRef = useRef<HTMLUListElement>(null);
-  const [sort, setSort] = useState<(typeof SORTS)[number]["key"]>("newest");
+  /* ⚠️ **الافتراضُ يتبع الدور.** القائدُ يفرغ طابورًا فيبدأ بـ«الأولى
+     بالبدء»؛ والرئاسةُ تراقب الوارد فيبقى «الأحدث» أنفعَ لها. */
+  const [sort, setSort] = useState<(typeof SORTS)[number]["key"]>(
+    isAdmin ? "newest" : "triage",
+  );
   const [picked, setPicked] = useState<string | null>(null);
+  /** لوحُ الاختصارات — يُفتح بـ«؟» أو بالزرّ في الشريط */
+  const [help, setHelp] = useState(false);
+  /**
+   * التمريرُ بالمفتاح **مسلَّحٌ على معرَّفٍ بعينه** لا على «مسلَّح/غير مسلَّح».
+   *
+   * ⚠️ لو كان منطقيًّا لَوقع هذا: يضغط `p` على فلان، ثم `j` فينتقل لغيره،
+   * ثم `p` ثانيةً يقصد بها تسليحَ الجديد — **فتُمرَّر على الجديد بلا
+   * تأكيد**. وبالمعرَّف: انتقالُه يُبطل التسليح من نفسِه.
+   */
+  const [passArm, setPassArm] = useState<string | null>(null);
+  /** نتيجةُ آخرِ فعلٍ بالمفتاح — الزرُّ يقولها عنده، والمفتاحُ لا زرَّ له */
+  const [keyNote, setKeyNote] = useState<{ ok: boolean; text: string } | null>(
+    null,
+  );
   const live = useHydrated();
 
   /* ⚠️ **الرئاسةُ بلا نطاق، وكلُّ جهةٍ لها.** `inScopes` على مصفوفةٍ
@@ -363,7 +411,16 @@ export function ApplicationsTable({
       ].some((f) => (f ?? "").toLowerCase().includes(needle));
     });
     const s = [...out];
-    if (sort === "oldest") s.reverse();
+    if (sort === "triage")
+      /* ⚠️ **الاستقرارُ محسوبٌ لا متروك.** `sort` في JS مستقرّة، والمصفوفةُ
+         داخلةٌ مرتّبةً بالأحدث — فمن تساوت مرتبتُهم يخرجون بالأحدث، وهو
+         عكسُ المقصود. فالأقدمُ يُطلب صراحةً بالمقارنة الثانية. */
+      s.sort(
+        (a, b) =>
+          triageRank(a.row) - triageRank(b.row) ||
+          Date.parse(a.row.created_at) - Date.parse(b.row.created_at),
+      );
+    else if (sort === "oldest") s.reverse();
     else if (sort === "name")
       s.sort((a, b) => a.row.full_name.localeCompare(b.row.full_name, "ar"));
     else if (sort === "full") s.sort((a, b) => b.pct - a.pct);
@@ -406,6 +463,15 @@ export function ApplicationsTable({
    * ⚠️ **ولا تعمل داخل حقلٍ يُكتب فيه.** ملاحظةُ مقابلةٍ فيها حرف «ج» كانت
    * ستقفز بالاختيار وتضبط حالة، ورقمٌ في البحث كان سيغيّر قرارًا. فيُفحص
    * هدفُ الحدث أوّلًا، وتُترك المعدِّلات (Ctrl/Cmd) للمتصفّح.
+   *
+   * 🔴 **و`e.code` لا `e.key` — وهذا ليس تفصيلًا هنا.** `e.key` يُرجع
+   * **الحرفَ المكتوب** لا الزرَّ المضغوط. فقائدٌ لوحتُه على العربية يضغط
+   * زرّ `j` فيصل الحدثُ بـ«ت»، و`k` بـ«ن»، و`x` بـ«ء» — فلا يطابق شيئًا،
+   * و**الاختصاراتُ كلُّها ميّتةٌ عنده بلا رسالةِ خطأ**. وأكثرُ من يفرز
+   * طلبات نادٍ عربيٍّ لوحتُه على العربية. و`e.code` اسمُ الزرّ في الهيكل
+   * (`KeyJ`) فلا يتبدّل بتبدّل اللغة.
+   *
+   * وتبقى `Escape` والأسهم على `e.key`: أسماؤها لا تتبع تخطيطًا أصلًا.
    */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -418,12 +484,13 @@ export function ApplicationsTable({
           t.tagName === "SELECT" ||
           t.isContentEditable);
 
-      if (e.key === "/" && !typing) {
-        e.preventDefault();
-        searchRef.current?.focus();
-        return;
-      }
       if (e.key === "Escape") {
+        /* ⚠️ **ترتيبُ التراجع: الأعلى طبقةً أوّلًا.** اللوحُ يغطّي الشاشة،
+           فـ`Escape` عليه تعني «أغلقه» لا «ألغِ تحديد العشرين خلفه». */
+        if (help) {
+          setHelp(false);
+          return;
+        }
         /* ⚠️ **Escape داخل حقلٍ يخرج منه، ولا يُلغي التحديد.** لو ألغاه
            لضاع تحديدُ عشرين بضغطةٍ يقصد بها الخروجَ من مربّع البحث. فأوّلُ
            ضغطةٍ تُخرجه، والثانيةُ — وقد صار خارجَ الحقل — تُلغي. */
@@ -431,10 +498,25 @@ export function ApplicationsTable({
           (t as HTMLElement).blur();
           return;
         }
+        setPassArm(null);
         setPicked2(new Set());
         return;
       }
-      if (typing) return;
+
+      /* «؟» = Shift على زرّ `/` — والزرُّ نفسُه في كل تخطيط */
+      if (e.code === "Slash" && e.shiftKey && !typing) {
+        e.preventDefault();
+        setHelp((v) => !v);
+        return;
+      }
+      /* ⚠️ و«/» **لا تعمل واللوحُ مفتوح**: تُركّز حقلًا خلف طبقةٍ تغطّيه،
+         فيكتب القائدُ ولا يرى ما يكتب. و«؟» وحدها تعبر لأنها تُغلقه. */
+      if (e.code === "Slash" && !e.shiftKey && !typing && !help) {
+        e.preventDefault();
+        searchRef.current?.focus();
+        return;
+      }
+      if (typing || help) return;
 
       const at = shown.findIndex((x) => x.row.id === current?.row.id);
       const go = (i: number) => {
@@ -442,19 +524,63 @@ export function ApplicationsTable({
         if (next) setPicked(next.row.id);
       };
 
-      if (e.key === "j" || e.key === "ArrowDown") {
+      /* ⚠️ **كلُّ مفتاحٍ غيرِ `p` ينزع التسليح.** وإلّا بقي مسلَّحًا في
+         الخلفية بينما يقرأ القائدُ ويبحث، ثم وقعت ضغطةُ `p` بعد دقائق
+         على تسليحٍ نسيَه. */
+      /* ⚠️ ونتيجةُ التمرير تزول معه. اللوحةُ مبنيّةٌ على ألّا تُمرَّر
+         الصفحة، وكلُّ سطرٍ هنا يُخصم من ارتفاع القائمة — فرسالةٌ تبقى
+         بعد أن قُرئت تقتطع صفًّا من كل شاشة إلى أن يُعاد التحميل. */
+      if (e.code !== "KeyP") {
+        setPassArm(null);
+        setKeyNote(null);
+      }
+
+      if (e.code === "KeyJ" || e.key === "ArrowDown") {
         e.preventDefault();
         go(at + 1);
-      } else if (e.key === "k" || e.key === "ArrowUp") {
+      } else if (e.code === "KeyK" || e.key === "ArrowUp") {
         e.preventDefault();
         go(at - 1);
-      } else if (e.key === "x") {
+      } else if (e.code === "KeyX") {
         if (current) {
           e.preventDefault();
           toggle(current.row.id);
         }
-      } else if (e.key === "1" || e.key === "2" || e.key === "3") {
-        const key = { "1": "new", "2": "reviewing", "3": "accepted" }[e.key];
+      } else if (e.code === "KeyP") {
+        /**
+         * **التمرير — وهو الفعلُ الذي كان وحدَه بلا مفتاح.**
+         *
+         * ⚠️ **بخطوتين كالزرّ، لا بضغطةٍ واحدة.** ضبطُ الحالة (`1`‑`3`)
+         * يُنقض بضغطةٍ أخرى، أمّا التمريرُ فينقل الصفَّ **خارج نطاق
+         * القائد** — فلا يقدر على ردّه بنفسه. وضغطةٌ واحدةٌ على مفتاحٍ
+         * مجاورٍ لا تكفي لقرارٍ كهذا.
+         */
+        if (!current) return;
+        e.preventDefault();
+        const row = current.row;
+        if (row.status === "accepted" || row.status === "rejected") {
+          setKeyNote({ ok: false, text: "قرارُه نهائيٌّ ولا يُنقض بتمرير" });
+          return;
+        }
+        if (passArm !== row.id) {
+          setKeyNote(null);
+          setPassArm(row.id);
+          return;
+        }
+        setPassArm(null);
+        void passOver(row.id).then((res) =>
+          setKeyNote({ ok: res.ok, text: res.message }),
+        );
+      } else if (
+        e.code === "Digit1" ||
+        e.code === "Digit2" ||
+        e.code === "Digit3"
+      ) {
+        const key = {
+          Digit1: "new",
+          Digit2: "reviewing",
+          Digit3: "accepted",
+        }[e.code];
         if (current && key) {
           e.preventDefault();
           void setStatus(current.row.id, key);
@@ -463,7 +589,7 @@ export function ApplicationsTable({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [shown, current, toggle]);
+  }, [shown, current, toggle, help, passArm]);
 
   /* المختارُ يُجلب إلى المرأى حين يُنقل بالمفاتيح — وإلّا تحرّك اختيارٌ
      لا يُرى في قائمةٍ من ستّةٍ وأربعين. */
@@ -566,6 +692,7 @@ export function ApplicationsTable({
         scopeOptions={isAdmin ? SCOPE_OPTIONS : null}
         viewAs={viewAs}
         setViewAs={setViewAs}
+        onHelp={() => setHelp(true)}
       />
 
       {/* ⚠️ **أرضيةُ ارتفاعٍ تحت `flex-1`.** الشاشةُ مبنيّةٌ على ألّا
@@ -573,6 +700,36 @@ export function ApplicationsTable({
           قصيرةٍ يهبط الجدولُ إلى صفرٍ فلا يُبلَغ أصلًا (رُصد في الإنتاج:
           «ما أقدر أنزل تحت أبدًا»). فبأرضيّةٍ ثابتة يفيض اللوحُ على الصفحة
           فتُمرَّر قليلًا بدل أن يختفي — تدهورٌ لطيفٌ لا انهيار. */}
+      {/* ⚠️ **التسليحُ يُرى، ولا يبقى في الذاكرة وحدها.** الزرُّ يتبدّل
+          نصُّه عند تسليحه فيرى القائدُ أنه مسلَّح؛ والمفتاحُ لا شكلَ له —
+          فبلا هذا السطر يضغط `p` مرّتين ظانًّا الأولى ضاعت، أو ينساها
+          فيمرّر من لم يقصد. والاسمُ فيه صراحةً: التأكيدُ على شخصٍ بعينه. */}
+      {passArm && current?.row.id === passArm && (
+        <p
+          role="status"
+          className="tile shrink-0 px-s4 py-s2 text-[0.8rem] font-medium"
+          style={{
+            borderColor: "color-mix(in oklab, var(--warning) 55%, transparent)",
+            background: "color-mix(in oklab, var(--warning) 12%, transparent)",
+          }}
+        >
+          اضغط <b>p</b> ثانيةً لتمرير <strong>{current.row.full_name}</strong>{" "}
+          إلى رغبته التالية · <b>Esc</b> للتراجع
+        </p>
+      )}
+
+      {/* نتيجةُ التمرير بالمفتاح — تُقرأ ثم تزول بأوّل تمريرٍ تالٍ */}
+      {keyNote && (
+        <p
+          role="status"
+          className={`tile shrink-0 px-s4 py-s2 text-[0.8rem] font-medium ${
+            keyNote.ok ? "" : "text-danger"
+          }`}
+        >
+          {keyNote.text}
+        </p>
+      )}
+
       <BulkBar
         ids={selected}
         allShown={shown.length}
@@ -605,6 +762,90 @@ export function ApplicationsTable({
             <p className="text-fg-muted">لا طلبَ يطابق البحث.</p>
           </section>
         )}
+      </div>
+
+      {help && <KeysHelp onClose={() => setHelp(false)} />}
+    </div>
+  );
+}
+
+/**
+ * لوحُ الاختصارات — **يُفتح بـ«؟» وبزرٍّ، ولا يُترك للتخمين**.
+ *
+ * ⚠️ **السببُ مقيسٌ لا مفترَض:** لا قائدَ واحدٌ في `staff` حتى اليوم — فكلُّ
+ * من سيفتح هذي الشاشة يفتحها **أوّلَ مرّة، وبلا من يشرح**. والدليلُ الوحيد
+ * قبل هذا اللوح سطرٌ رماديٌّ بحجم 0.72rem فوق القائمة، **مخفيٌّ دون `lg`** —
+ * أي أن من فتحها من جوّاله لم يكن يعلم أن للوحة اختصاراتٍ أصلًا.
+ *
+ * ⚠️ **ويُعرض على الجوّال أيضًا، وفيه سطرٌ يقول إنها للحاسب.** لوحٌ يُخفى
+ * على الجوّال يترك قارئَه يظنّ أن لا شيء هناك؛ ولوحٌ يُعرض بلا هذا السطر
+ * يجعله يجرّب مفاتيحَ لا لوحةَ له بها. فالصدقُ أوضحُ من الإخفاء.
+ */
+function KeysHelp({ onClose }: { onClose: () => void }) {
+  const rows: readonly { keys: string; what: string }[] = [
+    { keys: "j / k", what: "انتقل للتالي · للسابق (والأسهم مثلُها)" },
+    { keys: "1 · 2 · 3", what: "جديد · دعوةٌ لمقابلة · مقبول" },
+    { keys: "p", what: "مرِّره لرغبته التالية — بضغطتين، والثانيةُ تأكيد" },
+    { keys: "x", what: "حدِّده لفعلٍ جماعيّ (ثم اختر من الشريط)" },
+    { keys: "/", what: "اقفز إلى البحث" },
+    { keys: "Esc", what: "اخرج من الحقل · ألغِ التحديد · أغلق هذا اللوح" },
+    { keys: "؟", what: "افتح هذا اللوح وأغلقه" },
+  ];
+  return (
+    /* ⚠️ الطبقةُ تُغلق بالنقر خارجَها — ومن نقر داخلَها لا يُغلق عليه
+       اللوحُ وهو يقرأ، فالتوقّفُ على الحاوية لا على الجذر. */
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-[color-mix(in_oklab,var(--charcoal)_62%,transparent)] p-s4"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="اختصارات اللوحة"
+        onClick={(e) => e.stopPropagation()}
+        className="tile max-h-full w-full max-w-[30rem] overflow-y-auto p-s5"
+      >
+        <div className="mb-s4 flex items-start justify-between gap-x-s4">
+          <div>
+            <h2 className="text-[1.05rem] font-bold">اختصارات اللوحة</h2>
+            <p className="text-fg-muted mt-1 text-[0.76rem]">
+              تعمل على الحاسب وأنت خارج حقول الكتابة.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-11 shrink-0 rounded-full bg-bg-sunken px-s4 text-[0.78rem] font-semibold"
+          >
+            إغلاق
+          </button>
+        </div>
+
+        <dl className="flex flex-col gap-s2">
+          {rows.map((r) => (
+            <div
+              key={r.keys}
+              className="flex items-baseline gap-x-s3 border-t border-line pt-s2"
+            >
+              <dt
+                dir="ltr"
+                className="text-fg w-[5.5rem] shrink-0 text-[0.8rem] font-bold"
+              >
+                {r.keys}
+              </dt>
+              <dd className="text-fg-muted text-[0.82rem] leading-relaxed">
+                {r.what}
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        {/* ⚠️ **يُقال للجوّال ما يفعله بدلَها.** بلا هذا يقرأ قائدُ الجوّال
+            لوحًا لا ينطبق عليه ويظنّ اللوحةَ ناقصةً في يده. */}
+        <p className="text-fg-muted mt-s4 border-t border-line pt-s3 text-[0.78rem] leading-relaxed lg:hidden">
+          على الجوّال لا لوحةَ مفاتيح: افتح الطلب من القائمة، والقرارُ
+          وأزرارُه داخل ملفّه.
+        </p>
       </div>
     </div>
   );
@@ -646,7 +887,8 @@ function BulkBar({
         حدِّد عدّةً لتغييرِ حالتهم دفعةً · أو بالمفاتيح:{" "}
         <b className="text-fg">j</b>/<b className="text-fg">k</b> تنقّل ·{" "}
         <b className="text-fg">x</b> تحديد · <b className="text-fg">1‑3</b>{" "}
-        حالة · <b className="text-fg">/</b> بحث
+        حالة · <b className="text-fg">p</b> تمرير · <b className="text-fg">/</b>{" "}
+        بحث · <b className="text-fg">؟</b> الكلّ
       </p>
     ) : null;
   }
@@ -1423,6 +1665,7 @@ function Toolbar({
   scopeOptions,
   viewAs,
   setViewAs,
+  onHelp,
 }: {
   q: string;
   setQ: (v: string) => void;
@@ -1444,6 +1687,8 @@ function Toolbar({
   scopeOptions: readonly { value: string; label: string }[] | null;
   viewAs: string;
   setViewAs: (v: string) => void;
+  /** يفتح لوحَ الاختصارات — نفسُه الذي يفتحه مفتاح «؟» */
+  onHelp: () => void;
 }) {
   return (
     <div className="tile shrink-0">
@@ -1558,6 +1803,19 @@ function Toolbar({
             ))}
           </select>
         </label>
+
+        {/* ⚠️ **زرٌّ لا مفتاحٌ وحده.** «؟» لا يُكتشف بالتجريب — ومن لا
+            يعرف أن ثمّة لوحًا لن يضغط مفتاحَه. والزرُّ يظهر على الجوّال
+            أيضًا لأن اللوح يشرح الشاشةَ لا المفاتيحَ وحدها. */}
+        <button
+          type="button"
+          onClick={onHelp}
+          aria-label="اختصارات اللوحة وكيف تعمل"
+          title="اختصارات اللوحة (؟)"
+          className="border-line bg-bg-sunken text-fg-muted hover:text-fg min-h-11 lg:min-h-10 shrink-0 rounded-xl border px-s3 text-[0.82rem] font-bold transition-colors"
+        >
+          ؟
+        </button>
 
         <p className="text-fg-muted ms-auto hidden text-[0.78rem] sm:block">
           <span dir="ltr" className="tabular-nums">
