@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useOptimistic, useState, useTransition } from "react";
 
 import { COMMITTEES } from "@/content/committees";
 import { findPreference, questionBlocks } from "@/content/preferences";
@@ -408,7 +408,7 @@ export function ApplicationsTable({
             background: "color-mix(in oklab, var(--d-cyan) 12%, transparent)",
           }}
         >
-          معاينة — الشاشةُ كما يراها قائدُ{" "}
+          تشوف الآن شاشةَ قائدِ{" "}
           <strong>
             {SCOPE_OPTIONS.find((o) => o.value === viewAs)?.label ?? viewAs}
           </strong>
@@ -445,7 +445,12 @@ export function ApplicationsTable({
         setViewAs={setViewAs}
       />
 
-      <div className="grid min-h-0 flex-1 gap-s3 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)]">
+      {/* ⚠️ **أرضيةُ ارتفاعٍ تحت `flex-1`.** الشاشةُ مبنيّةٌ على ألّا
+          تُمرَّر الصفحة، فكلُّ بكسلٍ في الرأس يُخصم من هنا — وعلى شاشةٍ
+          قصيرةٍ يهبط الجدولُ إلى صفرٍ فلا يُبلَغ أصلًا (رُصد في الإنتاج:
+          «ما أقدر أنزل تحت أبدًا»). فبأرضيّةٍ ثابتة يفيض اللوحُ على الصفحة
+          فتُمرَّر قليلًا بدل أن يختفي — تدهورٌ لطيفٌ لا انهيار. */}
+      <div className="grid min-h-[24rem] flex-1 gap-s3 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)]">
         <Roster
           items={shown}
           currentId={current?.row.id ?? null}
@@ -805,9 +810,15 @@ function NotesBlock({
 function IntakeMeters({ meters }: { meters: Meter[] }) {
   if (meters.length === 0) return null;
   return (
-    <div className="tile shrink-0 px-s4 py-s3">
-      <div className="flex flex-wrap items-center gap-x-s3 gap-y-s2">
-        <p className="text-fg-muted text-[0.7rem] font-semibold tracking-[0.1em]">
+    /* ⚠️ **صفٌّ واحدٌ يُسحب أفقيًّا، لا التفافٌ.** الرئاسةُ ترى سبعَ عشرة
+       جهةً، فالالتفافُ يجعلها أربعةَ صفوفٍ تأكل ≈٢٥٠px من ارتفاعٍ ثابت —
+       واللوحةُ مبنيّةٌ على ألّا تُمرَّر الصفحة، فالمأكولُ يُخصم من الجدول
+       نفسِه حتى يختفي تحت الطيّة ولا يُبلَغ. رُصد في لقطةٍ من الإنتاج:
+       «ما أقدر أنزل تحت أبدًا».
+       والسحبُ هو نفسُ ما تفعله رقائقُ الحالة أسفلَه منذ البداية. */
+    <div className="tile shrink-0 px-s4 py-s2">
+      <div className="-mx-s4 flex items-center gap-x-s3 overflow-x-auto px-s4 [scrollbar-width:none]">
+        <p className="text-fg-muted shrink-0 text-[0.7rem] font-semibold tracking-[0.1em]">
           مدعوّون للمقابلة
         </p>
         {meters.map((m) => {
@@ -816,7 +827,7 @@ function IntakeMeters({ meters }: { meters: Meter[] }) {
             <span
               key={m.value}
               title={`${m.total} عندها الآن · ${m.pending} بلا قرار`}
-              className="border-line flex items-center gap-x-s2 rounded-full border px-s3 py-s1 text-[0.76rem]"
+              className="border-line flex shrink-0 items-center gap-x-s2 rounded-full border px-s3 py-s1 text-[0.76rem]"
               style={
                 full
                   ? {
@@ -850,8 +861,8 @@ function IntakeMeters({ meters }: { meters: Meter[] }) {
         {/* ⚠️ **يُقال إنه إرشادٌ لا سقف.** الإدارة قالت «يمديك أقلّ، وفي
             حالات استثناء يمديك أعلى» — فلونٌ تحذيريٌّ بلا هذي الكلمة
             يُقرأ منعًا، فيتوقّف قائدٌ عن دعوةٍ يملكها. */}
-        <span className="text-fg-muted ms-auto text-[0.72rem]">
-          إرشادٌ لا سقف — تجاوزه عند الحاجة
+        <span className="text-fg-muted shrink-0 ps-s2 text-[0.72rem]">
+          إرشادٌ لا سقف
         </span>
       </div>
     </div>
@@ -1164,7 +1175,7 @@ function Toolbar({
             الستّةُ كانت تلتفّ فتأكل ≈250px أخرى فوق الطيّة. */}
         {scopeOptions && (
           <label className="flex items-center gap-x-s2 text-[0.8rem]">
-            <span className="text-fg-muted">أعاين كـ</span>
+            <span className="text-fg-muted">أشوف كـ</span>
             <select
               value={viewAs}
               onChange={(e) => setViewAs(e.target.value)}
@@ -1800,6 +1811,19 @@ function Checklist({ items }: { items: readonly Item[] }) {
 function StatusPicker({ row, dark }: { row: Row; dark?: boolean }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState("");
+  /**
+   * ⚠️ **الزرُّ يستجيب قبل الخادم — وإلّا بدا معطوبًا.**
+   *
+   * `setStatus` فعلٌ خادميّ يتبعه `revalidatePath("/admin")`، والصفحةُ
+   * `force-dynamic`: فكلُّ ضغطةٍ تعيد جلب **٢٤٧ طلبًا وملاحظاتِها** ثم
+   * ترسم الشجرة من جديد. فيمضي ما بين نصف ثانيةٍ وثانيتين قبل أن يتلوّن
+   * الزرّ — والقائدُ يظنّ أن ضغطتَه ضاعت **فيضغط ثانيةً**.
+   *
+   * فالحالةُ المعروضةُ تسبق الردّ. وإن فشل الفعلُ رجعت وحدَها إلى
+   * `row.status` (هذا ما يفعله `useOptimistic` عند انتهاء الانتقال)،
+   * ويظهر سببُ الفشل نصًّا تحتها — فلا يبقى قرارٌ كاذبٌ على الشاشة.
+   */
+  const [shown, showNow] = useOptimistic(row.status);
 
   return (
     <div>
@@ -1810,7 +1834,7 @@ function StatusPicker({ row, dark }: { row: Row; dark?: boolean }) {
       </p>
       <div className="flex flex-wrap gap-s2">
         {PHASE_STATUSES.map((s) => {
-          const on = s.key === row.status;
+          const on = s.key === shown;
           /* ⚠️ **الإحالة مستحيلةٌ بلا وجهة.** من دخل برابطٍ مباشر لا رغبةَ
              ثانيةَ له (`choice2` فارغة)، فالزرّ يُعطَّل ويُقال السبب — لا
              يُخفى، وإلّا ظنّ القائد أن اللوحة معطوبة. */
@@ -1827,6 +1851,7 @@ function StatusPicker({ row, dark }: { row: Row; dark?: boolean }) {
               onClick={() =>
                 start(async () => {
                   setError("");
+                  showNow(s.key);
                   const res = await setStatus(row.id, s.key);
                   if (!res.ok) setError(res.message);
                 })

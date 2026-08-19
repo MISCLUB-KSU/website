@@ -269,17 +269,17 @@ export default async function AdminPage() {
           موصولة** — وهي القناةُ نفسُها التي يُرسَل بها الاعتذار. فمن يقرؤه
           يقرأ تحذيرًا عن الاعتذار لا عن الإيصال. */}
       {me.role === "admin" && unmailed === rows.length && rows.length > 0 && (
-        <p className="tile mb-s4 px-s5 py-s4 text-[0.9rem] font-medium text-warning">
-          ⚠️ <strong>قناةُ البريد غيرُ موصولة</strong> — لم يخرج إيصالٌ واحدٌ
-          من {rows.length} طلبًا. والإيصالُ لم يُوعَد به فلا ضررَ الآن، لكنّ
-          <strong> الاعتذار يمرّ بالقناة نفسِها</strong>: فما لم يُوثَّق النطاق
-          في Resend، لن يصل المعتذَرَ عنهم شيء.
+        /* ⚠️ سطرٌ واحد: كلُّ سطرٍ هنا يُخصم من الجدول أسفلَه، واللوحةُ
+           مبنيّةٌ على ألّا تُمرَّر الصفحة. */
+        <p className="tile mb-s3 shrink-0 px-s4 py-s2 text-[0.82rem] font-medium text-warning">
+          ⚠️ <strong>قناةُ البريد غيرُ موصولة</strong> — والاعتذار يمرّ بها.
+          وثّق النطاق في Resend وإلّا لم يصل المعتذَرَ عنهم شيء.
         </p>
       )}
       {me.role === "admin" && unmailed > 0 && unmailed < rows.length && (
-        <p className="tile mb-s4 px-s5 py-s4 text-[0.9rem] font-medium text-warning">
-          📮 <strong>{unmailed}</strong> من {rows.length} طلبًا لم يخرج لصاحبه
-          إيصال. القناةُ تعمل جزئيًّا — راجع الحصّة في لوحة Resend.
+        <p className="tile mb-s3 shrink-0 px-s4 py-s2 text-[0.82rem] font-medium text-warning">
+          📮 <strong>{unmailed}</strong> من {rows.length} لم يخرج لهم إيصال —
+          راجع الحصّة في Resend.
         </p>
       )}
 
