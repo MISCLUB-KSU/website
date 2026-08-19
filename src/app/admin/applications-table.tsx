@@ -440,6 +440,27 @@ export function ApplicationsTable({
      ظاهر. ولولا ذلك لبقي الملفّ يعرض متقدّمًا غائبًا عن القائمة. */
   const current = shown.find((s) => s.row.id === picked) ?? shown[0] ?? null;
 
+  /**
+   * موضعُ المفتوح في الطابور — **و«التالي» بلا رجوعٍ إلى القائمة**.
+   *
+   * ⚠️ **رُصد في الرحلة لا في الشيفرة:** على الجوّال يملأ الملفُّ الشاشةَ
+   * وتنزوي القائمة، فدورةُ القائد لكلّ متقدّم: افتح ← قرِّر ← **ارجع ←
+   * ابحث عن موضعك ← افتح التالي**. ثلاثُ لمساتٍ زائدةٍ في كلّ دورة، وفي
+   * طابورٍ من ٥٧ تصير ١٧١ لمسةً لا تقرّر شيئًا. و«ارجع» أسوأُها: القائمةُ
+   * تعود إلى رأسها فيبحث بعينه عن آخرِ من قرأ.
+   *
+   * وعلى الحاسب `j`/`k` تحلّها — لكن من لم يفتح لوحَ الاختصارات لا يعلم،
+   * ولا لوحةَ مفاتيح على الجوّال أصلًا.
+   */
+  const at = current ? shown.findIndex((x) => x.row.id === current.row.id) : -1;
+  const step = useCallback(
+    (delta: number) => {
+      const next = shown[at + delta];
+      if (next) setPicked(next.row.id);
+    },
+    [shown, at],
+  );
+
   /* ⚠️ **المحدَّدون يُقصّون على المعروض.** من حُدّد ثم أخفاه بحثٌ أو ترشيحٌ
      يبقى في المجموعة ويُصيبه الفعلُ الجماعيّ وهو غائبٌ عن العين — وهذا
      أسوأُ ما يقع في تحديدٍ متعدّد: تغيّرُ حالةِ من لم تره. */
@@ -756,6 +777,9 @@ export function ApplicationsTable({
             notes={notesByApp.get(current.row.id) ?? EMPTY_NOTES}
             me={me}
             onBack={() => setPicked(null)}
+            at={at}
+            of={shown.length}
+            onStep={step}
           />
         ) : (
           <section className="tile items-center justify-center p-s7 text-center">
@@ -2001,6 +2025,9 @@ function Dossier({
   notes,
   me,
   onBack,
+  at,
+  of,
+  onStep,
 }: {
   row: Row;
   items: readonly Item[];
@@ -2009,6 +2036,11 @@ function Dossier({
   notes: readonly Note[];
   me: string;
   onBack: () => void;
+  /** موضعُه في المعروض (صفريّ) وعددُ المعروض — «٣ من ٥٧» */
+  at: number;
+  of: number;
+  /** ‎+1 للتالي و‎-1 للسابق — الأبُ يحرس الطرفين */
+  onStep: (delta: number) => void;
 }) {
   const s = STATUSES.find((x) => x.key === row.status);
   const asked = askedQuestions(row);
@@ -2017,25 +2049,63 @@ function Dossier({
     <section className="tile apps-dossier min-h-0">
       <div className="min-h-0 flex-1 overflow-y-auto">
         <header className="tile-ink fade-up relative rounded-b-none px-s5 py-s5 sm:px-s6">
-          {/* رجوعٌ إلى القائمة — على الجوّال وحده، فالحاسبُ يعرض اللوحين معًا */}
-          <button
-            type="button"
-            onClick={onBack}
-            className="mb-s4 -ms-s2 inline-flex min-h-11 items-center gap-x-s2 px-s2 text-[0.82rem] font-semibold lg:hidden"
-          >
-            <svg
-              viewBox="0 0 20 20"
-              width="16"
-              height="16"
-              aria-hidden
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+          {/* ⚠️ **صفٌّ واحد: الرجوعُ والموضعُ والانتقال.** والانتقالُ يظهر
+              على الحاسب أيضًا وإن كانت `j`/`k` أسرع — فمن لم يفتح لوحَ
+              الاختصارات لا يعلم بها، وزرٌّ يُرى يعلّم مفتاحًا لا يُرى. */}
+          <div className="mb-s4 flex items-center justify-between gap-x-s3">
+            {/* رجوعٌ إلى القائمة — على الجوّال وحده، فالحاسبُ يعرض اللوحين معًا */}
+            <button
+              type="button"
+              onClick={onBack}
+              className="-ms-s2 inline-flex min-h-11 items-center gap-x-s2 px-s2 text-[0.82rem] font-semibold lg:hidden"
             >
-              <path d="M8 4l6 6-6 6" />
-            </svg>
-            كل الطلبات
-          </button>
+              <svg
+                viewBox="0 0 20 20"
+                width="16"
+                height="16"
+                aria-hidden
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M8 4l6 6-6 6" />
+              </svg>
+              كل الطلبات
+            </button>
+
+            <div className="ms-auto flex items-center gap-x-s2">
+              {/* ⚠️ **الموضعُ يُعرض، فـ«كم بقي» سؤالُ من يفرغ طابورًا.**
+                  وهو على المعروض لا على الطابور كلِّه — فمن رشّح «جديد»
+                  يقرأ موضعَه فيما رشّح، لا في ما أخفاه. */}
+              <span
+                dir="ltr"
+                className="text-[0.74rem] tabular-nums opacity-60"
+                aria-label={`المعروض ${at + 1} من ${of}`}
+              >
+                {at + 1}/{of}
+              </span>
+              {/* ⚠️ **يُعطَّل عند الطرف ولا يُخفى.** زرٌّ يختفي يزحزح
+                  أخاه تحت الإصبع في اللحظة التي يُضغط فيها. */}
+              <button
+                type="button"
+                onClick={() => onStep(-1)}
+                disabled={at <= 0}
+                className="min-h-11 rounded-full px-s3 text-[0.78rem] font-semibold transition-opacity disabled:opacity-30"
+                style={{ background: "rgba(255,255,255,.12)" }}
+              >
+                السابق
+              </button>
+              <button
+                type="button"
+                onClick={() => onStep(1)}
+                disabled={at < 0 || at >= of - 1}
+                className="min-h-11 rounded-full px-s3 text-[0.78rem] font-semibold transition-opacity disabled:opacity-30"
+                style={{ background: "rgba(255,255,255,.12)" }}
+              >
+                التالي
+              </button>
+            </div>
+          </div>
           <div className="flex flex-wrap items-start justify-between gap-x-s5 gap-y-s4">
             <div className="min-w-0">
               <h2 className="font-display text-2xl leading-tight font-bold">
