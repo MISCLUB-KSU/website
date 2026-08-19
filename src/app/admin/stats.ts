@@ -291,6 +291,11 @@ export const INTERVIEW_CAP = 15;
 /* ما يضبطه القائدُ مباشرةً — والتعليلُ كاملًا في `content/statuses.ts` */
 export { DIRECT_STATUSES } from "@/content/statuses";
 
+/* الحالاتُ التي تقع فعلًا — بلا `referred` الميّتة. التعليل في المصدر. */
+export const LIVE_STATUSES = APPLICATION_STATUSES.filter(
+  (s) => s.value !== "referred",
+).map((s) => ({ key: s.value, label: s.label, color: s.color }));
+
 /**
  * هل تقع هذي الجهةُ في نطاق القائد؟
  *
@@ -344,3 +349,126 @@ export type Note = {
   created_at: string;
   updated_at: string | null;
 };
+
+/* ══════════════════════════════════════════════════════════════════════
+   قراءةُ السلّم — تشترك فيها اللوحةُ والمساراتُ والطلبات
+   ══════════════════════════════════════════════════════════════════════ */
+
+/** رغبةُ الصفّ عند رتبةٍ بعينها (١..٣) — وفراغٌ لما لا رتبةَ له */
+export function choiceAtRank(row: Row, rank: number): string {
+  if (rank === 1) return row.choice1;
+  if (rank === 2) return row.choice2;
+  if (rank === 3) return row.choice3;
+  return "";
+}
+
+/**
+ * **هل مرّ هذا المتقدّم بجهةٍ من نطاقي ثم نزل عنها؟**
+ *
+ * ⚠️ **وهو الرقمُ الذي يغيب عن القائد تمامًا بلا هذا الحساب.** بعد التمرير
+ * يخرج الصفُّ من رتبته عنده، فلا يظهر في طابوره ولا في عدّاداته — فيبدو
+ * كأنّ شغلَه لم يتقدّم. والحقيقةُ أنه حسم أمرَه: مرّره.
+ *
+ * والفحصُ على الرتب **السابقة** لرتبته الحالية: من هو الآن عند الثانية
+ * وأولاه لجنتي ⇒ مررتُه أنا.
+ */
+export function passedThrough(
+  row: Row,
+  scopes: readonly string[],
+): boolean {
+  for (let rank = 1; rank < row.stage; rank++) {
+    if (inScopes(choiceAtRank(row, rank), scopes)) return true;
+  }
+  return false;
+}
+
+/** حصيلةُ جهةٍ واحدة في الموسم — تُقرأ سطرًا واحدًا */
+export type EntityProgress = {
+  value: string;
+  label: string;
+  /** وصل ولم يُفتح */
+  fresh: number;
+  /** مدعوٌّ لمقابلة */
+  invited: number;
+  /** قُبل عندها */
+  accepted: number;
+  /** مرّ بها ونزل */
+  movedOn: number;
+  /** نزل إليها ولم تُفتح رتبتُه بعد */
+  waiting: number;
+  /** ما لم يُحسم بعد عند الرتبة المفتوحة = fresh + invited */
+  pending: number;
+  /** كلُّ من مرّ بها في الموسم */
+  total: number;
+};
+
+/**
+ * **أين وصل الموسم في كلّ جهة.**
+ *
+ * ⚠️ **سؤالُ الرئاسة الحقيقيّ ليس «كم طلبًا» بل «من واقف».** وقفلُ المرحلة
+ * قرارٌ يُتّخذ على `pending`: صفرٌ في الكلّ يعني أن الفتحَ لا يسبق شغلًا
+ * قائمًا. والعددُ الإجماليُّ لا يقوله — يقوله التوزيعُ على الجهات.
+ *
+ * ونطاقٌ فارغٌ مع `all` يعني الرئاسة: كلُّ جهةٍ في النادي.
+ */
+export function seasonProgress(
+  rows: readonly Row[],
+  scopes: readonly string[],
+  all: boolean,
+  phase: number,
+  name: (value: string) => string,
+): EntityProgress[] {
+  const map = new Map<string, EntityProgress>();
+  const at = (value: string): EntityProgress => {
+    const found = map.get(value);
+    if (found) return found;
+    const made: EntityProgress = {
+      value,
+      label: name(value),
+      fresh: 0,
+      invited: 0,
+      accepted: 0,
+      movedOn: 0,
+      waiting: 0,
+      pending: 0,
+      total: 0,
+    };
+    map.set(value, made);
+    return made;
+  };
+  const mine = (value: string) =>
+    Boolean(value) && (all || inScopes(value, scopes));
+
+  for (const row of rows) {
+    /* الجهةُ التي هو عندها الآن */
+    const here = choiceAtStage(row);
+    if (mine(here)) {
+      const e = at(here);
+      e.total += 1;
+      if (row.stage > phase) e.waiting += 1;
+      else if (row.status === "accepted") e.accepted += 1;
+      else if (row.status === "reviewing") {
+        e.invited += 1;
+        e.pending += 1;
+      } else if (row.status === "new") {
+        e.fresh += 1;
+        e.pending += 1;
+      }
+      /* `rejected` عند رتبته الأخيرة: حُسم ولا ينتظر — فلا يدخل `pending` */
+    }
+
+    /* والجهاتُ التي مرّ بها ونزل عنها */
+    for (let rank = 1; rank < row.stage; rank++) {
+      const past = choiceAtRank(row, rank);
+      if (!mine(past) || past === here) continue;
+      const e = at(past);
+      e.movedOn += 1;
+      e.total += 1;
+    }
+  }
+
+  /* الأكثرُ انتظارًا أوّلًا — فما يُقرأ أوّلًا هو ما يعطّل المرحلة */
+  return [...map.values()].sort(
+    (a, b) => b.pending - a.pending || b.total - a.total,
+  );
+}

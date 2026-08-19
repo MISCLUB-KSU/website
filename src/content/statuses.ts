@@ -70,3 +70,18 @@ export function statusLabel(value: string): string {
     APPLICATION_STATUSES.find((s) => s.value === value)?.label ?? value
   );
 }
+
+/**
+ * الحالاتُ التي **يمكن أن تقع فعلًا** — بلا `referred`.
+ *
+ * ⚠️ **وحذفُها من العرض ليس تجميلًا.** بعد عمود `stage` صار النزولُ
+ * `stage + 1` لا حالةً، فـ`referred` لا تُكتب في صفٍّ أبدًا — ورسمُها في
+ * حلقة «أين وصلت المراجعة» يعرض شريحةً صفريّةً للأبد. والصفرُ الدائم في
+ * لوحةٍ يُقرأ **«لم يُحَل أحدٌ بعد»** لا «هذي الحالة لم تعد تُستعمل» —
+ * فينتظر القائدُ رقمًا لا يجيء.
+ *
+ * وتبقى في `APPLICATION_STATUSES` لتُسمّى صفوفٌ قديمةٌ إن وُجدت، وفي قيد
+ * القاعدة لأن حذفَ قيمةٍ من قيدٍ حيٍّ يحتاج هجرةً لا داعيَ لخطرها.
+ */
+export const LIVE_STATUSES: readonly ApplicationStatus[] =
+  APPLICATION_STATUSES.filter((s) => s.value !== "referred");

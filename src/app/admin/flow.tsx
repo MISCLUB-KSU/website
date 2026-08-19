@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import { findPreference } from "@/content/preferences";
 import { useHydrated } from "@/lib/use-hydrated";
-import type { Row } from "./stats";
+import { choiceAtRank, inScopes, type Row } from "./stats";
 
 /**
  * مخطّط التدفّق — **من أي جامعةٍ يأتي الطلب، وإلى أي لجنةٍ يذهب**.
@@ -29,7 +29,16 @@ const W = 1000;
    وتُقرأ العقدة شريطًا مستقيمًا. */
 const NODE_W = 24;
 const PAD_Y = 10;
-const MIN_GAP = 7;
+/**
+ * الفجوةُ بين عقدتين.
+ *
+ * ⚠️ **مقاسةٌ على التسمية لا على الشريط.** العقدةُ الصغيرة ترتفع ٨px
+ * (حدُّها الأدنى)، وتسميتُها سطران عربيّان ≈٢٨px — فبفجوةِ ٧ تتراكب
+ * تسميتان متجاورتان وتُقرآن كلمةً واحدةً ممسوخة. رُصد في «حركة السلّم»
+ * حيث تكثر العقدُ الصغيرة (قفزتان أو ثلاث)، ولم يظهر في «من أي جامعة»
+ * لأن الجامعاتِ قليلةٌ وكبيرة.
+ */
+const MIN_GAP = 20;
 /* أقصى ما يُعرض من كل جهة قبل ضمّ الذيل في «أخرى».
    ⚠️ عند ٧ صارت «أخرى» أكبرَ عقدةٍ في جهة المقاصد (١٠ من ٣٠) — والمجمَّع
    الغُفل يتصدّر الرسم فيُفقده معناه. */
@@ -55,11 +64,55 @@ type Ribbon = {
   h1: number;
 };
 
-export function FlowChart({ rows }: { rows: readonly Row[] }) {
+/**
+ * ما الذي يرسمه المخطّط.
+ *
+ * ⚠️ **«المسارات» صار اسمًا صادقًا بعد السلّم.** كان التبويبُ يرسم
+ * الجامعةَ ← الرغبةَ الأولى، وهو سؤالُ **استقطابٍ** يُسأل مرّةً في السنة
+ * («من أين نأتي بالمتقدّمين»). والمسارُ الحيّ هذا الموسم حركةُ السلّم
+ * نفسِها: **من مرّ بجهةٍ ونزل إلى أيّ جهة**.
+ *
+ * فالوضعان معًا، لأن لكلٍّ سؤاله — والافتراضُ يتبع البيانات: ما دام لم
+ * ينزل أحدٌ بعد فلا شيءَ في «حركة السلّم» تُرسم، فيُفتح على «من أين».
+ */
+type Mode = "origin" | "ladder";
+
+export function FlowChart({
+  rows,
+  scopes,
+  isAdmin,
+}: {
+  rows: readonly Row[];
+  scopes: readonly string[];
+  isAdmin: boolean;
+}) {
   const [hot, setHot] = useState<string | null>(null);
   const live = useHydrated();
 
-  const model = useMemo(() => build(rows), [rows]);
+  /* ⚠️ **يُعدّ بالقصّ نفسِه الذي يُرسم به.** عددٌ على الزرّ أكبرُ ممّا في
+     الرسم يجعل القائدَ يظنّ أن شرائطَ خُفيت عنه. */
+  const hops = useMemo(() => {
+    let n = 0;
+    for (const r of rows) {
+      for (let rank = 1; rank < r.stage; rank++) {
+        const from = choiceAtRank(r, rank);
+        const to = choiceAtRank(r, rank + 1);
+        if (!from || !to || from === to) continue;
+        if (isAdmin || inScopes(from, scopes) || inScopes(to, scopes)) n += 1;
+      }
+    }
+    return n;
+  }, [rows, scopes, isAdmin]);
+  const [mode, setMode] = useState<Mode | null>(null);
+  /* ⚠️ **يُشتقّ ولا يُثبَّت في الحالة الابتدائية.** الصفوفُ تصل بعد أوّل
+     رسمٍ أحيانًا، ومُهيّئُ `useState` يقرأ مرّةً واحدةً ولا يعود — فكان
+     التبويبُ يبقى على «من أين» بعد أن يبدأ النزولُ فعلًا. */
+  const view: Mode = mode ?? (hops > 0 ? "ladder" : "origin");
+
+  const model = useMemo(
+    () => build(rows, view, scopes, isAdmin),
+    [rows, view, scopes, isAdmin],
+  );
   if (!model) return null;
 
   const { sources, targets, ribbons, height } = model;
@@ -69,11 +122,50 @@ export function FlowChart({ rows }: { rows: readonly Row[] }) {
       className={`m-0 ${live ? "flow-live" : ""} ${hot ? "flow-dim" : ""}`}
       onMouseLeave={() => setHot(null)}
     >
-      <figcaption className="mb-s4 flex flex-wrap items-baseline justify-between gap-x-s5 gap-y-s2">
-        <h2 className="font-display text-fg text-lg font-bold">من أين إلى أين</h2>
-        <p className="text-fg-muted text-[0.8rem]">
-          الجامعة ← الرغبة الأولى · سُمك الشريط عددُ الطلبات
-        </p>
+      <figcaption className="mb-s4 flex flex-wrap items-center justify-between gap-x-s5 gap-y-s3">
+        <div className="flex items-baseline gap-x-s4">
+          <h2 className="font-display text-fg text-lg font-bold">
+            {view === "ladder" ? "حركة السلّم" : "من أين إلى أين"}
+          </h2>
+          <p className="text-fg-muted text-[0.8rem]">
+            {view === "ladder"
+              ? "من جهةٍ نزل ← إلى أيّ جهة · سُمك الشريط عددُ المتقدّمين"
+              : "الجامعة ← الرغبة الحالية · سُمك الشريط عددُ الطلبات"}
+          </p>
+        </div>
+
+        <div role="tablist" aria-label="ما يُرسم" className="seg shrink-0">
+          <button
+            role="tab"
+            type="button"
+            aria-selected={view === "ladder"}
+            disabled={hops === 0}
+            title={
+              hops === 0
+                ? "لم ينزل أحدٌ بعد — لا حركةَ تُرسم"
+                : undefined
+            }
+            className="seg-item"
+            onClick={() => setMode("ladder")}
+            style={hops === 0 ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
+          >
+            حركة السلّم
+            {hops > 0 && (
+              <span dir="ltr" className="ms-s2 tabular-nums opacity-60">
+                {hops}
+              </span>
+            )}
+          </button>
+          <button
+            role="tab"
+            type="button"
+            aria-selected={view === "origin"}
+            className="seg-item"
+            onClick={() => setMode("origin")}
+          >
+            من أي جامعة
+          </button>
+        </div>
       </figcaption>
 
       {/* ⚠️ **التسميات `HTML` لا `SVG`.** جرّبناها داخل الرسم فخرجت
@@ -103,7 +195,11 @@ export function FlowChart({ rows }: { rows: readonly Row[] }) {
             className="block w-full"
             style={{ height: `${height}px` }}
             role="img"
-            aria-label={`تدفّق ${rows.length} طلبًا من ${sources.length} جهةً إلى ${targets.length} لجنةً حسب الرغبة الأولى`}
+            aria-label={
+              view === "ladder"
+                ? `${hops} حركةَ نزولٍ بين ${sources.length} جهةً و${targets.length} جهة`
+                : `تدفّق ${rows.length} طلبًا من ${sources.length} جهةً إلى ${targets.length} لجنة`
+            }
           >
             {/* الشرائط أولًا فالعقد فوقها */}
             {ribbons.map((r, i) => (
@@ -278,24 +374,62 @@ function ribbonPath(r: Ribbon): string {
 
 /* ── بناء النموذج ──────────────────────────────────────────────────────── */
 
-function build(rows: readonly Row[]) {
+function build(
+  rows: readonly Row[],
+  mode: Mode,
+  scopes: readonly string[],
+  isAdmin: boolean,
+) {
   if (rows.length === 0) return null;
 
   const pairs = new Map<string, number>();
   const srcTotal = new Map<string, number>();
   const dstTotal = new Map<string, number>();
+  const name = (value: string) =>
+    findPreference(value)?.fullLabel ?? value;
 
-  for (const r of rows) {
-    const src = r.university;
-    const dst = findPreference(r.choice1)?.fullLabel ?? r.choice1;
-    if (!src || !dst) continue;
+  /* ⚠️ الفاصل `\u0000` صراحةً لا مسافة: أسماء الجامعات واللجان فيها
+     مسافات، والشقُّ عليها يقطعها ويولّد جهاتٍ وهمية. */
+  /**
+   * ⚠️ **القائدُ يرى ما يمسّ نطاقَه، والرئاسةُ ترى الشبكة كلَّها.**
+   *
+   * لو رُسمت الحركةُ كلُّها لقائدٍ لصار أمامه تسعَ عشرةَ شريطةً أكثرُها لا
+   * يمسّه — وسؤالُه واحد: **من نزل إليّ، ومن نزل عنّي**. وهو أيضًا اتّساقٌ
+   * مع اللوحة: هي تقيس شغلَه، فلا يليق أن يقيس هذا شيئًا آخر.
+   *
+   * والقصُّ على **القفزة** لا على الشخص: قفزةٌ بين جهتين لا تخصّني تُطرح
+   * وإن كان صاحبُها قد مرّ بي في رتبةٍ أخرى.
+   */
+  const touchesMe = (src: string, dst: string) =>
+    isAdmin || inScopes(src, scopes) || inScopes(dst, scopes);
+
+  const add = (src: string, dst: string, raw?: [string, string]) => {
+    if (!src || !dst || src === dst) return;
+    if (raw && !touchesMe(raw[0], raw[1])) return;
     srcTotal.set(src, (srcTotal.get(src) ?? 0) + 1);
     dstTotal.set(dst, (dstTotal.get(dst) ?? 0) + 1);
-    /* ⚠️ الفاصل `\u0000` صراحةً لا مسافة: أسماء الجامعات واللجان
-       فيها مسافات، والشقّ عليها يقطعها ويولّد جهاتٍ وهمية. */
     const k = `${src}\u0000${dst}`;
     pairs.set(k, (pairs.get(k) ?? 0) + 1);
+  };
+
+  for (const r of rows) {
+    if (mode === "origin") {
+      /* الرغبةُ **الحالية** لا `choice1`: بعد النزول صار سؤالُ الاستقطاب
+         «من أي جامعةٍ جاء من هو عند هذي الجهة الآن». */
+      const here = choiceAtRank(r, r.stage);
+      if (!isAdmin && !inScopes(here, scopes)) continue;
+      add(r.university, name(here));
+      continue;
+    }
+    /* حركةُ السلّم: قفزةٌ لكلّ نزولٍ وقع فعلًا — ومن هو عند الثالثة
+       يُرسم بقفزتين، فالمجموعُ يساوي عددَ النزولات لا عددَ الأشخاص. */
+    for (let rank = 1; rank < r.stage; rank++) {
+      const from = choiceAtRank(r, rank);
+      const to = choiceAtRank(r, rank + 1);
+      add(name(from), name(to), [from, to]);
+    }
   }
+  if (pairs.size === 0) return null;
 
   /* ضمُّ الذيل في «أخرى» بدل قصّه: القصّ يُخفي طلبات موجودة، والضمّ يبقي
      المجموع صادقًا — ومجموعُ الشرائط يساوي عدد الطلبات دائمًا. */
@@ -306,14 +440,27 @@ function build(rows: readonly Row[]) {
   const d = tally(dstTotal, foldDst);
   if (s.length === 0 || d.length === 0) return null;
 
-  const rowsCount = rows.length;
+  /**
+   * ⚠️ **المقامُ مجموعُ الوصلات لا عددُ الصفوف.**
+   *
+   * كان `rows.length`، وكان صحيحًا حين تُنتج كلُّ صفٍّ وصلةً واحدة (جامعة
+   * ← رغبة). وفي «حركة السلّم» يفترقان تمامًا: مئتان وثمانيةٌ وأربعون صفًّا
+   * قد تُنتج اثنتين وثلاثين قفزة، فتُقسَّم الأطوالُ على ٢٤٨ — **فتنكمش
+   * العقدُ كلُّها إلى شريطٍ رفيعٍ في أعلى الرسم وتتراكم تسمياتُها فوق
+   * بعضها**. رُصد في لقطةٍ قبل النشر.
+   *
+   * والجانبان يُقاسان بمجموعهما هما: مصدرٌ ومقصدٌ لكلّ قفزة، فالمجموعان
+   * متساويان — ويُحسبان مستقلَّين احتياطًا لا اعتمادًا على ذلك.
+   */
+  const srcSum = [...srcTotal.values()].reduce((a, b) => a + b, 0) || 1;
+  const dstSum = [...dstTotal.values()].reduce((a, b) => a + b, 0) || 1;
   const height = Math.max(
     260,
     Math.min(620, Math.max(s.length, d.length) * 54 + PAD_Y * 2),
   );
 
-  const sources = layout(s, height, rowsCount);
-  const targets = layout(d, height, rowsCount);
+  const sources = layout(s, height, srcSum);
+  const targets = layout(d, height, dstSum);
 
   const srcCursor = new Map(sources.map((n) => [n.key, n.y]));
   const dstCursor = new Map(targets.map((n) => [n.key, n.y]));
@@ -402,7 +549,12 @@ function layout(
   const usable = Math.max(40, height - PAD_Y * 2 - gaps);
   let y = PAD_Y;
   return items.map((it) => {
-    const h = Math.max(8, (it.value / total) * usable);
+    /* ⚠️ **أرضيةُ العقدة تُقاس على تسميتها لا على شريطها.** القيمةُ
+       الصغيرة (قفزتان) تُنتج شريطًا ٨px، وتسميتُها سطران عربيّان ≈٣٠px —
+       فتتراكب مع جارتها وتُقرآن كلمةً ممسوخة. و١٦ + فجوةُ ٢٠ تعطي ٣٦px
+       بين مركزين، وهي تسع السطرين. ولا تفيض: أوسعُ حالةٍ ١١ عقدةً في
+       ٦١٤px، وأرضيّاتُها مجتمعةً ١٧٦ من ٣٩٤ متاحة. */
+    const h = Math.max(16, (it.value / total) * usable);
     const node = { ...it, y, h };
     y += h + MIN_GAP;
     return node;

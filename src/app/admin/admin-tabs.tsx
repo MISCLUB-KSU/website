@@ -88,10 +88,17 @@ export function AdminTabs({
         role="tabpanel"
         className={`mt-s3 min-h-0 flex-1 ${tab === "flow" ? "overflow-y-auto" : ""}`}
       >
-        {tab === "dash" && <Dashboard rows={rows} />}
+        {tab === "dash" && (
+          <Dashboard
+            rows={rows}
+            scopes={scopes}
+            isAdmin={isAdmin}
+            phase={phase}
+          />
+        )}
         {tab === "flow" && (
           <div className="tile p-s5 sm:p-s6">
-            <FlowChart rows={rows} />
+            <FlowChart rows={rows} scopes={scopes} isAdmin={isAdmin} />
           </div>
         )}
         {tab === "list" && (

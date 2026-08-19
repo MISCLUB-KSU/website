@@ -3,12 +3,18 @@
 import { useEffect, useId, useMemo, useState } from "react";
 
 import { useHydrated } from "@/lib/use-hydrated";
+import { findPreference } from "@/content/preferences";
 import {
   LEVEL_ORDER,
-  STATUSES,
+  LIVE_STATUSES,
+  choiceAtStage,
   countBy,
   demand,
+  inScopes,
+  passedThrough,
   perDay,
+  seasonProgress,
+  type EntityProgress,
   type Row,
 } from "./stats";
 
@@ -29,30 +35,70 @@ import {
 const CYAN = "var(--d-cyan)";
 const RANK = ["var(--deep)", "var(--primary)", "var(--sky)"] as const;
 
-export function Dashboard({ rows }: { rows: readonly Row[] }) {
+export function Dashboard({
+  rows,
+  scopes,
+  isAdmin,
+  phase,
+}: {
+  rows: readonly Row[];
+  scopes: readonly string[];
+  isAdmin: boolean;
+  phase: number;
+}) {
   const live = useHydrated();
 
   const m = useMemo(() => {
-    const statusCounts = Object.fromEntries(countBy(rows, (r) => r.status));
-    const demandRows = demand(rows);
-    const levels = countBy(rows, (r) => r.level);
-    const unis = [...countBy(rows, (r) => r.university)]
+    /**
+     * ⚠️ **اللوحةُ تقيس شغلَ قارئها، لا حصيلةَ النادي.**
+     *
+     * القائدُ يستقبل من ذكره في رغباته الثلاث، وشغلُه من هو **عند رتبته**.
+     * فلو عدّت اللوحةُ كلَّ ما وصله لقالت له «١٢٢ طلبًا» وترويسةُ الصفحة
+     * فوقها تقول «٤٦ عندك الآن» — رقمان متناقضان في شاشةٍ واحدة، وأحدُهما
+     * يضاعف حجمَ عمله ثلاثًا في عينه.
+     *
+     * ومن مرّرتَه يبقى في الحساب: هو شغلٌ **أنجزتَه** لا شغلٌ زال. وحذفُه
+     * يجعل عدّادَ «حُسم» يقول صفرًا لقائدٍ مرّر عشرين.
+     */
+    const base = isAdmin
+      ? rows
+      : rows.filter(
+          (r) =>
+            (r.stage <= phase && inScopes(choiceAtStage(r), scopes)) ||
+            passedThrough(r, scopes),
+        );
+
+    const statusCounts = Object.fromEntries(countBy(base, (r) => r.status));
+    const demandRows = demand(base);
+    const levels = countBy(base, (r) => r.level);
+    const unis = [...countBy(base, (r) => r.university)]
       .map(([label, value]) => ({ label, value }))
       .sort((a, b) => b.value - a.value);
+
+    /* ⚠️ **والتمريرُ حسمٌ.** من نزل عن جهتي حُسم أمرُه عندي وإن بقيت حالتُه
+       `new` عند غيري — فعدُّ الحالات وحدَها يبخس القائدَ نصفَ إنجازه. */
+    const movedOn = isAdmin
+      ? 0
+      : base.filter((r) => passedThrough(r, scopes)).length;
+
     return {
-      total: rows.length,
-      decided: (statusCounts.accepted ?? 0) + (statusCounts.rejected ?? 0),
-      withCv: rows.filter((r) => r.cv_path).length,
+      total: base.length,
+      decided:
+        (statusCounts.accepted ?? 0) + (statusCounts.rejected ?? 0) + movedOn,
+      withCv: base.filter((r) => r.cv_path).length,
       statusCounts,
       demandRows,
-      days: perDay(rows),
+      days: perDay(base),
       unis,
+      progress: seasonProgress(rows, scopes, isAdmin, phase, (v) =>
+        findPreference(v)?.fullLabel ?? v,
+      ),
       levels: LEVEL_ORDER.filter((l) => levels.has(l)).map((label) => ({
         label,
         value: levels.get(label) ?? 0,
       })),
     };
-  }, [rows]);
+  }, [rows, scopes, isAdmin, phase]);
 
   if (m.total === 0) {
     return (
@@ -69,7 +115,11 @@ export function Dashboard({ rows }: { rows: readonly Row[] }) {
     >
       <Total {...m} />
       <Arrivals days={m.days} />
-      <Structure rows={m.demandRows} />
+      {/* ⚠️ **حلّ محلَّ رادار «البنية».** ذاك كان يرسم أعلى ستِّ جهاتٍ
+          بالرغبة الأولى — وهي البياناتُ نفسُها في «الأعلى طلبًا» و«الرغبة
+          الأولى»؛ ثلاثةُ ألواحٍ على سؤالٍ واحد. وهذا يجيب سؤالًا لا يجيبه
+          شيءٌ في اللوحة: **من واقف**، وهو ما تُقفَل به المرحلة. */}
+      <Progress rows={m.progress} phase={phase} />
       <TopWanted rows={m.demandRows} />
       <StatusTile counts={m.statusCounts} total={m.total} />
       <Costs rows={m.demandRows} total={m.total} />
@@ -243,75 +293,100 @@ function Arrivals({
 /* ── ٣ · البنية — رادار ─────────────────────────────────────────────────
    ⚠️ الرادار صادقٌ فقط بمحاورَ متجانسة القياس. هنا كلُّ محورٍ «عددُ من
    وضعها رغبةً أولى»، ومقياسُ الجميع واحد — فالشكل مقارنةٌ صحيحة. */
-function Structure({
+/**
+ * **أين وصل الموسم** — لوحٌ يجيب «من واقف» لا «كم وصل».
+ *
+ * ⚠️ **قفلُ المرحلة قرارٌ يُتّخذ على هذا اللوح.** «بلا قرار» صفرٌ في كلّ
+ * جهة ⇒ الفتحُ لا يسبق شغلًا قائمًا. والعددُ الإجماليُّ لا يقوله أبدًا —
+ * جهةٌ فرغت وأخرى لم تبدأ يعطيان معًا رقمًا متوسّطًا لا معنى له.
+ *
+ * ⚠️ **والأكثرُ انتظارًا أوّلًا، لا الأكبرُ حجمًا.** الترتيبُ بالحجم يضع
+ * الجهةَ التي أنهت أربعين في الصدارة والتي عطّلت خمسةً في الذيل — وهو عكسُ
+ * ما يُبحث عنه. والمعروضُ خمسةٌ لأن السؤال «من يعطّل» لا «اسرد الكلّ».
+ */
+function Progress({
   rows,
+  phase,
 }: {
-  rows: { label: string; first: number }[];
+  rows: EntityProgress[];
+  phase: number;
 }) {
-  const axes = rows.slice(0, 6);
-  const max = Math.max(...axes.map((a) => a.first), 1);
-  const R = 78;
-  const C = 100;
-  const pos = (i: number, k: number) => {
-    const a = (i / axes.length) * Math.PI * 2 - Math.PI / 2;
-    return [C + Math.cos(a) * R * k, C + Math.sin(a) * R * k];
-  };
-  const poly = axes
-    .map((a, i) => pos(i, a.first / max).join(","))
-    .join(" ");
+  const shown = rows.slice(0, 5);
+  const done = rows.filter((r) => r.pending === 0).length;
+  const rest = rows.length - shown.length;
+  const max = Math.max(...rows.map((r) => r.total), 1);
 
   return (
     <section className="tile col-span-12 p-s5 lg:col-span-3">
-      <Head title="البنية" />
-      <div className="flex min-h-0 flex-1 items-center justify-center">
-        <svg viewBox="0 0 200 200" className="block h-full w-auto">
-          {[0.34, 0.67, 1].map((k, ring) => (
-            <polygon
-              key={k}
-              points={axes.map((_, i) => pos(i, k).join(",")).join(" ")}
-              fill="none"
-              stroke="var(--line)"
-              strokeWidth={ring === 2 ? 1.2 : 0.8}
-            />
-          ))}
-          {axes.map((a, i) => {
-            const [x, y] = pos(i, 1);
-            return (
-              <line
-                key={a.label}
-                x1={C}
-                y1={C}
-                x2={x}
-                y2={y}
-                stroke="var(--line)"
-                strokeWidth={0.8}
-              />
-            );
-          })}
-          <polygon
-            points={poly}
-            fill={CYAN}
-            fillOpacity={0.24}
-            stroke={CYAN}
-            strokeWidth={2}
-            style={{ filter: `drop-shadow(0 0 8px color-mix(in oklab, ${CYAN} 60%, transparent))` }}
-          />
-          {axes.map((a, i) => {
-            const [x, y] = pos(i, a.first / max);
-            return <circle key={a.label} cx={x} cy={y} r={3.2} fill={CYAN} />;
-          })}
-        </svg>
-      </div>
+      <Head title="أين وصل الموسم">
+        <span className="text-fg-muted text-[0.68rem]">
+          المرحلة {phase}
+        </span>
+      </Head>
 
-      {/* التسميات نصًّا تحت الرسم: `SVG` لا يلفّ، والأسماء عربيةٌ طويلة */}
-      <ul className="text-fg-muted mt-s3 grid grid-cols-2 gap-x-s3 gap-y-s1 text-[0.66rem] leading-tight">
-        {axes.map((a, i) => (
-          <li key={a.label} className="fade-up flex gap-x-s1" style={{ ["--i" as string]: i }}>
-            <b dir="ltr" className="text-fg tabular-nums">{a.first}</b>
-            <span className="truncate">{leaf(a.label)}</span>
-          </li>
-        ))}
-      </ul>
+      {rows.length === 0 ? (
+        <p className="text-fg-muted mt-s3 text-[0.8rem]">لا جهةَ في نطاقك.</p>
+      ) : (
+        <ul className="mt-s3 flex min-h-0 flex-1 flex-col justify-center gap-s3">
+          {shown.map((r, i) => (
+            <li
+              key={r.value}
+              className="fade-up"
+              style={{ ["--i" as string]: i }}
+            >
+              <p className="mb-s1 flex items-baseline justify-between gap-x-s2 text-[0.7rem] leading-tight">
+                <span className="truncate">{leaf(r.label)}</span>
+                <span
+                  dir="ltr"
+                  className="shrink-0 tabular-nums"
+                  style={{
+                    color: r.pending === 0 ? "var(--st-accepted)" : undefined,
+                    opacity: r.pending === 0 ? 1 : 0.75,
+                  }}
+                >
+                  {r.pending === 0 ? "✓ فرغت" : `${r.pending} بلا قرار`}
+                </span>
+              </p>
+              {/* ⚠️ **شريطٌ مكدَّسٌ لا أربعةُ أرقام.** الرائي يقارن الجهاتِ
+                  بالعين في لمحة؛ والأرقامُ الأربعة تحتاج قراءةً وحسابًا. */}
+              <div
+                className="flex h-[7px] overflow-hidden rounded-full"
+                style={{ background: "var(--line-quiet)" }}
+                title={`${r.fresh} جديد · ${r.invited} مقابلة · ${r.accepted} قُبل · ${r.movedOn} مُرِّر`}
+              >
+                {(
+                  [
+                    [r.accepted, "var(--st-accepted)"],
+                    [r.invited, "var(--st-reviewing)"],
+                    [r.fresh, "var(--st-new)"],
+                    [r.movedOn, "var(--st-referred)"],
+                  ] as const
+                ).map(([n, color], k) =>
+                  n > 0 ? (
+                    <span
+                      key={k}
+                      style={{ width: `${(n / max) * 100}%`, background: color }}
+                    />
+                  ) : null,
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {rows.length > 0 && (
+        <p className="text-fg-muted mt-s3 text-[0.68rem]">
+          <b className="text-fg tabular-nums" dir="ltr">
+            {done}
+          </b>{" "}
+          من{" "}
+          <b className="text-fg tabular-nums" dir="ltr">
+            {rows.length}
+          </b>{" "}
+          فرغت{rest > 0 ? ` · و${rest} جهةً أخرى تحت الخمس` : ""}
+        </p>
+      )}
     </section>
   );
 }
@@ -395,7 +470,7 @@ function StatusTile({
 
       <div className="mt-s3 flex min-h-0 flex-1 items-center gap-x-s5">
         <Donut
-          slices={STATUSES.map((s) => ({
+          slices={LIVE_STATUSES.map((s) => ({
             key: s.key,
             label: s.label,
             value: counts[s.key] ?? 0,
@@ -406,7 +481,7 @@ function StatusTile({
         />
 
         <ul className="flex min-h-0 flex-1 flex-col justify-around gap-y-s2">
-          {STATUSES.map((s, i) => {
+          {LIVE_STATUSES.map((s, i) => {
             const v = counts[s.key] ?? 0;
             const pct = total ? Math.round((v / total) * 100) : 0;
             return (
