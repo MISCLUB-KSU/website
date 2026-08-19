@@ -240,6 +240,20 @@ function triageRank(row: Row): number {
   return 0;
 }
 
+/**
+ * مقتطفٌ حول موضع المطابقة — **يقول للقائد لماذا ظهر هذا الصفّ**.
+ *
+ * ⚠️ بلا المقتطف يرى صفًّا لا يطابق اسمُه ولا لجنتُه ما كتب، فيظنّ الترشيحَ
+ * معطوبًا. والدافعُ قد يبلغ مئاتِ الحروف، فيُقصّ حول الموضع لا من أوّله.
+ */
+function whySnippet(why: string, needle: string): string {
+  const at = why.toLowerCase().indexOf(needle);
+  if (at === -1) return "";
+  const from = Math.max(0, at - 24);
+  const to = Math.min(why.length, at + needle.length + 48);
+  return `${from > 0 ? "…" : ""}${why.slice(from, to).trim()}${to < why.length ? "…" : ""}`;
+}
+
 /* ── الجذر ──────────────────────────────────────────────────────────────── */
 
 export function ApplicationsTable({
@@ -257,6 +271,8 @@ export function ApplicationsTable({
      يُبطل ترتيبَ الرغبات كلَّه — وهو ما تقوم عليه خطّةُ الموسم. فالطابورُ
      يفتح على من اختارك **أوّلًا**، والبقيّةُ خلف تبديلٍ مقصود. */
   const [queue, setQueue] = useState<Queue>("first");
+  /** أيشمل البحثُ نصَّ الدافع؟ مطفأٌ افتراضيًّا — التعليل عند `extra` */
+  const [inWhy, setInWhy] = useState(false);
   /* ⚠️ **معاينةٌ للرئاسة، لا تنازلٌ عن صلاحية.** الرئاسةُ ترى الكلَّ في
      القاعدة ولا يغيّر هذا شيئًا من ذلك — يغيّر **ما تعرضه الشاشة** حتى
      يتحقّق من يوزّع الحسابات ممّا سيراه كلُّ قائدٍ قبل أن يسلّمه المفتاح.
@@ -423,7 +439,33 @@ export function ApplicationsTable({
         prefName(r.choice3),
       ].some((f) => (f ?? "").toLowerCase().includes(needle));
     });
-    const s = [...out];
+
+    /**
+     * **البحثُ في الدوافع — وضعٌ يُطلَب، لا توسيعٌ صامتٌ للبحث.**
+     *
+     * ⚠️ **السببُ مقيسٌ لا مخشيّ.** التضمينُ في نصٍّ حرٍّ عربيٍّ يطابق داخلَ
+     * الكلمات: قِيس على القاعدة (١٩ أغسطس ٢٠٢٦) أن **«علي»** يطابق سبعةَ
+     * أسماء و**ثمانيةً وعشرين** دافعًا — «التعليم» و«عليها» و«عليّ». فطيُّه
+     * في البحث العاديّ يجعل من يبحث عن شخصٍ اسمه عليّ يرى ٣٥ صفًّا بدل ٧،
+     * **وضجيجًا أربعةَ أضعاف الإشارة**، بلا أن يفهم لماذا.
+     *
+     * وفي المقابل «تصميم» يطابق **صفرَ اسمٍ واثني عشرَ دافعًا**، و«تسويق»
+     * صفرًا وستّة — أي أن الوضعين نافعان وكلٌّ في سؤاله. فيُفصلان بمفتاح،
+     * وتُقال المطابقةُ في الصفّ حتى لا يُقرأ الصفُّ بلا سبب ظهوره.
+     *
+     * وهو أنفعُ ما يكون لمن لا سيرةَ له — و**١٩٠ من ٢٥٩** بلا سيرة، فالدافعُ
+     * كلُّ ما عنهم.
+     */
+    const extra =
+      inWhy && needle
+        ? scored.filter(({ row: r }) => {
+            if (status !== "all" && r.status !== status) return false;
+            if (out.some((x) => x.row.id === r.id)) return false;
+            return (r.why ?? "").toLowerCase().includes(needle);
+          })
+        : [];
+
+    const s = [...out, ...extra];
     if (sort === "triage")
       /* ⚠️ **الاستقرارُ محسوبٌ لا متروك.** `sort` في JS مستقرّة، والمصفوفةُ
          داخلةٌ مرتّبةً بالأحدث — فمن تساوت مرتبتُهم يخرجون بالأحدث، وهو
@@ -446,8 +488,15 @@ export function ApplicationsTable({
         if (!y) return -1;
         return Date.parse(x) - Date.parse(y);
       });
-    return s;
-  }, [scored, q, status, sort]);
+
+    /* ⚠️ **المقتطفُ لمن ظهر بالدافع وحدَه.** من طابق اسمُه أو لجنتُه ظهورُه
+       مفهوم، فلا يُقتطع سطرُه لأجل تفسيرٍ لا يحتاجه. */
+    const onlyWhy = new Set(extra.map((x) => x.row.id));
+    return s.map((x) => ({
+      ...x,
+      hit: onlyWhy.has(x.row.id) ? whySnippet(x.row.why ?? "", needle) : "",
+    }));
+  }, [scored, q, status, sort, inWhy]);
 
   /* ⚠️ المختارُ **يتبع ما يُعرض**: لو أخفاه الترشيح انتقل الاختيار لأول
      ظاهر. ولولا ذلك لبقي الملفّ يعرض متقدّمًا غائبًا عن القائمة. */
@@ -745,6 +794,8 @@ export function ApplicationsTable({
         scopeOptions={isAdmin ? SCOPE_OPTIONS : null}
         viewAs={viewAs}
         setViewAs={setViewAs}
+        inWhy={inWhy}
+        setInWhy={setInWhy}
         onHelp={() => setHelp(true)}
       />
 
@@ -1745,6 +1796,8 @@ function Toolbar({
   scopeOptions,
   viewAs,
   setViewAs,
+  inWhy,
+  setInWhy,
   onHelp,
 }: {
   q: string;
@@ -1767,6 +1820,9 @@ function Toolbar({
   scopeOptions: readonly { value: string; label: string }[] | null;
   viewAs: string;
   setViewAs: (v: string) => void;
+  /** أيشمل البحثُ نصَّ الدافع؟ — التعليل عند حسابه في الجذر */
+  inWhy: boolean;
+  setInWhy: (v: boolean) => void;
   /** يفتح لوحَ الاختصارات — نفسُه الذي يفتحه مفتاح «؟» */
   onHelp: () => void;
 }) {
@@ -1784,6 +1840,24 @@ function Toolbar({
             className="text-fg placeholder:text-fg-muted/70 min-h-10 w-full bg-transparent text-[0.85rem]"
           />
         </label>
+
+        {/* ⚠️ **مفتاحٌ لا توسيعٌ صامت.** «علي» يطابق ٧ أسماء و٢٨ دافعًا
+            («التعليم» · «عليها») — فطيُّه في البحث العاديّ يغرق من يبحث عن
+            شخص. و«تصميم» يطابق صفرَ اسمٍ و١٢ دافعًا. سؤالان مختلفان،
+            فمفتاحان. والتعليلُ الكامل عند حسابه في الجذر. */}
+        <button
+          type="button"
+          onClick={() => setInWhy(!inWhy)}
+          aria-pressed={inWhy}
+          title="يبحث أيضًا في نصّ «لماذا يريد الانضمام» — نافعٌ للبحث عن مهارةٍ أو اهتمام"
+          className={`min-h-11 lg:min-h-10 shrink-0 rounded-xl border px-s3 text-[0.78rem] font-semibold transition-colors ${
+            inWhy
+              ? "border-accent text-accent"
+              : "border-line bg-bg-sunken text-fg-muted"
+          }`}
+        >
+          وفي الدوافع
+        </button>
 
         {/* ⚠️ **صفٌّ واحدٌ يُسحب على الجوّال لا التفافٌ على ثلاثة صفوف.**
             الستّةُ كانت تلتفّ فتأكل ≈250px أخرى فوق الطيّة. */}
@@ -1960,7 +2034,8 @@ function Roster({
   onToggle,
   listRef,
 }: {
-  items: readonly { row: Row; pct: number }[];
+  /** `hit` مقتطفٌ من الدافع لمن ظهر به وحدَه — فارغٌ لغيره */
+  items: readonly { row: Row; pct: number; hit?: string }[];
   currentId: string | null;
   onPick: (id: string) => void;
   selected: ReadonlySet<string>;
@@ -1970,7 +2045,7 @@ function Roster({
   return (
     <section className="tile apps-roster min-h-0">
       <ul ref={listRef} className="min-h-0 flex-1 overflow-y-auto p-s2">
-        {items.map(({ row, pct }, i) => {
+        {items.map(({ row, pct, hit }, i) => {
           const s = STATUSES.find((x) => x.key === row.status);
           const on = row.id === currentId;
           const marked = selected.has(row.id);
@@ -2035,7 +2110,13 @@ function Roster({
                     {/* ⚠️ **الموعدُ يزيح الجامعة ولا يُضاف تحتها.** الصفُّ
                         سطران وحسب؛ وثالثٌ يقصّر القائمةَ المرئيّة. ومن له
                         موعدٌ اليوم، موعدُه أهمُّ من جامعته. */}
-                    {row.interview_at ? (
+                    {/* ⚠️ **المقتطفُ يزيح الجامعةَ ولا يُضاف تحتها** —
+                        كالموعد تمامًا، والسببُ واحد: الصفُّ سطران، وثالثٌ
+                        يقصّر القائمةَ المرئيّة. ومن ظهر بدافعه، **سببُ
+                        ظهوره أهمُّ من جامعته** في تلك اللحظة. */}
+                    {hit ? (
+                      <span style={{ color: "var(--st-new)" }}>«{hit}»</span>
+                    ) : row.interview_at ? (
                       <span style={{ color: "var(--st-reviewing)" }}>
                         ◷ {interviewLabel(row.interview_at)}
                       </span>
