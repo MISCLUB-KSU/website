@@ -64,6 +64,12 @@ export type Row = {
   /** `open` نموذجٌ بثلاث رغبات · `direct` رابطٌ مباشر لجهةٍ واحدة */
   source: string;
   /**
+   * موعدُ المقابلة عند الجهة التي هو عندها الآن — و`null` يعني لم يُحدَّد.
+   *
+   * ⚠️ يُمسح عند التمرير: هو موعدُ الجهة السابقة لا موعدُ الشخص.
+   */
+  interview_at: string | null;
+  /**
    * **رتبةُ الرغبة التي يُنظر فيه عندها الآن** — ١ أولى · ٢ ثانية · ٣ ثالثة.
    *
    * ⚠️ لا تُستنتج من `status`: قائدُ الرتبة الثانية يضبط «قيد المراجعة»
@@ -472,3 +478,63 @@ export function seasonProgress(
     (a, b) => b.pending - a.pending || b.total - a.total,
   );
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   موعد المقابلة — بتوقيت الرياض دائمًا
+   ══════════════════════════════════════════════════════════════════════ */
+
+/**
+ * صيغةُ حقل `datetime-local` من طابعٍ مخزَّن — `2026-08-22T13:00`.
+ *
+ * ⚠️ **بتوقيت الرياض لا بتوقيت الجهاز.** لو قُرئ بالتوقيت المحلّيّ لرأى
+ * قائدٌ مسافرٌ موعدًا يخالف ما ضبطه، ولاختلف ما يراه عمّا يراه زميلُه على
+ * الطلب نفسِه. والنادي في الرياض، فالموعدُ رياضيٌّ لكلّ من قرأه.
+ */
+export function toRiyadhInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const at = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Riyadh",
+  }).formatToParts(d);
+  const get = (t: string) => at.find((x) => x.type === t)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+}
+
+/**
+ * العكس: ما كتبه القائدُ في الحقل ⇒ لحظةٌ مطلقة.
+ *
+ * ⚠️ **`+03:00` صراحةً لا اعتمادًا على الجهاز.** `new Date("...T13:00")`
+ * تُفسَّر بتوقيت المتصفّح — فقائدٌ خارج المملكة يضبط الواحدة فتُخزَّن
+ * لحظةً أخرى، ويقرؤها زميلُه في الرياض ساعةً غيرَها. والسعوديةُ بلا توقيتٍ
+ * صيفيّ، فالإزاحةُ ثابتةٌ ولا تحتاج جدولًا.
+ */
+export function fromRiyadhInput(value: string): string | null {
+  const v = value.trim();
+  if (!v) return null;
+  const d = new Date(`${v}:00+03:00`);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+/** «الأحد ٢٢ أغسطس، ١:٠٠ م» — للعرض */
+export function interviewLabel(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return INTERVIEW_FMT.format(d);
+}
+
+const INTERVIEW_FMT = new Intl.DateTimeFormat("ar", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  hour: "numeric",
+  minute: "2-digit",
+  ...RIYADH,
+});

@@ -28,6 +28,7 @@ import {
   passOver,
   passOverMany,
   sendPendingRejections,
+  setInterview,
   setPhase,
   setStatus,
   setStatusMany,
@@ -39,6 +40,9 @@ import {
   STATUSES,
   arrivalStamp,
   choiceAtStage,
+  fromRiyadhInput,
+  interviewLabel,
+  toRiyadhInput,
   inScopes,
   openOnly,
   type Note,
@@ -131,6 +135,10 @@ type Meter = {
 const SORTS = [
   { key: "newest", label: "الأحدث" },
   { key: "oldest", label: "الأقدم" },
+  /* ⚠️ **من له موعدٌ أوّلًا ثم الأقرب.** بلا هذا الشرط تتصدّر القائمةَ
+     صفوفٌ بلا موعدٍ لأن `null` يُقارَن كأنه أصغر — فيبحث القائدُ عمّن
+     عنده اليوم في آخر ستّةٍ وأربعين. */
+  { key: "interview", label: "الأقرب موعدًا" },
   { key: "name", label: "الاسم" },
   { key: "full", label: "الأكمل ملفًّا" },
 ] as const;
@@ -359,6 +367,15 @@ export function ApplicationsTable({
     else if (sort === "name")
       s.sort((a, b) => a.row.full_name.localeCompare(b.row.full_name, "ar"));
     else if (sort === "full") s.sort((a, b) => b.pct - a.pct);
+    else if (sort === "interview")
+      s.sort((a, b) => {
+        const x = a.row.interview_at;
+        const y = b.row.interview_at;
+        if (!x && !y) return 0;
+        if (!x) return 1;
+        if (!y) return -1;
+        return Date.parse(x) - Date.parse(y);
+      });
     return s;
   }, [scored, q, status, sort]);
 
@@ -1677,8 +1694,19 @@ function Roster({
                     {row.full_name}
                   </span>
                   <span className="text-fg-muted block truncate text-[0.72rem]">
-                    {row.university}
-                    {row.source === "direct" && " · رابط مباشر"}
+                    {/* ⚠️ **الموعدُ يزيح الجامعة ولا يُضاف تحتها.** الصفُّ
+                        سطران وحسب؛ وثالثٌ يقصّر القائمةَ المرئيّة. ومن له
+                        موعدٌ اليوم، موعدُه أهمُّ من جامعته. */}
+                    {row.interview_at ? (
+                      <span style={{ color: "var(--st-reviewing)" }}>
+                        ◷ {interviewLabel(row.interview_at)}
+                      </span>
+                    ) : (
+                      <>
+                        {row.university}
+                        {row.source === "direct" && " · رابط مباشر"}
+                      </>
+                    )}
                   </span>
                 </span>
 
@@ -2196,9 +2224,72 @@ function StatusPicker({ row, dark }: { row: Row; dark?: boolean }) {
         </p>
       )}
 
+      <InterviewField row={row} dark={dark} />
+
       <PassOverButton row={row} dark={dark} />
 
       <NotifyButton row={row} dark={dark} />
+    </div>
+  );
+}
+
+/**
+ * موعدُ المقابلة.
+ *
+ * ⚠️ **كان يُكتب في الملاحظات نصًّا.** «قابلته الثلاثاء ٤ عصرًا» تُقرأ ولا
+ * تُرتَّب ولا تُذكِّر — ومن يفتح اللوحة صباحًا لا يعرف من عنده اليوم إلّا
+ * بقراءة كلّ ملاحظة. وبحقلٍ صريح يصير «الأقرب موعدًا» ترتيبًا، والموعدُ
+ * وسمًا في القائمة.
+ *
+ * ⚠️ **ولا يظهر لمن حُسم أمرُه** — موعدُ مقابلةٍ لمقبولٍ أو معتذَرٍ عنه
+ * ليس شيئًا يُضبط.
+ */
+function InterviewField({ row, dark }: { row: Row; dark?: boolean }) {
+  const [pending, start] = useTransition();
+  const [note, setNote] = useState("");
+
+  if (row.status === "accepted" || row.status === "rejected") return null;
+
+  const save = (value: string) =>
+    start(async () => {
+      setNote("");
+      const res = await setInterview(row.id, fromRiyadhInput(value));
+      setNote(res.message);
+    });
+
+  return (
+    <div
+      className="mt-s4 border-t pt-s3"
+      style={{ borderColor: dark ? "rgba(255,255,255,.14)" : "var(--line)" }}
+    >
+      <label className="flex flex-wrap items-center gap-x-s3 gap-y-s2 text-[0.8rem]">
+        <span
+          className="font-semibold"
+          style={{ color: dark ? "rgba(255,255,255,.72)" : "var(--fg-muted)" }}
+        >
+          موعد المقابلة
+        </span>
+        <input
+          type="datetime-local"
+          disabled={pending}
+          defaultValue={toRiyadhInput(row.interview_at)}
+          onChange={(e) => save(e.target.value)}
+          className="text-fg min-h-11 rounded-xl border px-s3 text-[0.82rem] lg:min-h-10"
+          style={{
+            borderColor: dark ? "rgba(255,255,255,.28)" : "var(--line-strong)",
+            background: "transparent",
+            colorScheme: dark ? "dark" : undefined,
+          }}
+        />
+        {/* ⚠️ **بتوقيت الرياض يُقال صراحةً.** القائدُ المسافرُ يكتب ما يراه
+            على ساعته ويظنّه محفوظًا كما كتبه. */}
+        <span
+          className="text-[0.72rem]"
+          style={{ color: dark ? "rgba(255,255,255,.5)" : "var(--fg-muted)" }}
+        >
+          {pending ? "…يُحفظ" : note || "بتوقيت الرياض"}
+        </span>
+      </label>
     </div>
   );
 }

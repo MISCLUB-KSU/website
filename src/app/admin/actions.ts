@@ -647,3 +647,36 @@ export async function passOverMany(ids: readonly string[]) {
     message: parts.join(" · ") || "لم يتغيّر شيء",
   };
 }
+
+/**
+ * ضبطُ موعد المقابلة — أو مسحُه بقيمةٍ فارغة.
+ *
+ * ⚠️ **الوقتُ يصل لحظةً مطلقة (`ISO`) لا نصًّا محلّيًّا.** التحويلُ من
+ * توقيت الرياض يقع في العميل حيث كُتب، فلا يتأثّر بمنطقة الخادم.
+ */
+export async function setInterview(id: string, iso: string | null) {
+  if (iso !== null && Number.isNaN(Date.parse(iso))) {
+    return { ok: false as const, message: "موعدٌ غير صالح" };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("applications")
+    .update({ interview_at: iso })
+    .eq("id", id)
+    .select("id");
+
+  if (error) {
+    console.error("[admin] تعذّر ضبط الموعد", {
+      code: error.code,
+      message: error.message,
+    });
+    return { ok: false as const, message: "تعذّر الحفظ" };
+  }
+  if (!data || data.length === 0) {
+    return { ok: false as const, message: "ليس عند رتبتِك" };
+  }
+
+  revalidatePath("/admin");
+  return { ok: true as const, message: iso ? "حُفظ الموعد" : "مُسح الموعد" };
+}
