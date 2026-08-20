@@ -112,7 +112,6 @@ type Props = {
  */
 const PHASE_STATUSES = STATUSES.filter((s) => DIRECT_STATUSES.includes(s.key));
 
-/** طابورُ المرحلة الأولى، أو كلُّ من ذكرني في رغباته الثلاث */
 /**
  * **وسمُ الطابور — يتبع المرحلةَ المفتوحة لا يُثبَّت على «الأولى».**
  *
