@@ -46,6 +46,7 @@ export function AdminTabs({
   isAdmin,
   me,
   staff,
+  canManageStaff,
 }: {
   rows: readonly Row[];
   notes: readonly Note[];
@@ -55,12 +56,20 @@ export function AdminTabs({
   isAdmin: boolean;
   /** بريدُ القارئ — به يُعرف ما يملك تعديلَه من الملاحظات */
   me: string;
-  /** صفوفُ الطاقم — فارغةٌ لغير الرئاسة، فالخادمُ لا يجلبها لها */
+  /** صفوفُ الطاقم — فارغةٌ لمن لا يديره، فالخادمُ لا يجلبها له */
   staff: readonly StaffRow[];
+  /**
+   * ⚠️ **أضيقُ من `isAdmin` عمدًا.** الرئاسةُ كلُّها ترى الطلباتِ وتفتح
+   * المراحل؛ وإدارةُ الطاقم علامةٌ تُمنح بعينها — لأن من يملكها يملك أن
+   * يمنح غيرَه الاطّلاعَ على ٢٧٤ طلبًا بأرقام أحوال أصحابها.
+   */
+  canManageStaff: boolean;
 }) {
   /* ⚠️ **يُرشَّح مرّةً ويُستعمل في الرسم والتحقّق معًا.** ولو رُشّح في
      الرسم وحدَه لبقي `#staff` في العنوان يفتح لوحًا لا يملكه قارئُه. */
-  const tabs = TABS.filter((t) => isAdmin || !("adminOnly" in t && t.adminOnly));
+  const tabs = TABS.filter(
+    (t) => canManageStaff || !("adminOnly" in t && t.adminOnly),
+  );
   /**
    * ⚠️ **المخزنُ هنا لا في `ApplicationsTable` — واللوحُ يُفكّ عند التبديل.**
    *
@@ -86,14 +95,15 @@ export function AdminTabs({
          كلَّ مرّةٍ فتُبطل قائمةَ الاعتماد، وهذي قيمةٌ ثابتةٌ للجلسة. */
       const allowed = TABS.some(
         (t) =>
-          t.key === h && (isAdmin || !("adminOnly" in t && t.adminOnly)),
+          t.key === h &&
+          (canManageStaff || !("adminOnly" in t && t.adminOnly)),
       );
       if (allowed) setTab(h as Key);
     };
     read();
     window.addEventListener("hashchange", read);
     return () => window.removeEventListener("hashchange", read);
-  }, [isAdmin]);
+  }, [canManageStaff]);
 
   const go = (k: Key) => {
     setTab(k);
@@ -141,7 +151,9 @@ export function AdminTabs({
         {/* ⚠️ **`isAdmin` مع `tab` لا `tab` وحدَه.** التبويبُ مُرشَّحٌ من
             القائمة، لكنّ حالةً قديمةً أو `hash` محقونًا قد تُبقي القيمة —
             فيُشترط الدورُ عند الرسم أيضًا. */}
-        {tab === "staff" && isAdmin && <StaffPanel rows={staff} me={me} />}
+        {tab === "staff" && canManageStaff && (
+          <StaffPanel rows={staff} me={me} />
+        )}
         {tab === "meet" && (
           <Interviews
             rows={rows}

@@ -50,7 +50,7 @@ export default async function AdminPage() {
      «لا صلاحية لك» بلا سطرٍ واحدٍ يدلّ على السبب. */
   const { data: me, error: meError } = await supabase
     .from("staff")
-    .select("role, scopes, label, display_name")
+    .select("role, scopes, label, display_name, manages_staff")
     .eq("email", user.email?.toLowerCase() ?? "")
     .maybeSingle();
 
@@ -136,8 +136,21 @@ export default async function AdminPage() {
    * وحدَه. لكنّ الاستعلامَ لا يُرسَل من الأساس لمن لا شاشةَ له — فما لا
    * يُعرض لا يُجلب، وهو أرخصُ وأصدقُ من أن يُجلب ثم يُخفى.
    */
+  /**
+   * ⚠️ **`manages_staff` لا `role = 'admin'` — والفرقُ مقصود.**
+   *
+   * الرئاسةُ كلُّها ترى الطلباتِ وتفتح المراحل؛ **وإدارةُ الطاقم أضيق**: من
+   * يملكها يملك أن يمنح غيرَه الاطّلاعَ على ٢٧٤ طلبًا بأرقام أحوال أصحابها.
+   * فهي علامةٌ تُمنح بعينها لا تُشتقّ من الدور.
+   *
+   * ⚠️ **والحارسُ في القاعدة لا هنا.** سياسة «من يملك العلامة يدير الطاقم»
+   * هي التي تردّ؛ وهذا السطرُ يمنع جلبًا لا يُعرض، لا أكثر. فإخفاءُ تبويبٍ
+   * ليس أمانًا — ومن يعرف العنوان يستدعي الفعلَ مباشرةً.
+   */
+  const canManageStaff = me.role === "admin" && me.manages_staff === true;
+
   const { data: staffRows, error: staffError } =
-    me.role === "admin"
+    canManageStaff
       ? await supabase
           .from("staff")
           .select("email, role, scopes, display_name, created_at")
@@ -313,6 +326,7 @@ export default async function AdminPage() {
         isAdmin={me.role === "admin"}
         me={user.email?.toLowerCase() ?? ""}
         staff={(staffRows ?? []) as StaffRow[]}
+        canManageStaff={canManageStaff}
       />
     </main>
   );
