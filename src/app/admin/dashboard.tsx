@@ -4,6 +4,7 @@ import { useEffect, useId, useMemo, useState } from "react";
 
 import { isolateLatin } from "@/lib/bidi";
 import { useHydrated } from "@/lib/use-hydrated";
+import { capacityOf } from "@/content/capacity";
 import { findPreference } from "@/content/preferences";
 import {
   LEVEL_ORDER,
@@ -317,6 +318,27 @@ function Progress({
   const rest = rows.length - shown.length;
   const max = Math.max(...rows.map((r) => r.total), 1);
 
+  /**
+   * **المقاعد في نطاق القارئ — قُبل كم من كم.**
+   *
+   * ⚠️ **تُجمع السقوفُ على وحدة السقف لا على قيمة الرغبة.** ثلاثةُ مسارات
+   * في اللجنة الإعلاميّة تقع تحت سقفٍ واحد، فجمعُها بقيمها يعطي ٤٥ مقعدًا
+   * حيث لا يوجد إلّا ١٥ — رقمٌ يجعل الرئاسةَ تظنّ أن عندها من الفراغ
+   * ثلاثةَ أضعاف ما عندها.
+   */
+  const seats = (() => {
+    const caps = new Map<string, number>();
+    let accepted = 0;
+    for (const r of rows) {
+      accepted += r.accepted;
+      const bucket = capacityOf(r.value);
+      if (bucket) caps.set(bucket.key, bucket.cap);
+    }
+    let cap = 0;
+    for (const c of caps.values()) cap += c;
+    return { accepted, cap };
+  })();
+
   return (
     <section className="tile col-span-12 p-s5 lg:col-span-3">
       <Head title="أين وصل الموسم">
@@ -376,7 +398,11 @@ function Progress({
               <div
                 className="flex h-[7px] overflow-hidden rounded-full"
                 style={{ background: "var(--line-quiet)" }}
-                title={`${r.fresh} جديد · ${r.invited} مقابلة · ${r.accepted} قُبل · ${r.movedOn} مُرِّر`}
+                title={`${r.fresh} جديد · ${r.invited} مقابلة · ${r.accepted} قُبل${
+                  capacityOf(r.value)
+                    ? ` من ${capacityOf(r.value)!.cap}`
+                    : " (لا سقف)"
+                } · ${r.movedOn} مُرِّر`}
               >
                 {(
                   [
@@ -409,6 +435,23 @@ function Progress({
             {rows.length}
           </b>{" "}
           فرغت{rest > 0 ? ` · و${rest} جهةً أخرى تحت الخمس` : ""}
+        </p>
+      )}
+
+      {/* ⚠️ **المقاعدُ سطرٌ مستقلٌّ عن «فرغت».** ذاك يقول إن الشغلَ انتهى،
+          وهذا يقول كم بقي من مكان — وجهةٌ تفرغ وهي نصفُ ممتلئة حالٌ
+          قائمة. */}
+      {seats.cap > 0 && (
+        <p className="text-fg-muted mt-s1 text-[0.68rem]">
+          قُبل{" "}
+          <b className="text-fg tabular-nums" dir="ltr">
+            {seats.accepted}
+          </b>{" "}
+          من{" "}
+          <b className="text-fg tabular-nums" dir="ltr">
+            {seats.cap}
+          </b>{" "}
+          مقعدًا
         </p>
       )}
     </section>

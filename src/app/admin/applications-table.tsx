@@ -10,6 +10,12 @@ import {
   useTransition,
 } from "react";
 
+import {
+  CAPACITY,
+  UNCAPPED_PREFERENCES,
+  UNKNOWN_CAPACITY_VALUES,
+  capacityOf,
+} from "@/content/capacity";
 import { COMMITTEES } from "@/content/committees";
 import { findPreference, questionBlocks } from "@/content/preferences";
 import { PROJECTS } from "@/content/projects";
@@ -126,7 +132,8 @@ const SCOPE_OPTIONS: readonly { value: string; label: string }[] = [
 ];
 
 type Meter = {
-  value: string;
+  /** مفتاحُ وحدة السقف — أو قيمةُ الرغبة نفسِها لجهةٍ بلا سقف */
+  key: string;
   label: string;
   /** كم هم عند هذي الجهة الآن */
   total: number;
@@ -134,6 +141,10 @@ type Meter = {
   invited: number;
   /** وكم لم يُحسم أمرُه بعد — صفرٌ يعني أن الجهة فرغت */
   pending: number;
+  /** وكم قُبل عندها فعلًا — يُقاس على `cap` */
+  accepted: number;
+  /** الحدُّ الأعلى للقبول — و`null` لجهةٍ لم تُعطَ سقفًا بعد */
+  cap: number | null;
 };
 
 const SORTS = [
@@ -424,31 +435,47 @@ export function ApplicationsTable({
   const meters = useMemo<Meter[]>(() => {
     const m = new Map<
       string,
-      { total: number; invited: number; pending: number }
+      { total: number; invited: number; pending: number; accepted: number }
     >();
     for (const r of rows) {
       /* على الجهة التي هو عندها الآن — فمن نزل يُحسب على مضيفه الجديد */
       const at = choiceAtStage(r);
       if (!at) continue;
       if (!asAdmin && (r.stage > phase || !inScopes(at, asScopes))) continue;
-      const e = m.get(at) ?? { total: 0, invited: 0, pending: 0 };
+      /* ⚠️ **العدُّ على وحدة السقف لا على قيمة الرغبة.** الإعلاميّة تُقدَّم
+         على **ستّة مسارات** وتُدار بـ**ثلاث وحدات**، والرئاسةُ أعطت السقفَ
+         بأسماء الوحدات. فلو عُدَّ على المسار لعرض كلٌّ من المسارات الثلاثة
+         تحت «التسويق» سقفَ الخمسةَ عشرَ كاملًا — ثلاثةُ عدّاداتٍ تَعِد
+         بخمسةٍ وأربعين مقعدًا لا وجود لها. وما لا سقفَ له يبقى بقيمته. */
+      const key = capacityOf(at)?.key ?? at;
+      const e = m.get(key) ?? {
+        total: 0,
+        invited: 0,
+        pending: 0,
+        accepted: 0,
+      };
       e.total += 1;
       if (r.status === "reviewing") e.invited += 1;
+      if (r.status === "accepted") e.accepted += 1;
       /* «بلا قرار» = لم يُقبل ولم يُمرَّر. وهو الرقمُ الذي تُقفَل به مرحلة */
       if (r.status === "new" || r.status === "reviewing") e.pending += 1;
-      m.set(at, e);
+      m.set(key, e);
     }
-    /* ⚠️ **الاسمُ القصير للقائد، والكاملُ للرئاسة.** القائدُ يرى وحداتِ
-       لجنةٍ واحدة، فتكرارُ اسم اللجنة ثلاثَ مرّاتٍ يبتلع السطر ولا يفرّق
-       شيئًا. والرئاسةُ ترى سبعَ عشرة جهةً من لجانٍ شتّى، وفيها أسماءُ
-       وحداتٍ متشابهة («وحدة التصميم» و«التصميم الجرافيكي») — فيلزمها
-       الكامل. */
+    /* ⚠️ **اسمُ الوحدة كما قالته الرئاسة — للقائد وللرئاسة معًا.**
+       كان القائدُ يرى الاسمَ القصير والرئاسةُ الكامل، لأن «وحدة التصميم»
+       و«التصميم الجرافيكي» تتشابهان في سبعَ عشرةَ جهة. وقد اندمج المساران
+       في وحدةٍ واحدةٍ بالسقف، فلم يبقَ في الشريط اسمان متشابهان — والقاعدةُ
+       القديمة تبقى لجهةٍ بلا سقف. */
     return [...m.entries()]
-      .map(([value, v]) => ({
-        value,
-        label: asAdmin ? prefName(value) : prefShort(value),
-        ...v,
-      }))
+      .map(([key, v]) => {
+        const bucket = CAPACITY.find((b) => b.key === key);
+        return {
+          key,
+          label: bucket?.label ?? (asAdmin ? prefName(key) : prefShort(key)),
+          cap: bucket?.cap ?? null,
+          ...v,
+        };
+      })
       .sort((a, b) => b.invited - a.invited || b.total - a.total);
   }, [rows, asScopes, asAdmin, phase]);
 
@@ -601,10 +628,10 @@ export function ApplicationsTable({
    * «دعوة لمقابلة» يكون ناظرًا إلى الملفّ لا إلى الشريط — فيدعو السادسَ
    * عشرَ وهو لا يدري. والعددُ ينفع حيث يقع القرار.
    */
-  const capInvited = useMemo(() => {
+  const capHere = useMemo(() => {
     if (!current) return null;
     const at = choiceAtStage(current.row);
-    return meters.find((m) => m.value === at)?.invited ?? null;
+    return meters.find((m) => m.key === (capacityOf(at)?.key ?? at)) ?? null;
   }, [current, meters]);
 
   /** كم في نطاق القارئ أصلًا — به يُفرَّق «فرغ طابورُك» عن «لا طلبَ لك» */
@@ -997,7 +1024,7 @@ export function ApplicationsTable({
             notes={notesByApp.get(current.row.id) ?? EMPTY_NOTES}
             me={me}
             clash={clash}
-            capInvited={capInvited}
+            capHere={capHere}
             cvOpen={cvOpen}
             onCvToggle={() => setCvOpen((v) => !v)}
             onBack={() => setPicked(null)}
@@ -1613,7 +1640,8 @@ function NotesBlock({
 /* ── مدخلُ الجهات ────────────────────────────────────────────────────────── */
 
 /**
- * كم دُعي إلى المقابلة في كل جهة — **والرقمُ يُعرض ولا يمنع**.
+ * **عدّادا كلّ جهة: كم دُعي للمقابلة، وكم قُبل من سقفها** — يُعرضان ولا
+ * يمنعان.
  *
  * ⚠️ **الجهةُ وحدةُ العدّ، لا القائد.** رئيسُ لجنةٍ نطاقُه ثلاثُ وحدات
  * يرى ثلاثةَ عدّادات: لكلِّ وحدةٍ مدخلُها. وعدّادٌ واحدٌ له كان يعني أن
@@ -1622,6 +1650,12 @@ function NotesBlock({
  * ⚠️ **ورئيسُ اللجنة ونائبُه يريان العدّادَ نفسَه، وهذا صواب** — الوحدةُ
  * لها مدخلٌ واحدٌ مهما تعدّد من يضغط. ولو أردنا فصلَ نصيب كلٍّ منهما
  * لاحتجنا عمودًا يسجّل مَن دعا، وهو ما لا تحتاجه المرحلة.
+ *
+ * ⚠️ **والرقمان مختلفان في طبيعتهما، فلا يُقرأ أحدُهما بالآخر.** سقفُ
+ * المقابلة (`INTERVIEW_CAP`) واحدٌ لكلّ الجهات، وسقفُ القبول يختلف من
+ * أربعةٍ في وحدة الميزانية إلى خمسين في MISthon. فجهةٌ سقفُ قبولها خمسون
+ * لا تبلغه بخمسةَ عشرَ مقابلةً أصلًا — والموازنةُ قرارُ رئاسةٍ لا حسابُ
+ * شاشة.
  */
 function IntakeMeters({ meters }: { meters: Meter[] }) {
   if (meters.length === 0) return null;
@@ -1635,17 +1669,21 @@ function IntakeMeters({ meters }: { meters: Meter[] }) {
     <div className="tile shrink-0 px-s4 py-s2">
       <div className="-mx-s4 flex items-center gap-x-s3 overflow-x-auto px-s4 [scrollbar-width:none]">
         <p className="text-fg-muted shrink-0 text-[0.7rem] font-semibold tracking-[0.1em]">
-          مدعوّون للمقابلة
+          مقابلةٌ · قبول
         </p>
         {meters.map((m) => {
           const full = m.invited >= INTERVIEW_CAP;
+          /* بلغت سقفَ قبولها — والجهةُ بلا سقفٍ لا تبلغ شيئًا */
+          const seated = m.cap !== null && m.accepted >= m.cap;
           return (
             <span
-              key={m.value}
-              title={`${m.total} عندها الآن · ${m.pending} بلا قرار`}
+              key={m.key}
+              title={`${m.total} عندها الآن · ${m.pending} بلا قرار${
+                m.cap === null ? " · لا سقفَ قبولٍ مسجَّلٌ لها" : ""
+              }`}
               className="border-line flex shrink-0 items-center gap-x-s2 rounded-full border px-s3 py-s1 text-[0.76rem]"
               style={
-                full
+                full || seated
                   ? {
                       borderColor:
                         "color-mix(in oklab, var(--warning) 55%, transparent)",
@@ -1655,10 +1693,34 @@ function IntakeMeters({ meters }: { meters: Meter[] }) {
                   : undefined
               }
             >
-              <span className="opacity-80">{m.label}</span>
-              <span dir="ltr" className="font-bold tabular-nums">
+              <span className="opacity-80">{isolateLatin(m.label)}</span>
+              <span
+                dir="ltr"
+                className="font-bold tabular-nums"
+                title="مدعوّون للمقابلة"
+              >
                 {m.invited}/{INTERVIEW_CAP}
               </span>
+              {/* ⚠️ **الرقمان يُفصَلان بفاصلٍ مرئيّ.** بلا فاصلٍ يُقرأ
+                  `4/15 2/15` رقمًا واحدًا مبتورًا — والشريطُ يُمسح بالعين
+                  في لمحةٍ لا يُتهجّى. */}
+              {m.cap !== null && (
+                <>
+                  <span aria-hidden className="opacity-30">
+                    ·
+                  </span>
+                  <span
+                    dir="ltr"
+                    className="font-bold tabular-nums"
+                    title="قُبلوا من سقف الجهة"
+                    style={
+                      seated ? { color: "var(--st-accepted)" } : undefined
+                    }
+                  >
+                    {m.accepted}/{m.cap}
+                  </span>
+                </>
+              )}
               {/* ⚠️ **علامةُ الفراغ هي ما تُقفَل به المرحلة.** الرئاسةُ
                   تمسح الشريطَ بعينها: كلُّها مُعلَّمة ⇒ لا أحدَ ينتظر
                   قرارًا، فالفتحُ لا يسبق شغلًا قائمًا. */}
@@ -1676,10 +1738,39 @@ function IntakeMeters({ meters }: { meters: Meter[] }) {
         })}
         {/* ⚠️ **يُقال إنه إرشادٌ لا سقف.** الإدارة قالت «يمديك أقلّ، وفي
             حالات استثناء يمديك أعلى» — فلونٌ تحذيريٌّ بلا هذي الكلمة
-            يُقرأ منعًا، فيتوقّف قائدٌ عن دعوةٍ يملكها. */}
+            يُقرأ منعًا، فيتوقّف قائدٌ عن دعوةٍ يملكها. والقبولُ مثلُه:
+            سقفُه رقمٌ يُقال ولا يُقفل عليه بابٌ في ليلة الحسم. */}
         <span className="text-fg-muted shrink-0 ps-s2 text-[0.72rem]">
-          إرشادٌ لا سقف
+          الأوّل مقابلة، والثاني قبول — إرشادٌ لا سقف
         </span>
+        {/**
+         * **انحرافُ جدول السقوف عن قائمة الجهات — يُقال ولا يُسقط الشاشة.**
+         *
+         * ⚠️ **وهو انحرافٌ يقع بلا ضجيج.** وحدةٌ تُفتح في `committees.ts`
+         * ولا تُذكر في `capacity.ts` تصير بلا سقفٍ صامتة؛ وسلَجٌ يُعاد
+         * تسميتُه يترك في الجدول سقفًا لا يعدّ أحدًا. والاثنان يظهران هنا
+         * لمن يملك إصلاحَهما — لا في سجلٍّ لا يقرؤه أحد.
+         */}
+        {(UNCAPPED_PREFERENCES.length > 0 ||
+          UNKNOWN_CAPACITY_VALUES.length > 0) && (
+          <span
+            role="status"
+            className="shrink-0 rounded-full border px-s3 py-s1 text-[0.72rem]"
+            style={{
+              borderColor:
+                "color-mix(in oklab, var(--danger) 55%, transparent)",
+              color: "var(--danger)",
+            }}
+          >
+            {UNCAPPED_PREFERENCES.length > 0 &&
+              `${UNCAPPED_PREFERENCES.length} جهةٌ بلا سقفٍ مسجَّل`}
+            {UNCAPPED_PREFERENCES.length > 0 &&
+              UNKNOWN_CAPACITY_VALUES.length > 0 &&
+              " · "}
+            {UNKNOWN_CAPACITY_VALUES.length > 0 &&
+              `${UNKNOWN_CAPACITY_VALUES.length} سقفٌ لجهةٍ لا تُعرف`}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -2311,7 +2402,7 @@ function Dossier({
   notes,
   me,
   clash,
-  capInvited,
+  capHere,
   cvOpen,
   onCvToggle,
   onBack,
@@ -2328,7 +2419,7 @@ function Dossier({
   /** أسماءُ من يتعارض موعدُهم مع موعده — تُقال عند الحقل لا في القائمة */
   clash: readonly string[];
   /** كم مدعوًّا في جهته الآن — و`null` لمن لا جهةَ له في المقاييس */
-  capInvited: number | null;
+  capHere: Meter | null;
   /** أمعاينةُ السيرة مفتوحة؟ الحالةُ في الأب فتبقى عبر المتقدّمين */
   cvOpen: boolean;
   onCvToggle: () => void;
@@ -2498,7 +2589,7 @@ function Dossier({
             <StatusPicker
               row={row}
               clash={clash}
-              capInvited={capInvited}
+              capHere={capHere}
               dark
             />
           </div>
@@ -2838,13 +2929,13 @@ function Checklist({ items }: { items: readonly Item[] }) {
 function StatusPicker({
   row,
   clash,
-  capInvited,
+  capHere,
   dark,
 }: {
   row: Row;
   clash: readonly string[];
   /** المدعوّون في جهته الآن — يُقال عند الزرّ لا في شريطٍ فوق الشاشة */
-  capInvited: number | null;
+  capHere: Meter | null;
   dark?: boolean;
 }) {
   const [pending, start] = useTransition();
@@ -2943,16 +3034,43 @@ function StatusPicker({
        * حالات استثناء يمديك أعلى» — فالمنعُ يخالف القرارَ نفسَه، والصمتُ
        * يجعل التجاوزَ يقع بلا علم. فيُقال ويُترك القرار.
        */}
-      {capInvited !== null &&
-        capInvited >= INTERVIEW_CAP &&
+      {capHere !== null &&
+        capHere.invited >= INTERVIEW_CAP &&
         row.status !== "reviewing" && (
           <p
             role="status"
             className="mt-s2 text-[0.76rem] leading-relaxed"
             style={{ color: dark ? "var(--sky)" : "var(--warning)" }}
           >
-            ⚠️ بلغت جهتُه <strong>{capInvited}</strong> مدعوًّا، والإرشاد{" "}
+            ⚠️ بلغت جهتُه <strong>{capHere.invited}</strong> مدعوًّا، والإرشاد{" "}
             {INTERVIEW_CAP} — ولك أن تتجاوزه.
+          </p>
+        )}
+
+      {/**
+       * **وسقفُ القبول يُقال عند زرّ القبول — وهو غيرُ سقف المقابلة.**
+       *
+       * ⚠️ **ولا يُقال إلّا لمن لم يُقبل بعد.** من هو مقبولٌ أصلًا محسوبٌ
+       * في `accepted`، فتحذيرُه بأن جهتَه امتلأت يعني «اسحب قبولًا
+       * أعطيتَه» — وهو ليس القرارَ المعروضَ عليه.
+       *
+       * ⚠️ **وعدّادٌ لا قفل، كسابقه.** الرئاسةُ تملك أن تتجاوز، والزرُّ
+       * يبقى شغّالًا — والصمتُ وحدَه هو ما يجعل التجاوزَ يقع بلا علم.
+       */}
+      {capHere !== null &&
+        capHere.cap !== null &&
+        capHere.accepted >= capHere.cap &&
+        row.status !== "accepted" && (
+          <p
+            role="status"
+            className="mt-s2 text-[0.76rem] leading-relaxed"
+            style={{ color: dark ? "var(--sky)" : "var(--warning)" }}
+          >
+            ⚠️ بلغت <strong>{capHere.label}</strong> سقفَ قبولها —{" "}
+            <strong dir="ltr">
+              {capHere.accepted}/{capHere.cap}
+            </strong>{" "}
+            — ولك أن تتجاوزه.
           </p>
         )}
 
