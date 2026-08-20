@@ -260,10 +260,17 @@ function Line({
           {time}
         </span>
       )}
-      <span className="text-fg min-w-0 flex-1 truncate text-[0.86rem] font-semibold">
+      {/* ⚠️ **الاسمُ ضِعفا الجهة في القسمة — والجهةُ كانت لا تنكمش أصلًا.**
+          كان الاسمُ `flex-1` (أساسُه صفر) والجهةُ بلا `flex` (أساسُها
+          محتواها)، فجهةٌ طويلة مثل «مونتاج الفيديو والموشن جرافيك» تأخذ
+          نصيبَها كاملًا ويُقصّ الاسمُ إلى «مُتق…». رُصد على 390px — والاسمُ
+          هو الشيءُ الوحيد الذي يُقرأ في سطرِ موعد. */}
+      <span className="text-fg min-w-0 flex-[2_1_6rem] truncate text-[0.86rem] font-semibold">
         {row.full_name}
       </span>
-      <span className="text-fg-muted truncate text-[0.76rem]">{unit}</span>
+      <span className="text-fg-muted min-w-0 flex-[1_1_4rem] truncate text-[0.76rem]">
+        {unit}
+      </span>
       {clash && (
         <span
           className="text-warning text-[0.74rem] font-semibold"

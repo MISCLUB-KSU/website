@@ -151,7 +151,7 @@ export function FlowChart({
           >
             حركة السلّم
             {hops > 0 && (
-              <span dir="ltr" className="ms-s2 tabular-nums opacity-60">
+              <span dir="ltr" className="tabular-nums opacity-60">
                 {hops}
               </span>
             )}

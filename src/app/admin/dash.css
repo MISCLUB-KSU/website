@@ -113,6 +113,11 @@
 .seg-item {
   display: inline-flex;
   align-items: center;
+  /* ⚠️ **الفسحةُ هنا لا `ms-s2` على العدّاد.** العدّادُ `dir="ltr"` ليُقرأ
+     رقمًا، و`margin-inline-start` يُحلّ **باتّجاه العنصر نفسِه** — فتقع
+     الفسحةُ يسارَه أي خارجَه، ويلتصق بالوسم: «حركة السلّم11». والفجوةُ في
+     الحاوي لا تسأل عن اتّجاه ابنها. */
+  gap: var(--s2);
   min-block-size: 2.75rem;
   border-radius: 999px;
   padding: 0.4rem 0.95rem;
@@ -125,6 +130,16 @@
 }
 .seg-item:hover {
   color: var(--fg);
+}
+
+/* ⚠️ **وعلى الشاشات الضيّقة تضيق الحشوةُ ولا يضيق هدفُ اللمس.** خمسةُ
+   تبويباتٍ بحشوة 0.95rem تفيض عن 390px (قِيس: 381 داخل 358). والارتفاع
+   يبقى 44px — وهو الضابطُ الذي لا يُمسّ. */
+@media (max-width: 26rem) {
+  .seg-item {
+    padding-inline: 0.6rem;
+    font-size: 0.78rem;
+  }
 }
 
 @media (min-width: 1024px) {

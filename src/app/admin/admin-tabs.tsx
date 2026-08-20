@@ -113,7 +113,21 @@ export function AdminTabs({
   return (
     <StoreProvider value={store}>
     <div className="flex min-h-0 flex-1 flex-col">
-      <div role="tablist" aria-label="أقسام اللوحة" className="seg shrink-0 self-start">
+      {/**
+       * ⚠️ **حاوٍ يُسحب حول الشريط — وبدونه تنزلق اللوحةُ كلُّها أفقيًّا.**
+       *
+       * قِيس على 390px: خمسةُ تبويبات عرضُها **381px** داخل حاوٍ **358px**،
+       * فيفيض ٢٣ بكسلًا وتصير الوثيقةُ ٣٩٧ — أي أن كلَّ شاشةٍ في اللوحة
+       * تُسحب سبعةَ بكسلاتٍ جانبًا، والترويسةُ تتزحزح مع الإصبع. ولا يظهر
+       * إلّا عند من يرى التبويب الخامس («الطاقم») — أي واحدٌ في النادي،
+       * ولهذا لم يُرصد قبل اليوم.
+       *
+       * و`overflow-x` هنا لا `flex-wrap`: الالتفافُ يجعله صفّين فيأكل
+       * ≈44px من ارتفاعٍ مبنيٍّ على ألّا يُمرَّر (انظر رأس `admin/page.tsx`).
+       * والسحبُ هو ما تفعله رقائقُ الحالة والعدّادات أسفلَه أصلًا.
+       */}
+      <div className="max-w-full shrink-0 self-start overflow-x-auto [scrollbar-width:none]">
+      <div role="tablist" aria-label="أقسام اللوحة" className="seg">
         {tabs.map((t) => (
           <button
             key={t.key}
@@ -126,6 +140,7 @@ export function AdminTabs({
             {t.label}
           </button>
         ))}
+      </div>
       </div>
 
       {/* ⚠️ التمرير **داخل اللوح** لا في الصفحة: اللوحة تُملأ بلا تمرير،
