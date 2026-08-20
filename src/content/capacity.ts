@@ -219,10 +219,43 @@ export const INTERVIEW_MARGIN = 1.5;
  */
 export const INTERVIEW_GUIDE_FALLBACK = 15;
 
-/** كم يُدعى إلى المقابلة في الجهة التي تقع فيها هذي الرغبة */
-export function interviewGuide(value: string): number {
+/* ── سقفُ المرحلة ─────────────────────────────────────────────────────── */
+
+/**
+ * **ما تقبله الجهةُ في المرحلة الأولى — لا أكثرُ من خمسةَ عشر.**
+ *
+ * ⚠️ **قرارُ الرئاسة في ٢٠ أغسطس ٢٠٢٦، وهو غيرُ سقف الموسم.** الفرزُ ثلاثُ
+ * مراحل: أصحابُ الرغبة الأولى، ثم الثانية، ثم الثالثة. ولو ملأت جهةٌ سقفَ
+ * موسمها كلَّه من الرغبات الأولى لَما بقي لمن نزل إليها شيءٌ — وهو نقضٌ
+ * لمعنى السلّم أصلًا: المرحلةُ الثانيةُ تفتح على مقاعدَ لا وجود لها.
+ *
+ * ⚠️ **ويُؤخذ الأصغرُ من الاثنين لا الخمسةَ عشرَ حرفيًّا.** وحدةُ الميزانية
+ * سقفُ موسمها **أربعة**؛ فـ«خمسةَ عشرَ في المرحلة الأولى» عندها يعني
+ * ثلاثةَ أضعافِ ما تملك. فالسقفُ الفعليّ `min(15, cap)`: الميزانية ٤،
+ * والأرشيف ٧، والتصوير ١٠، وما فوقها ١٥.
+ */
+export const PHASE_ONE_CAP = 15;
+
+/**
+ * سقفُ القبول الفعليّ عند مرحلةٍ بعينها.
+ *
+ * ⚠️ **وما بعد الأولى يرجع إلى سقف الموسم لا يتضاعف.** العدُّ تراكميّ —
+ * `accepted` تجمع من قُبل في كلّ المراحل — فسقفُ المرحلة الثانية هو ما
+ * بقي من الموسم، لا خمسةَ عشرَ جديدة.
+ */
+export function capAtPhase(cap: number, phase: number): number {
+  return phase <= 1 ? Math.min(PHASE_ONE_CAP, cap) : cap;
+}
+
+/** إرشادُ المقابلة لسقفٍ بعينه — ⌈السقف × ١٫٥⌉ */
+export function guideFor(cap: number): number {
+  return Math.ceil(cap * INTERVIEW_MARGIN);
+}
+
+/** كم يُدعى إلى المقابلة في الجهة التي تقع فيها هذي الرغبة، عند مرحلةٍ ما */
+export function interviewGuide(value: string, phase: number): number {
   const bucket = capacityOf(value);
   return bucket
-    ? Math.ceil(bucket.cap * INTERVIEW_MARGIN)
+    ? guideFor(capAtPhase(bucket.cap, phase))
     : INTERVIEW_GUIDE_FALLBACK;
 }

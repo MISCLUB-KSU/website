@@ -13,10 +13,11 @@ import {
 import {
   CAPACITY,
   INTERVIEW_GUIDE_FALLBACK,
-  INTERVIEW_MARGIN,
   UNCAPPED_PREFERENCES,
   UNKNOWN_CAPACITY_VALUES,
+  capAtPhase,
   capacityOf,
+  guideFor,
 } from "@/content/capacity";
 import { COMMITTEES } from "@/content/committees";
 import { findPreference, questionBlocks } from "@/content/preferences";
@@ -112,7 +113,20 @@ type Props = {
 const PHASE_STATUSES = STATUSES.filter((s) => DIRECT_STATUSES.includes(s.key));
 
 /** طابورُ المرحلة الأولى، أو كلُّ من ذكرني في رغباته الثلاث */
-type Queue = "first" | "all";
+/**
+ * **وسمُ الطابور — يتبع المرحلةَ المفتوحة لا يُثبَّت على «الأولى».**
+ *
+ * ⚠️ **كان «عندي الآن»، ومعه تبويبٌ ثانٍ «كلُّ من ذكرك».** ورُفع الثاني
+ * بطلب الرئاسة في ٢٠ أغسطس ٢٠٢٦: «أيُّ قائدٍ يظهر له بس اللي حاطين رغبة
+ * أولى فقط لا غير». والأوّلُ صار يقول **أيَّ رغبةٍ** يعمل عليها الآن —
+ * فلا يظنّ قائدُ المرحلة الثانية أن أمامه أصحابَ الرغبة الأولى.
+ */
+const QUEUE_LABELS = [
+  "",
+  "أصحاب الرغبة الأولى",
+  "أصحاب الرغبة الثانية",
+  "أصحاب الرغبة الثالثة",
+];
 
 /**
  * النطاقاتُ التسعة — **مبنيّةٌ من المحتوى لا مكتوبةٌ يدويًّا**.
@@ -144,8 +158,16 @@ type Meter = {
   pending: number;
   /** وكم قُبل عندها فعلًا — يُقاس على `cap` */
   accepted: number;
-  /** الحدُّ الأعلى للقبول — و`null` لجهةٍ لم تُعطَ سقفًا بعد */
+  /**
+   * الحدُّ الأعلى للقبول **عند المرحلة المفتوحة** — و`null` لجهةٍ بلا سقف.
+   *
+   * ⚠️ **وهو `min(15, سقف الموسم)` في الأولى.** المعروضُ ما يملكه القائدُ
+   * الآن لا ما تملكه جهتُه في الموسم كلِّه — ورقمُ الموسم في `capSeason`
+   * يُقال في تلميح الرقاقة.
+   */
   cap: number | null;
+  /** سقفُ الموسم كاملًا — للتلميح، وللفرق بينه وبين سقف المرحلة */
+  capSeason: number | null;
   /** وكم يُدعى إلى المقابلة عندها — مشتقٌّ من `cap` */
   guide: number;
 };
@@ -324,7 +346,6 @@ export function ApplicationsTable({
      ثانيةً وثالثةً أيضًا، وقبولُ أحدهم قبل أن يقابله قائدُ رغبته الأولى
      يُبطل ترتيبَ الرغبات كلَّه — وهو ما تقوم عليه خطّةُ الموسم. فالطابورُ
      يفتح على من اختارك **أوّلًا**، والبقيّةُ خلف تبديلٍ مقصود. */
-  const [queue, setQueue] = useState<Queue>("first");
   /* ⚠️ **معاينةٌ للرئاسة، لا تنازلٌ عن صلاحية.** الرئاسةُ ترى الكلَّ في
      القاعدة ولا يغيّر هذا شيئًا من ذلك — يغيّر **ما تعرضه الشاشة** حتى
      يتحقّق من يوزّع الحسابات ممّا سيراه كلُّ قائدٍ قبل أن يسلّمه المفتاح.
@@ -399,14 +420,15 @@ export function ApplicationsTable({
      وتثبيتُه على `choice1` كان يُخفي المرحلةَ الثانية كلَّها عن أصحابها. */
   /* ⚠️ **و`stage <= phase` معها.** القاعدةُ تمنع العملَ على رتبةٍ لم
      تُفتح؛ فعرضُها في الطابور يضع أمام القائد أشخاصًا كلُّ زرٍّ عليهم
-     يُردّ — «الطلب غير متاح» بلا سببٍ مفهوم. والمنعُ يُقال بألّا يُعرضوا،
-     ويبقون في «كلُّ من ذكرك» لمن أراد أن يستبق. */
+     يُردّ — «الطلب غير متاح» بلا سببٍ مفهوم. والمنعُ يُقال بألّا يُعرضوا.
+     ⚠️ **ولا بابَ آخرَ يراهم منه بعد اليوم:** كان تبويبُ «كلُّ من ذكرك»
+     يعرضهم للاطّلاع، ورُفع بطلب الرئاسة — «ما أبغى يظهروا له كلهم». */
   const pool = useMemo(() => {
-    if (queue === "all" || asAdmin) return rows;
+    if (asAdmin) return rows;
     return rows.filter(
       (r) => r.stage <= phase && inScopes(choiceAtStage(r), asScopes),
     );
-  }, [rows, queue, asScopes, asAdmin, phase]);
+  }, [rows, asScopes, asAdmin, phase]);
 
   const scored = useMemo(
     () => pool.map((r) => ({ row: r, ...completeness(r) })),
@@ -475,9 +497,10 @@ export function ApplicationsTable({
         return {
           key,
           label: bucket?.label ?? (asAdmin ? prefName(key) : prefShort(key)),
-          cap: bucket?.cap ?? null,
+          cap: bucket ? capAtPhase(bucket.cap, phase) : null,
+          capSeason: bucket?.cap ?? null,
           guide: bucket
-            ? Math.ceil(bucket.cap * INTERVIEW_MARGIN)
+            ? guideFor(capAtPhase(bucket.cap, phase))
             : INTERVIEW_GUIDE_FALLBACK,
           ...v,
         };
@@ -943,10 +966,7 @@ export function ApplicationsTable({
         total={pool.length}
         showing={shown.length}
         pendingRejections={pendingRejections}
-        queue={queue}
-        setQueue={setQueue}
-        showQueue={!asAdmin}
-        beyondFirst={rows.length - pool.length}
+        queueLabel={asAdmin ? "" : QUEUE_LABELS[phase] ?? ""}
         scopeOptions={isAdmin ? SCOPE_OPTIONS : null}
         viewAs={viewAs}
         setViewAs={setViewAs}
@@ -1300,7 +1320,8 @@ function BulkBar({
  * فيملأ قادةُ الرتبة التالية نصيبَهم من دفعةٍ ناقصة.
  *
  * ⚠️ **ويُقال للقائد أيضًا وإن لم يملك الزرّ.** من لا يعرف أيَّ مرحلةٍ
- * نحن فيها لا يفهم لماذا لا يستطيع العملَ على من يراه في «كلُّ من ذكرك».
+ * نحن فيها لا يعرف لماذا خلا طابورُه فجأةً بعد أن حسم أصحابَ الرغبة
+ * الأولى — ولا متى يعود يمتلئ.
  */
 function PhaseBar({
   phase,
@@ -1684,7 +1705,11 @@ function IntakeMeters({ meters }: { meters: Meter[] }) {
             <span
               key={m.key}
               title={`${m.total} عندها الآن · ${m.pending} بلا قرار${
-                m.cap === null ? " · لا سقفَ قبولٍ مسجَّلٌ لها" : ""
+                m.cap === null
+                  ? " · لا سقفَ قبولٍ مسجَّلٌ لها"
+                  : m.capSeason !== null && m.capSeason !== m.cap
+                    ? ` · سقفُ هذي المرحلة ${m.cap} وسقفُ الموسم ${m.capSeason}`
+                    : ""
               }`}
               className="border-line flex shrink-0 items-center gap-x-s2 rounded-full border px-s3 py-s1 text-[0.76rem]"
               style={
@@ -2051,10 +2076,7 @@ function Toolbar({
   total,
   showing,
   pendingRejections,
-  queue,
-  setQueue,
-  showQueue,
-  beyondFirst,
+  queueLabel,
   scopeOptions,
   viewAs,
   setViewAs,
@@ -2071,11 +2093,13 @@ function Toolbar({
   total: number;
   showing: number;
   pendingRejections: number;
-  queue: Queue;
-  setQueue: (v: Queue) => void;
-  /** الرئاسةُ ترى الكلَّ أصلًا، فالتبديلُ لها بلا أثر — فيُخفى */
-  showQueue: boolean;
-  beyondFirst: number;
+  /**
+   * وسمُ الطابور — وفراغٌ للرئاسة، فهي ترى الكلَّ ولا طابورَ لها.
+   *
+   * ⚠️ **وسمٌ لا مبدّل.** كان تبويبين، والقائدُ اليوم لا يرى إلّا أصحابَ
+   * الرتبة المفتوحة — فما بقي إلّا أن يُقال ما هم.
+   */
+  queueLabel: string;
   /** للرئاسة وحدها — و`null` لغيرها فلا يُرسم المحدّد */
   scopeOptions: readonly { value: string; label: string }[] | null;
   viewAs: string;
@@ -2126,33 +2150,13 @@ function Toolbar({
             أفقيًّا لا رأسيًّا. و`sm:contents` تُذيب هذي الحاوية على
             الشاشات الواسعة فيعود التخطيطُ الأصليّ بلا نسخةٍ ثانية منه. */}
         <div className="-mx-s4 flex shrink-0 items-center gap-x-s2 overflow-x-auto px-s4 [scrollbar-width:none] sm:contents">
-        {showQueue && (
-          <div role="tablist" aria-label="الطابور" className="seg shrink-0">
-            <button
-              role="tab"
-              type="button"
-              aria-selected={queue === "first"}
-              className="seg-item"
-              onClick={() => setQueue("first")}
-            >
-              عندي الآن
-            </button>
-            <button
-              role="tab"
-              type="button"
-              aria-selected={queue === "all"}
-              className="seg-item"
-              onClick={() => setQueue("all")}
-              title="كلُّ من ذكرك في رغباته الثلاث — للاطّلاع؛ ولا يُعمل إلّا على من هو عند رتبتك"
-            >
-              كلُّ من ذكرك
-              {beyondFirst > 0 && (
-                <span dir="ltr" className="ms-s2 tabular-nums opacity-60">
-                  +{beyondFirst}
-                </span>
-              )}
-            </button>
-          </div>
+        {queueLabel && (
+          <span
+            className="border-line text-fg-muted shrink-0 rounded-full border px-s3 py-s1 text-[0.76rem]"
+            title="لا يُعرض لك إلّا من هو عند الرتبة المفتوحة في جهتك"
+          >
+            {queueLabel}
+          </span>
         )}
 
         <div className="flex gap-x-s2 sm:flex-wrap sm:gap-y-s2">
@@ -3071,10 +3075,14 @@ function StatusPicker({
             className="mt-s2 text-[0.76rem] leading-relaxed"
             style={{ color: dark ? "var(--sky)" : "var(--warning)" }}
           >
-            ⚠️ بلغت <strong>{capHere.label}</strong> سقفَ قبولها —{" "}
+            ⚠️ بلغت <strong>{capHere.label}</strong> سقفَ قبولها في هذي
+            المرحلة —{" "}
             <strong dir="ltr">
               {capHere.accepted}/{capHere.cap}
-            </strong>{" "}
+            </strong>
+            {capHere.capSeason !== null && capHere.capSeason !== capHere.cap
+              ? ` (وسقفُ الموسم ${capHere.capSeason})`
+              : ""}{" "}
             — ولك أن تتجاوزه.
           </p>
         )}
