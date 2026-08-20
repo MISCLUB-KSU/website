@@ -70,6 +70,35 @@ export async function sendLoginLink(
     if (lookupError) throw lookupError;
     if (!staff) return same;
 
+    /**
+     * **يُنشأ الحسابُ موثَّقًا قبل الإرسال — وإلّا وصلته رسالةُ توثيقٍ لا
+     * رسالةَ دخول.**
+     *
+     * ⚠️ **عطلٌ وقع مرّتين قبل أن يُفهم (١٨ و٢٠ أغسطس ٢٠٢٦).**
+     * `signInWithOtp` تُنشئ الحسابَ إن لم يوجد؛ ومع تفعيل تأكيد البريد في
+     * المشروع يرسل Supabase عندئذٍ قالبَ **«أكّد تسجيلك»** لا قالبَ الرابط
+     * السحريّ. والفرقُ قاتل: تلك الرسالةُ **لا رمزَ فيها**، ورابطُها
+     * يُستهلك مرّةً فيرتدّ صاحبُه إلى شاشة الدخول بلا سببٍ مفهوم. قِيس في
+     * السجلّ: خمسُ `One-time token not found` لقائدٍ واحدٍ في تسع دقائق،
+     * وقولُه حرفًا: «عيا يتوثق ايميلي، ولا جاني رمز».
+     *
+     * ⚠️ **والتوثيقُ هنا لا يفتح بابًا.** البريدُ مسجَّلٌ في `staff` — فُحص
+     * قبل سطرين — والجلسةُ لا تُمنح إلّا بعد أن يُثبت صاحبُه ملكيّةَ صندوقه
+     * برمزٍ أو رابطٍ يصله. فالتوثيقُ المسبق يحذف خطوةً لا حارسًا.
+     *
+     * ⚠️ **ويُتجاهَل خطأُ «موجودٌ أصلًا» ولا يُردّ به.** أغلبُ النداءات
+     * لحساباتٍ قائمة، وهي الحالةُ السويّة لا الخطأ. وما عداه يُسجَّل
+     * ويمضي: فشلُ الإنشاء لا يمنع محاولةَ الإرسال — وأسوأُ ما يقع أن يعود
+     * السلوكُ إلى ما كان.
+     */
+    const { error: createError } = await admin.auth.admin.createUser({
+      email,
+      email_confirm: true,
+    });
+    if (createError && !/already|exists|registered/i.test(createError.message)) {
+      console.error("[admin] تعذّر تهيئة الحساب", createError.message);
+    }
+
     const origin = (await headers()).get("origin") ?? "";
     const supabase = await createClient();
     const { error } = await supabase.auth.signInWithOtp({
