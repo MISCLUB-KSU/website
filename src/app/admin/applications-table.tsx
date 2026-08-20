@@ -12,6 +12,8 @@ import {
 
 import {
   CAPACITY,
+  INTERVIEW_GUIDE_FALLBACK,
+  INTERVIEW_MARGIN,
   UNCAPPED_PREFERENCES,
   UNKNOWN_CAPACITY_VALUES,
   capacityOf,
@@ -42,7 +44,6 @@ import {
 } from "./actions";
 import {
   DIRECT_STATUSES,
-  INTERVIEW_CAP,
   INTERVIEW_MINUTES,
   STAGE_LABELS,
   STATUSES,
@@ -145,6 +146,8 @@ type Meter = {
   accepted: number;
   /** الحدُّ الأعلى للقبول — و`null` لجهةٍ لم تُعطَ سقفًا بعد */
   cap: number | null;
+  /** وكم يُدعى إلى المقابلة عندها — مشتقٌّ من `cap` */
+  guide: number;
 };
 
 const SORTS = [
@@ -473,6 +476,9 @@ export function ApplicationsTable({
           key,
           label: bucket?.label ?? (asAdmin ? prefName(key) : prefShort(key)),
           cap: bucket?.cap ?? null,
+          guide: bucket
+            ? Math.ceil(bucket.cap * INTERVIEW_MARGIN)
+            : INTERVIEW_GUIDE_FALLBACK,
           ...v,
         };
       })
@@ -1651,11 +1657,10 @@ function NotesBlock({
  * لها مدخلٌ واحدٌ مهما تعدّد من يضغط. ولو أردنا فصلَ نصيب كلٍّ منهما
  * لاحتجنا عمودًا يسجّل مَن دعا، وهو ما لا تحتاجه المرحلة.
  *
- * ⚠️ **والرقمان مختلفان في طبيعتهما، فلا يُقرأ أحدُهما بالآخر.** سقفُ
- * المقابلة (`INTERVIEW_CAP`) واحدٌ لكلّ الجهات، وسقفُ القبول يختلف من
- * أربعةٍ في وحدة الميزانية إلى خمسين في MISthon. فجهةٌ سقفُ قبولها خمسون
- * لا تبلغه بخمسةَ عشرَ مقابلةً أصلًا — والموازنةُ قرارُ رئاسةٍ لا حسابُ
- * شاشة.
+ * ⚠️ **والرقمان مشدودان أحدُهما إلى الآخر الآن.** إرشادُ المقابلة
+ * (`interviewGuide`) مشتقٌّ من سقف القبول بهامش النصف — فوحدةُ الميزانية
+ * تقرأ `٦/٤` و MISthon يقرأ `٧٥/٥٠`. وكان الأوّلُ رقمًا واحدًا (١٥) للجميع،
+ * فيقرأ الاثنان العددَ نفسَه وسقفاهما يفترقان اثنيْ عشرَ ضعفًا.
  */
 function IntakeMeters({ meters }: { meters: Meter[] }) {
   if (meters.length === 0) return null;
@@ -1672,7 +1677,7 @@ function IntakeMeters({ meters }: { meters: Meter[] }) {
           مقابلةٌ · قبول
         </p>
         {meters.map((m) => {
-          const full = m.invited >= INTERVIEW_CAP;
+          const full = m.invited >= m.guide;
           /* بلغت سقفَ قبولها — والجهةُ بلا سقفٍ لا تبلغ شيئًا */
           const seated = m.cap !== null && m.accepted >= m.cap;
           return (
@@ -1699,7 +1704,7 @@ function IntakeMeters({ meters }: { meters: Meter[] }) {
                 className="font-bold tabular-nums"
                 title="مدعوّون للمقابلة"
               >
-                {m.invited}/{INTERVIEW_CAP}
+                {m.invited}/{m.guide}
               </span>
               {/* ⚠️ **الرقمان يُفصَلان بفاصلٍ مرئيّ.** بلا فاصلٍ يُقرأ
                   `4/15 2/15` رقمًا واحدًا مبتورًا — والشريطُ يُمسح بالعين
@@ -3035,7 +3040,7 @@ function StatusPicker({
        * يجعل التجاوزَ يقع بلا علم. فيُقال ويُترك القرار.
        */}
       {capHere !== null &&
-        capHere.invited >= INTERVIEW_CAP &&
+        capHere.invited >= capHere.guide &&
         row.status !== "reviewing" && (
           <p
             role="status"
@@ -3043,7 +3048,7 @@ function StatusPicker({
             style={{ color: dark ? "var(--sky)" : "var(--warning)" }}
           >
             ⚠️ بلغت جهتُه <strong>{capHere.invited}</strong> مدعوًّا، والإرشاد{" "}
-            {INTERVIEW_CAP} — ولك أن تتجاوزه.
+            {capHere.guide} — ولك أن تتجاوزه.
           </p>
         )}
 

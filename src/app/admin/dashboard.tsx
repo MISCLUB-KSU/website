@@ -329,14 +329,16 @@ function Progress({
   const seats = (() => {
     const caps = new Map<string, number>();
     let accepted = 0;
+    let inProjects = 0;
     for (const r of rows) {
       accepted += r.accepted;
+      if (r.value.startsWith("project:")) inProjects += r.accepted;
       const bucket = capacityOf(r.value);
       if (bucket) caps.set(bucket.key, bucket.cap);
     }
     let cap = 0;
     for (const c of caps.values()) cap += c;
-    return { accepted, cap };
+    return { accepted, cap, inProjects };
   })();
 
   return (
@@ -452,6 +454,25 @@ function Progress({
             {seats.cap}
           </b>{" "}
           مقعدًا
+        </p>
+      )}
+
+      {/**
+       * **من قُبل في مشروعٍ فليس في لجنة — يُقال وهو يقع، لا عند الإغلاق.**
+       *
+       * ⚠️ **الرئاسةُ أقرّت هذا بعد عرضه (٢٠ أغسطس ٢٠٢٦)، والرقمُ يُعرض
+       * لأن الإقرار كان على المبدأ لا على العدد.** الصفُّ له سلّمٌ واحد:
+       * من قُبل عند رغبته توقّف — فالمقبولُ في مشروعٍ عند رغبته الأولى
+       * عضوٌ فيه بلا لجنة. و١٣٠ متقدّمًا وضعوا مشروعًا أوّلًا، فالرقمُ قد
+       * يبلغ المئة. وسطرٌ يقوله وهو يتصاعد خيرٌ من مفاجأةٍ في ليلة الجرد.
+       */}
+      {seats.inProjects > 0 && (
+        <p className="text-fg-muted mt-s1 text-[0.68rem]">
+          منهم{" "}
+          <b className="text-fg tabular-nums" dir="ltr">
+            {seats.inProjects}
+          </b>{" "}
+          في مشاريعَ — بلا لجنة
         </p>
       )}
     </section>
