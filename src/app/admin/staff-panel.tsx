@@ -34,17 +34,66 @@ export type StaffRow = {
   created_at: string;
 };
 
-/** نفسُ اشتقاق `SCOPE_OPTIONS` في شاشة الطلبات — ومصدرُهما واحد */
-const SCOPES: readonly { value: string; label: string }[] = [
-  ...COMMITTEES.map((c) => ({
-    value: `committee:${c.slug}`,
-    label: c.name,
-  })),
-  ...PROJECTS.filter((p) => p.applicationState === "open").map((p) => ({
-    value: `project:${p.slug}`,
-    label: p.name,
-  })),
+/**
+ * **النطاقُ يُعطى للجنةٍ كاملة أو لوحدةٍ بعينها.**
+ *
+ * ⚠️ **وكان اللجنةَ وحدَها، فلم يكن لقائد الوحدة نطاقٌ يُعبَّر عنه.** طُلب
+ * في ٢٠ أغسطس ٢٠٢٦ أن تُعطى مسؤولةُ التواصل الداخليّ وحدتَها لا لجنتَها
+ * كلَّها؛ وكانت القائمةُ تسع خياراتٍ لا غير، فالبديلُ الوحيد أن ترى
+ * الرعاياتِ والزياراتِ معها — أي ٥٧ طلبًا بدل ١٠.
+ *
+ * ⚠️ **والقاعدةُ تقبل هذا منذ البداية:** `choice_in_scopes` تطابق القيمةَ
+ * كاملةً **أو ببادئةٍ منتهيةٍ بشرطةٍ مائلة** — فالناقصُ كان خياراتٍ في
+ * الشاشة لا حارسًا في القاعدة.
+ *
+ * ⚠️ **وأشدُّ ما في غيابها أنه كان يمحو صامتًا.** نطاقٌ يُكتب في القاعدة
+ * ولا يقابله مربّعٌ هنا لا يُعلَّم عند فتح الصفّ، و`saveStaff` تكتب ما
+ * وصلها — فيكفي أن يفتح المدير صفَّها ويضغط «احفظ» ليخرج نطاقُها كلُّه
+ * وتفتح هي شاشةً فارغة.
+ *
+ * ⚠️ **ووحداتُ الإعلاميّة ستٌّ لا ثلاث** — `applicationUnits`، وهي ما
+ * تحمله الطلباتُ المحفوظة فعلًا. والثلاثُ الإداريّةُ لا يقابلها في
+ * `choice1` شيء، فلا تصلح نطاقًا.
+ */
+type ScopeOption = {
+  value: string;
+  /** داخل مجموعته — «اللجنة كلّها» أو اسم الوحدة */
+  label: string;
+  /** خارجَها، في سطر القائمة */
+  full: string;
+};
+
+const SCOPE_GROUPS: readonly { label: string; options: ScopeOption[] }[] = [
+  ...COMMITTEES.map((c) => {
+    /* ⚠️ وحداتُ **التقديم** لا وحداتُ العرض — انظر `preferences.ts` */
+    const units = c.applicationUnits ?? c.units;
+    return {
+      label: c.name,
+      options: [
+        {
+          value: `committee:${c.slug}`,
+          label: units.length ? "اللجنة كلّها" : c.name,
+          full: c.name,
+        },
+        ...units.map((u) => ({
+          value: `committee:${c.slug}/${u.slug}`,
+          label: u.name,
+          full: u.name,
+        })),
+      ],
+    };
+  }),
+  {
+    label: "لجنة المشاريع",
+    options: PROJECTS.filter((p) => p.applicationState === "open").map((p) => ({
+      value: `project:${p.slug}`,
+      label: p.name,
+      full: p.name,
+    })),
+  },
 ];
+
+const SCOPES: readonly ScopeOption[] = SCOPE_GROUPS.flatMap((g) => g.options);
 
 export function StaffPanel({
   rows,
@@ -199,7 +248,7 @@ export function StaffPanel({
                   : isolateLatin(
                       (r.scopes ?? [])
                         .map(
-                          (s) => SCOPES.find((o) => o.value === s)?.label ?? s,
+                          (s) => SCOPES.find((o) => o.value === s)?.full ?? s,
                         )
                         .join(" · ") || "بلا نطاق",
                     )}
@@ -325,22 +374,38 @@ function StaffForm({
           <legend className="text-fg-muted mb-s1">
             النطاق — ما يستقبل طلباتِه
           </legend>
-          <div className="grid gap-x-s4 gap-y-s2 sm:grid-cols-2">
-            {SCOPES.map((s) => (
-              <label key={s.value} className="flex items-center gap-x-s2">
-                <input
-                  type="checkbox"
-                  name="scopes"
-                  value={s.value}
-                  defaultChecked={(row.scopes ?? []).includes(s.value)}
-                  className="size-4 shrink-0 accent-[var(--d-cyan)]"
-                />
-                <span className="min-w-0 truncate">{isolateLatin(s.label)}</span>
-              </label>
+          {/* ⚠️ **مجموعاتٌ لا قائمةٌ مسطّحة.** إحدى وعشرون خانةً متتابعةً
+              تجعل «وحدة الزيارات» و«وحدة العمليات» تبدوان في مستوًى واحدٍ
+              مع لجنتيهما — فيُعلَّم على الاثنين معًا بلا داعٍ. والعنوانُ
+              يقول لأيّ لجنةٍ تتبع الوحدة. */}
+          <div className="flex flex-col gap-s3">
+            {SCOPE_GROUPS.map((g) => (
+              <div key={g.label}>
+                <p className="text-fg-muted mb-s1 text-[0.72rem] font-semibold">
+                  {isolateLatin(g.label)}
+                </p>
+                <div className="grid gap-x-s4 gap-y-s2 sm:grid-cols-2">
+                  {g.options.map((s) => (
+                    <label key={s.value} className="flex items-center gap-x-s2">
+                      <input
+                        type="checkbox"
+                        name="scopes"
+                        value={s.value}
+                        defaultChecked={(row.scopes ?? []).includes(s.value)}
+                        className="size-4 shrink-0 accent-[var(--d-cyan)]"
+                      />
+                      <span className="min-w-0 truncate">
+                        {isolateLatin(s.label)}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
           <p className="text-fg-muted text-[0.74rem]">
-            وحداتُ اللجنة تتبع لجنتَها تلقائيًّا — فاختيارُ اللجنة يكفي.
+            «اللجنة كلّها» تشمل وحداتِها جميعًا. ولمن يقود وحدةً واحدة
+            علّم عليها وحدَها — فلا يرى طلباتِ أخواتها.
           </p>
         </fieldset>
       )}
