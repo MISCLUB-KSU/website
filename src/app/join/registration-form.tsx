@@ -11,6 +11,7 @@ import {
   validateUploadTotal,
   type RegistrationState,
 } from "@/lib/registration";
+import { helpWhatsappHref } from "@/content/contact";
 import { submitRegistration } from "./actions";
 import { RequestCard } from "./request-card";
 import { StepPersonal } from "./step-personal";
@@ -301,6 +302,10 @@ export function RegistrationForm({
   }
 
   if (state.ok) {
+    /* يُحسب هنا لا في الوسم: `null` حين لا رقمَ مضبوطًا، فيسقط الزرّ */
+    const help = helpWhatsappHref(
+      "السلام عليكم، قدّمتُ على عضوية نادي MIS ونسيتُ إرفاق سيرتي الذاتية.",
+    );
     return (
       <div
         role="status"
@@ -329,15 +334,48 @@ export function RegistrationForm({
             يصل الحقلُ فارغًا. فصار الجوابُ معروضًا في الحالين — لا في حالة
             الوصول وحدها، لأن **الغياب هو الذي يحتاج أن يُقال**. */}
         {state.received && (
-          <p
-            className={`mx-auto mt-s4 max-w-[44ch] text-[0.9rem] leading-relaxed ${
-              state.received.cv ? "text-fg-muted" : "text-warning font-semibold"
-            }`}
-          >
-            {state.received.cv
-              ? "ووصلت معه سيرتك الذاتية."
-              : "ولم تصلنا سيرةٌ ذاتية مع الطلب — وهي اختيارية، فإن أردت إرفاقها راسلنا."}
-          </p>
+          <>
+            <p
+              className={`mx-auto mt-s4 max-w-[44ch] text-[0.9rem] leading-relaxed ${
+                state.received.cv
+                  ? "text-fg-muted"
+                  : "text-warning font-semibold"
+              }`}
+            >
+              {state.received.cv
+                ? "ووصلت معه سيرتك الذاتية."
+                : help
+                  ? "ولم تصلنا سيرةٌ ذاتية مع الطلب — وهي اختيارية، وإن أردت إرفاقها فأرسِلها لنا الآن:"
+                  : "ولم تصلنا سيرةٌ ذاتية مع الطلب — وهي اختيارية، فإن أردت إرفاقها راسلنا."}
+            </p>
+
+            {/**
+             * **«راسلنا» كانت تقول افعل ولا تقول أين.**
+             *
+             * ⚠️ **وهي أسوأُ من الصمت:** تُحمّل الطالبَ مسؤوليّةَ استدراكٍ
+             * ثم تُغلق البابَ في وجهه، فيبحث في الموقع عن عنوانٍ لا يعرفه
+             * أو يترك الأمر. وثلثا من قدّموا بلا سيرة — فالسطرُ يُقرأ
+             * كثيرًا.
+             *
+             * ⚠️ **وزرٌّ لا رقمٌ عارٍ.** ينقر فتُفتح المحادثةُ بنصٍّ مبدئيٍّ
+             * يقول عن أيّ شيءٍ يكتب — فلا يصل «السلام عليكم» وحدَه ولا
+             * يُعرف صاحبُه. والرقمُ لا يُطبع في الصفحة، فلا تلتقطه
+             * الماسحات.
+             *
+             * ⚠️ **ولمن لم يرفق وحدَه.** من وصلت سيرتُه لا استدراكَ عنده،
+             * وزرٌّ أمامه يدعوه إلى مراسلةٍ بلا سبب.
+             */}
+            {!state.received.cv && help && (
+              <a
+                href={help}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="border-line-strong text-fg mt-s3 inline-flex min-h-11 items-center gap-x-s2 rounded-xl border px-s4 text-[0.85rem] font-semibold transition-opacity hover:opacity-80"
+              >
+                أرسِلها لنا على واتساب
+              </a>
+            )}
+          </>
         )}
       </div>
     );
