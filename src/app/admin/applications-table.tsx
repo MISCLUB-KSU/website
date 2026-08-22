@@ -22,8 +22,6 @@ import {
 import { COMMITTEES } from "@/content/committees";
 import { findPreference, questionBlocks } from "@/content/preferences";
 import { PROJECTS } from "@/content/projects";
-import { statusLabel } from "@/content/statuses";
-import { MAJOR_OTHER } from "@/lib/registration";
 import {
   answerName,
   splitAnswer,
@@ -31,6 +29,7 @@ import {
 } from "@/content/questions";
 import { isolateLatin } from "@/lib/bidi";
 import { useHydrated } from "@/lib/use-hydrated";
+import { rosterCsv } from "./roster-csv";
 import { useStore } from "./store";
 import {
   addNote,
@@ -54,9 +53,7 @@ import {
   choiceAtStage,
   fromRiyadhInput,
   interviewClashes,
-  interviewDayLabel,
   interviewLabel,
-  interviewTime,
   whatsappHref,
   toRiyadhInput,
   inScopes,
@@ -2305,97 +2302,26 @@ function Chip({
 /* ── التصدير ────────────────────────────────────────────────────────────── */
 
 /**
- * **تصديرُ المعروض إلى ملفٍّ يفتحه Excel.**
+ * **تنزيلُ المعروض ملفًّا يفتحه Excel.**
  *
- * ⚠️ **ولا رقمَ أحوالٍ فيه — وهذا شرطُ وجوده.** طلب فريقُ مشروعٍ ربطَ
- * الطلبات بملفٍّ على `OneDrive` شخصيٍّ يُشارَك برابط. والربطُ التلقائيُّ
- * متعذّرٌ إداريًّا (يحتاج تسجيلَ تطبيقٍ في مستأجر الجامعة)، والأخطرُ منه
- * أن أرقامَ الأحوال تخرج إلى ملفٍّ يملكه فردٌ ويبقى عنده بعد أن يترك
- * النادي. فالتصديرُ يعطيهم ما يحتاجون للتقييم — ويترك ما لا يحتاجونه.
+ * ⚠️ **الجدولُ نفسُه يُبنى في `roster-csv.ts`** — يقرؤه هذا الزرُّ ويقرؤه
+ * المسارُ الحيُّ (`/feed.csv`) الذي يسحب منه Excel تلقائيًّا. وبناؤه في
+ * موضعين يجعل الملفَّ اليدويَّ يخالف الملفَّ المرتبطَ بعد أوّل تعديل.
  *
  * ⚠️ **ويصدّر المعروضَ لا كلَّ شيء.** ما بعد البحث والترشيح هو ما يراه
  * القائدُ أمامه؛ وزرٌّ يصدّر غيرَ ما يُرى يفاجئ صاحبَه بصفوفٍ لم يطلبها.
  * والنطاقُ محروسٌ قبل ذلك: `rows` مقصوصةٌ في القاعدة أصلًا.
- *
- * ⚠️ **و`\uFEFF` في الرأس ليست زينة.** بدونها يقرأ Excel على ويندوز
- * الملفَّ بترميز الجهاز فيصير العربيُّ رموزًا — وهو أشهرُ عطبٍ في تصدير
- * `CSV` العربيّ.
  */
 function exportRows(rows: readonly Row[], scopeName: string): void {
-  /* أعمدةُ الأسئلة: اتّحادُ أسئلة **الجهة التي هم عندها الآن** لا الرغبات
-     الثلاث — وإلّا صارت الأعمدةُ عشراتٍ أكثرُها فارغ. */
-  const answerCols = new Map<string, string>();
-  for (const row of rows) {
-    const at = choiceAtStage(row);
-    if (!at) continue;
-    for (const block of questionBlocks([at])) {
-      for (const q of block.questions) {
-        const key = answerName(block.key, q.id);
-        if (key in (row.answers ?? {}) && !answerCols.has(key)) {
-          answerCols.set(key, q.label);
-        }
-      }
-    }
-  }
-
-  const head = [
-    "اسم المقدم",
-    "الرقم الجامعي",
-    "التخصص",
-    "السنة الدراسية",
-    "الجوال",
-    "البريد",
-    "LinkedIn",
-    "معرض الأعمال",
-    "سيرة ذاتية",
-    "الجهة",
-    "الرتبة",
-    "حالة الطلب",
-    "تاريخ المقابلة",
-    "وقت المقابلة",
-    "الدوافع",
-    ...answerCols.values(),
-  ];
-
-  const body = rows.map((row) => {
-    const at = choiceAtStage(row);
-    const answers = row.answers ?? {};
-    return [
-      row.full_name,
-      row.student_id,
-      row.major === MAJOR_OTHER ? (row.major_other ?? row.major) : row.major,
-      row.level,
-      row.phone,
-      row.email,
-      row.linkedin ?? "",
-      row.portfolio ?? "",
-      row.cv_path ? "نعم" : "لا",
-      prefName(at),
-      STAGE_LABELS[row.stage] ?? "",
-      statusLabel(row.status),
-      row.interview_at ? interviewDayLabel(row.interview_at) : "",
-      row.interview_at ? interviewTime(row.interview_at) : "",
-      row.why,
-      ...[...answerCols.keys()].map((k) => answers[k] ?? ""),
-    ];
-  });
-
-  /* ⚠️ **الاقتباسُ على كلّ خانة.** الدوافعُ تحمل فواصلَ وأسطرًا جديدة،
-     وخانةٌ غيرُ مقتبَسة تكسر الصفَّ فتنزاح الأعمدةُ كلُّها بعدها. */
-  const cell = (v: string) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const csv =
-    "\uFEFF" +
-    [head, ...body].map((r) => r.map(cell).join(",")).join("\r\n");
-
   const url = URL.createObjectURL(
-    new Blob([csv], { type: "text/csv;charset=utf-8" }),
+    new Blob([rosterCsv(rows)], { type: "text/csv;charset=utf-8" }),
   );
   const a = document.createElement("a");
   a.href = url;
   a.download = `mis-${slug(scopeName)}-${new Date().toISOString().slice(0, 10)}.csv`;
   /* ⚠️ **يُضمّ إلى الوثيقة قبل النقر.** مرساةٌ منفصلةٌ عن الشجرة تُهمل في
      بعض المتصفّحات، فينزل الملفُّ باسم `download` بلا امتداد — ولا يفتحه
-     Excel. ويُزال بعدها فلا يبقى في الصفحة. */
+     Excel. ويُزال بعدها فلا يبقى في الصفحة. (وقع فعلًا في القياس.) */
   document.body.appendChild(a);
   a.click();
   a.remove();
