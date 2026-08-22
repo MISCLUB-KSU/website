@@ -22,6 +22,8 @@ import {
 import { COMMITTEES } from "@/content/committees";
 import { findPreference, questionBlocks } from "@/content/preferences";
 import { PROJECTS } from "@/content/projects";
+import { statusLabel } from "@/content/statuses";
+import { MAJOR_OTHER } from "@/lib/registration";
 import {
   answerName,
   splitAnswer,
@@ -52,7 +54,9 @@ import {
   choiceAtStage,
   fromRiyadhInput,
   interviewClashes,
+  interviewDayLabel,
   interviewLabel,
+  interviewTime,
   whatsappHref,
   toRiyadhInput,
   inScopes,
@@ -970,6 +974,12 @@ export function ApplicationsTable({
         viewAs={viewAs}
         setViewAs={setViewAs}
         onHelp={() => setHelp(true)}
+        onExport={() =>
+          exportRows(
+            shown.map((x) => x.row),
+            viewAs ? prefShort(viewAs) : isAdmin ? "النادي" : "نطاقي",
+          )
+        }
       />
 
       {/* ⚠️ **أرضيةُ ارتفاعٍ تحت `flex-1`.** الشاشةُ مبنيّةٌ على ألّا
@@ -2080,6 +2090,7 @@ function Toolbar({
   viewAs,
   setViewAs,
   onHelp,
+  onExport,
 }: {
   q: string;
   setQ: (v: string) => void;
@@ -2105,6 +2116,8 @@ function Toolbar({
   setViewAs: (v: string) => void;
   /** يفتح لوحَ الاختصارات — نفسُه الذي يفتحه مفتاح «؟» */
   onHelp: () => void;
+  /** ينزّل المعروضَ ملفًّا يفتحه Excel */
+  onExport: () => void;
 }) {
   return (
     <div className="tile shrink-0">
@@ -2219,6 +2232,22 @@ function Toolbar({
           ؟
         </button>
 
+        {/* ⚠️ **بجوار «؟» لا في الملفّ.** التصديرُ فعلٌ على القائمة كلِّها
+            لا على طلبٍ واحد، فموضعُه شريطُ القائمة. ووسمُه يقول العدد —
+            فلا يُضغط ظنًّا أنه يصدّر الكلَّ وهو يصدّر المرشَّح. */}
+        <button
+          type="button"
+          onClick={onExport}
+          title="ينزل ملفٌّ يفتحه Excel — بلا رقم الأحوال"
+          className="text-fg-muted hover:text-fg min-h-11 lg:min-h-10 shrink-0 rounded-xl border px-s3 text-[0.8rem] font-semibold transition-colors"
+          style={{ borderColor: "var(--line-control)" }}
+        >
+          تصدير{" "}
+          <span dir="ltr" className="tabular-nums opacity-70">
+            {showing}
+          </span>
+        </button>
+
         <p className="text-fg-muted ms-auto hidden text-[0.78rem] sm:block">
           <span dir="ltr" className="tabular-nums">
             {showing}
@@ -2270,6 +2299,119 @@ function Chip({
       </span>
     </button>
   );
+}
+
+
+/* ── التصدير ────────────────────────────────────────────────────────────── */
+
+/**
+ * **تصديرُ المعروض إلى ملفٍّ يفتحه Excel.**
+ *
+ * ⚠️ **ولا رقمَ أحوالٍ فيه — وهذا شرطُ وجوده.** طلب فريقُ مشروعٍ ربطَ
+ * الطلبات بملفٍّ على `OneDrive` شخصيٍّ يُشارَك برابط. والربطُ التلقائيُّ
+ * متعذّرٌ إداريًّا (يحتاج تسجيلَ تطبيقٍ في مستأجر الجامعة)، والأخطرُ منه
+ * أن أرقامَ الأحوال تخرج إلى ملفٍّ يملكه فردٌ ويبقى عنده بعد أن يترك
+ * النادي. فالتصديرُ يعطيهم ما يحتاجون للتقييم — ويترك ما لا يحتاجونه.
+ *
+ * ⚠️ **ويصدّر المعروضَ لا كلَّ شيء.** ما بعد البحث والترشيح هو ما يراه
+ * القائدُ أمامه؛ وزرٌّ يصدّر غيرَ ما يُرى يفاجئ صاحبَه بصفوفٍ لم يطلبها.
+ * والنطاقُ محروسٌ قبل ذلك: `rows` مقصوصةٌ في القاعدة أصلًا.
+ *
+ * ⚠️ **و`\uFEFF` في الرأس ليست زينة.** بدونها يقرأ Excel على ويندوز
+ * الملفَّ بترميز الجهاز فيصير العربيُّ رموزًا — وهو أشهرُ عطبٍ في تصدير
+ * `CSV` العربيّ.
+ */
+function exportRows(rows: readonly Row[], scopeName: string): void {
+  /* أعمدةُ الأسئلة: اتّحادُ أسئلة **الجهة التي هم عندها الآن** لا الرغبات
+     الثلاث — وإلّا صارت الأعمدةُ عشراتٍ أكثرُها فارغ. */
+  const answerCols = new Map<string, string>();
+  for (const row of rows) {
+    const at = choiceAtStage(row);
+    if (!at) continue;
+    for (const block of questionBlocks([at])) {
+      for (const q of block.questions) {
+        const key = answerName(block.key, q.id);
+        if (key in (row.answers ?? {}) && !answerCols.has(key)) {
+          answerCols.set(key, q.label);
+        }
+      }
+    }
+  }
+
+  const head = [
+    "اسم المقدم",
+    "الرقم الجامعي",
+    "التخصص",
+    "السنة الدراسية",
+    "الجوال",
+    "البريد",
+    "LinkedIn",
+    "معرض الأعمال",
+    "سيرة ذاتية",
+    "الجهة",
+    "الرتبة",
+    "حالة الطلب",
+    "تاريخ المقابلة",
+    "وقت المقابلة",
+    "الدوافع",
+    ...answerCols.values(),
+  ];
+
+  const body = rows.map((row) => {
+    const at = choiceAtStage(row);
+    const answers = row.answers ?? {};
+    return [
+      row.full_name,
+      row.student_id,
+      row.major === MAJOR_OTHER ? (row.major_other ?? row.major) : row.major,
+      row.level,
+      row.phone,
+      row.email,
+      row.linkedin ?? "",
+      row.portfolio ?? "",
+      row.cv_path ? "نعم" : "لا",
+      prefName(at),
+      STAGE_LABELS[row.stage] ?? "",
+      statusLabel(row.status),
+      row.interview_at ? interviewDayLabel(row.interview_at) : "",
+      row.interview_at ? interviewTime(row.interview_at) : "",
+      row.why,
+      ...[...answerCols.keys()].map((k) => answers[k] ?? ""),
+    ];
+  });
+
+  /* ⚠️ **الاقتباسُ على كلّ خانة.** الدوافعُ تحمل فواصلَ وأسطرًا جديدة،
+     وخانةٌ غيرُ مقتبَسة تكسر الصفَّ فتنزاح الأعمدةُ كلُّها بعدها. */
+  const cell = (v: string) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const csv =
+    "\uFEFF" +
+    [head, ...body].map((r) => r.map(cell).join(",")).join("\r\n");
+
+  const url = URL.createObjectURL(
+    new Blob([csv], { type: "text/csv;charset=utf-8" }),
+  );
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `mis-${slug(scopeName)}-${new Date().toISOString().slice(0, 10)}.csv`;
+  /* ⚠️ **يُضمّ إلى الوثيقة قبل النقر.** مرساةٌ منفصلةٌ عن الشجرة تُهمل في
+     بعض المتصفّحات، فينزل الملفُّ باسم `download` بلا امتداد — ولا يفتحه
+     Excel. ويُزال بعدها فلا يبقى في الصفحة. */
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * اسمُ ملفٍّ آمنٌ من اسم جهةٍ عربيّ.
+ *
+ * ⚠️ **لاتينيٌّ عمدًا.** الاسمُ العربيُّ يمرّ في المتصفّح، ثم يُرفع إلى
+ * `OneDrive` أو يُرسَل في واتساب فيصير رموزًا عند بعض الأنظمة — والملفُّ
+ * يُتداول بين الفريق لا يبقى في جهازٍ واحد.
+ */
+function slug(name: string): string {
+  const at = SCOPE_OPTIONS.find((o) => o.label === name)?.value;
+  return (at ?? name).replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "all";
 }
 
 /* ── القائمة ────────────────────────────────────────────────────────────── */
