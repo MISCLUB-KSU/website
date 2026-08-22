@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { rosterCsv, type RosterRow } from "@/app/admin/roster-csv";
+import { feedCsv, type RosterRow } from "@/app/admin/roster-csv";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await createAdminClient()
     .from("applications")
     .select(
-      "created_at, full_name, student_id, major, major_other, level, phone, email, linkedin, portfolio, cv_path, choice1, choice2, choice3, stage, status, interview_at, why, answers",
+      "id, created_at, full_name, student_id, major, major_other, level, phone, email, linkedin, portfolio, cv_path, choice1, choice2, choice3, stage, status, interview_at, why, answers",
     )
     /* ⚠️ **مطابقةٌ بالقيمة أو ببادئةٍ بشرطة** — نظيرُ `choice_in_scopes` في
        القاعدة. وبدون الشرطة يسحب نطاقُ `committee:pr` جهةَ `committee:press`. */
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
     return at === scope || String(at ?? "").startsWith(`${scope}/`);
   }) as RosterRow[];
 
-  return new NextResponse(rosterCsv(rows), {
+  return new NextResponse(feedCsv(rows), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Cache-Control": "no-store, max-age=0",
