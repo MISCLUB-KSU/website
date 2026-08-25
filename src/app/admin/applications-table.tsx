@@ -111,12 +111,20 @@ type Props = {
 const PHASE_STATUSES = STATUSES.filter((s) => DIRECT_STATUSES.includes(s.key));
 
 /**
- * **وسمُ الطابور — يتبع المرحلةَ المفتوحة لا يُثبَّت على «الأولى».**
+ * **وسمُ الطابور — يُشتقّ ممّا في القائمة فعلًا لا من رقم المرحلة.**
  *
  * ⚠️ **كان «عندي الآن»، ومعه تبويبٌ ثانٍ «كلُّ من ذكرك».** ورُفع الثاني
  * بطلب الرئاسة في ٢٠ أغسطس ٢٠٢٦: «أيُّ قائدٍ يظهر له بس اللي حاطين رغبة
- * أولى فقط لا غير». والأوّلُ صار يقول **أيَّ رغبةٍ** يعمل عليها الآن —
- * فلا يظنّ قائدُ المرحلة الثانية أن أمامه أصحابَ الرغبة الأولى.
+ * أولى فقط لا غير».
+ *
+ * ⚠️ **ثم صار يتبع رقمَ المرحلة — وذاك يكذب عند فتح الثانية.** فتحُ
+ * المرحلة الثانية **لا يرفع** أصحابَ الرغبة الأولى ممّن لم يُحسَموا:
+ * الرتبةُ لا تتغيّر إلّا بالتمرير، والترشيحُ `stage <= phase` يتّسع ولا
+ * يزيح. فطابورُ القائد يحمل الرتبتين معًا، ووسمٌ ثابتٌ يقول «أصحاب الرغبة
+ * الثانية» فوق قائمةٍ نصفُها أصحابُ رغبةٍ أولى **يقلب قراءتَه لكلّ صفّ**.
+ * فصار الوسمُ يُحسب من الرتب الحاضرة، وإن اجتمعت رتبتان صار مبدّلًا
+ * يُرشَّح به — وطلبُ الرئاسة في ٢٥ أغسطس ٢٠٢٦ نصُّه: «بس يقدرون يعرفون
+ * مين حقين الرغبة الأولى ومين حقين الرغبة الثانية».
  */
 const QUEUE_LABELS = [
   "",
@@ -124,6 +132,17 @@ const QUEUE_LABELS = [
   "أصحاب الرغبة الثانية",
   "أصحاب الرغبة الثالثة",
 ];
+
+/** اسمُ الرتبة في رقاقة الترشيح — أقصرُ من الوسم، فالمساحةُ صفٌّ يُسحب */
+const RANK_CHIP_LABELS = ["كلّ الرغبات", "رغبةٌ أولى", "رغبةٌ ثانية", "رغبةٌ ثالثة"];
+
+/**
+ * لونُ **النازل إليك** — واحدٌ في ثلاثة مواضع.
+ *
+ * شارةُ الصفّ في القائمة، ورقاقةُ الترشيح فوقها، وشارةُ «نزل إليك» في
+ * الملفّ. ولونان لمعنًى واحدٍ يجعل القائدَ يتعلّم علامتين بدل واحدة.
+ */
+const RANK_COLOR = "var(--st-referred)";
 
 /**
  * النطاقاتُ التسعة — **مبنيّةٌ من المحتوى لا مكتوبةٌ يدويًّا**.
@@ -285,10 +304,15 @@ export function ApplicationsTable({
 }: Props) {
   const [q, setQ] = useState("");
   const [status, setStatusFilter] = useState<string>("all");
-  /* ⚠️ **«الرغبة الأولى» هي الافتراض لا «الكلّ».** القائدُ يستقبل من ذكره
-     ثانيةً وثالثةً أيضًا، وقبولُ أحدهم قبل أن يقابله قائدُ رغبته الأولى
-     يُبطل ترتيبَ الرغبات كلَّه — وهو ما تقوم عليه خطّةُ الموسم. فالطابورُ
-     يفتح على من اختارك **أوّلًا**، والبقيّةُ خلف تبديلٍ مقصود. */
+  /**
+   * ترشيحٌ بالرتبة — **صفرٌ يعني الكلّ، والافتراضُ صفر**.
+   *
+   * ⚠️ **الافتراضُ «الكلّ» عمدًا لا «الأولى».** إخفاءُ النازلين افتراضًا
+   * يعيد الخطأَ الذي فُتحت المرحلةُ الثانيةُ لإصلاحه: جهةٌ لم تمتلئ
+   * وأسماءٌ صالحةٌ لا تُرى. فالكلُّ معروضٌ، والرتبةُ **موسومةٌ في كلّ
+   * صفّ** — ومن أراد أن يفرغ رغبتَه الأولى أوّلًا ضغط رقاقتَها.
+   */
+  const [rankPick, setRank] = useState(0);
   /* ⚠️ **معاينةٌ للرئاسة، لا تنازلٌ عن صلاحية.** الرئاسةُ ترى الكلَّ في
      القاعدة ولا يغيّر هذا شيئًا من ذلك — يغيّر **ما تعرضه الشاشة** حتى
      يتحقّق من يوزّع الحسابات ممّا سيراه كلُّ قائدٍ قبل أن يسلّمه المفتاح.
@@ -373,9 +397,36 @@ export function ApplicationsTable({
     );
   }, [rows, asScopes, asAdmin, phase]);
 
+  /**
+   * الرتبُ الحاضرةُ في طابور القارئ — **مقيسةٌ لا مفترضة**.
+   *
+   * ⚠️ عليها يقوم الوسمُ فوق القائمة: رتبةٌ واحدة تعني جملةً خبريّة، ورتبتان
+   * تعنيان مبدّلًا. ولو حُسبت من `phase` لَقالت «ثانية» لقائدٍ طابورُه كلُّه
+   * أوّلُ رغبة — وذاك ما كان يقع قبل ٢٥ أغسطس ٢٠٢٦.
+   */
+  const ranks = useMemo(() => {
+    const m = new Map<number, number>();
+    for (const r of pool) m.set(r.stage, (m.get(r.stage) ?? 0) + 1);
+    return [...m.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([stage, count]) => ({ stage, count }));
+  }, [pool]);
+
+  /* ⚠️ **رتبةٌ اختفت من الطابور تسقط في الرسم نفسِه لا في أثرٍ يعقبه.** لو
+     حُسم آخرُ صاحبِ رغبةٍ ثانيةٍ ومُرِّر، بقي الترشيحُ على «ثانية» فرأى
+     القائدُ قائمةً فارغةً وظنّ اللوحة معطوبة. واشتقاقُه هنا يجعل الرسمةَ
+     الواحدةَ متّسقةً مع نفسها — و`setState` في أثرٍ يرسم مرّتين ويومض. */
+  const rank = ranks.some((r) => r.stage === rankPick) ? rankPick : 0;
+
+  /** ما بعد ترشيح الرتبة — وعليه تُبنى الرقائقُ والعدّادات، فلا تخالف القائمة */
+  const ranked = useMemo(
+    () => (rank ? pool.filter((r) => r.stage === rank) : pool),
+    [pool, rank],
+  );
+
   const scored = useMemo(
-    () => pool.map((r) => ({ row: r, ...completeness(r) })),
-    [pool],
+    () => ranked.map((r) => ({ row: r, ...completeness(r) })),
+    [ranked],
   );
 
   /* ⚠️ **المزاحمةُ على كلّ الصفوف لا على البِركة.** «يزاحمك ثمانية» حقيقةٌ
@@ -533,9 +584,15 @@ export function ApplicationsTable({
       /* ⚠️ **الاستقرارُ محسوبٌ لا متروك.** `sort` في JS مستقرّة، والمصفوفةُ
          داخلةٌ مرتّبةً بالأحدث — فمن تساوت مرتبتُهم يخرجون بالأحدث، وهو
          عكسُ المقصود. فالأقدمُ يُطلب صراحةً بالمقارنة الثانية. */
+      /* ⚠️ **والرتبةُ مفتاحٌ ثانٍ — بعد الشغل وقبل التاريخ.** فتحُ المرحلة
+         الثانية يضخّ نازلين في طابورٍ لم يفرغ، فيتخلّلون أصحابَ الرغبة
+         الأولى بتاريخ وصولهم ويدفنون من اختار هذي الجهةَ أوّلًا. والشغلُ
+         يبقى أوّلَ المفاتيح: محسومٌ ذو رغبةٍ أولى لا يعلو على غير مقروءٍ
+         نزل إليك. */
       s.sort(
         (a, b) =>
           triageRank(a.row) - triageRank(b.row) ||
+          a.row.stage - b.row.stage ||
           Date.parse(a.row.created_at) - Date.parse(b.row.created_at),
       );
     else if (sort === "oldest") s.reverse();
@@ -823,23 +880,35 @@ export function ApplicationsTable({
       ?.scrollIntoView({ block: "nearest" });
   }, [current]);
 
+  /* ⚠️ **من `ranked` لا من `pool`** — رقاقةٌ تقول «جديد ٣٠» فوق قائمةٍ
+     فيها اثنا عشر تجعل القائدَ يبحث عن ثمانيةَ عشرَ لا وجودَ لهم. */
   const counts = useMemo(() => {
     const m: Record<string, number> = {};
-    for (const r of pool) m[r.status] = (m[r.status] ?? 0) + 1;
+    for (const r of ranked) m[r.status] = (m[r.status] ?? 0) + 1;
     return m;
-  }, [pool]);
+  }, [ranked]);
 
-  const kpis = useMemo(
-    () => ({
-      waiting: (counts.new ?? 0) + (counts.reviewing ?? 0),
-      decided: (counts.accepted ?? 0) + (counts.rejected ?? 0),
-      withCv: pool.filter((r) => r.cv_path).length,
-      avg: scored.length
-        ? Math.round(scored.reduce((a, b) => a + b.pct, 0) / scored.length)
-        : 0,
-    }),
-    [counts, scored, pool],
-  );
+  /* ⚠️ **والمؤشّراتُ على العكس: من `pool` دائمًا.** «بانتظارك ٤٠» حقيقةٌ عن
+     طابورك لا عن الرقاقة المضغوطة الآن، ورقمٌ يهبط لأن العرضَ ضاق يوهم
+     أن شغلًا أُنجز. ولذلك تُحسب هنا ولا تُقرأ من `counts`. */
+  const kpis = useMemo(() => {
+    let waiting = 0;
+    let decided = 0;
+    let withCv = 0;
+    let pct = 0;
+    for (const r of pool) {
+      if (r.status === "new" || r.status === "reviewing") waiting += 1;
+      else if (r.status === "accepted" || r.status === "rejected") decided += 1;
+      if (r.cv_path) withCv += 1;
+      pct += completeness(r).pct;
+    }
+    return {
+      waiting,
+      decided,
+      withCv,
+      avg: pool.length ? Math.round(pct / pool.length) : 0,
+    };
+  }, [pool]);
 
   /* ⚠️ **يُحسب من الصفوف الواصلة لا باستعلامٍ ثانٍ.** الصفوفُ مقصوصةٌ
      بـ`RLS` أصلًا، فالعدُّ هنا يخصّ نطاق قارئه تلقائيًّا — وهو نفسُ ما
@@ -906,10 +975,16 @@ export function ApplicationsTable({
         sort={sort}
         setSort={setSort}
         counts={counts}
-        total={pool.length}
+        total={ranked.length}
         showing={shown.length}
         pendingRejections={pendingRejections}
-        queueLabel={asAdmin ? "" : QUEUE_LABELS[phase] ?? ""}
+        /* ⚠️ **الوسمُ من الرتب الحاضرة لا من `phase`** — وفراغٌ للرئاسة */
+        queueLabel={
+          asAdmin || ranks.length !== 1 ? "" : QUEUE_LABELS[ranks[0].stage] ?? ""
+        }
+        ranks={asAdmin ? [] : ranks}
+        rank={rank}
+        setRank={setRank}
         scopeOptions={isAdmin ? SCOPE_OPTIONS : null}
         viewAs={viewAs}
         setViewAs={setViewAs}
@@ -2026,6 +2101,9 @@ function Toolbar({
   showing,
   pendingRejections,
   queueLabel,
+  ranks,
+  rank,
+  setRank,
   scopeOptions,
   viewAs,
   setViewAs,
@@ -2044,12 +2122,23 @@ function Toolbar({
   showing: number;
   pendingRejections: number;
   /**
-   * وسمُ الطابور — وفراغٌ للرئاسة، فهي ترى الكلَّ ولا طابورَ لها.
+   * وسمُ الطابور — **لرتبةٍ واحدةٍ حاضرة**، وفراغٌ للرئاسة أو عند اجتماع رتبتين.
    *
-   * ⚠️ **وسمٌ لا مبدّل.** كان تبويبين، والقائدُ اليوم لا يرى إلّا أصحابَ
-   * الرتبة المفتوحة — فما بقي إلّا أن يُقال ما هم.
+   * ⚠️ **وسمٌ حين لا خيار، ومبدّلٌ حين يوجد.** رتبةٌ واحدةٌ في الطابور لا
+   * شيءَ يُرشَّح به، فيُقال ما هي وحسب. واجتماعُ رتبتين يجعل الجملةَ
+   * الخبريّة عاجزةً — فتحلّ محلَّها `ranks` رقائقَ تُضغط.
    */
   queueLabel: string;
+  /**
+   * الرتبُ الحاضرةُ في الطابور وعددُ كلٍّ — **فارغةٌ للرئاسة**.
+   *
+   * ⚠️ **العددُ في الرقاقة لا يُستغنى عنه.** «رغبةٌ ثانية» بلا رقمٍ لا
+   * تقول للقائد إن كان خلفها ثلاثةٌ أم ثلاثون، فيضغطها ليكتشف.
+   */
+  ranks: readonly { stage: number; count: number }[];
+  /** الرتبةُ المرشَّحُ بها — صفرٌ يعني الكلّ */
+  rank: number;
+  setRank: (v: number) => void;
   /** للرئاسة وحدها — و`null` لغيرها فلا يُرسم المحدّد */
   scopeOptions: readonly { value: string; label: string }[] | null;
   viewAs: string;
@@ -2109,6 +2198,42 @@ function Toolbar({
           >
             {queueLabel}
           </span>
+        )}
+
+        {/* ⚠️ **رقائقُ الرتبة قبل رقائق الحالة وبفاصلٍ بينهما.** بُعدان
+            يُرشَّح بهما في صفٍّ واحدٍ يُقرآن بُعدًا واحدًا لو تلاصقا، فيظنّ
+            القائدُ «رغبةٌ أولى» حالةً كـ«مقبول» ويضغطها بدلَها. والفاصلُ
+            خطٌّ رأسيٌّ لا فراغٌ: الصفُّ يُسحب أفقيًّا على الجوّال، والفراغُ
+            وحدَه يضيع عند حافّة السحب. */}
+        {ranks.length > 1 && (
+          <>
+            <div
+              className="flex shrink-0 gap-x-s2"
+              role="group"
+              aria-label="ترشيحٌ برتبة الرغبة"
+            >
+              <Chip
+                label={RANK_CHIP_LABELS[0]}
+                count={ranks.reduce((a, r) => a + r.count, 0)}
+                active={rank === 0}
+                onClick={() => setRank(0)}
+              />
+              {ranks.map((r) => (
+                <Chip
+                  key={r.stage}
+                  label={RANK_CHIP_LABELS[r.stage] ?? `رتبة ${r.stage}`}
+                  count={r.count}
+                  color={r.stage > 1 ? RANK_COLOR : "var(--primary)"}
+                  active={rank === r.stage}
+                  onClick={() => setRank(r.stage)}
+                />
+              ))}
+            </div>
+            <span
+              aria-hidden
+              className="bg-line my-s1 h-6 w-px shrink-0 rounded-full"
+            />
+          </>
         )}
 
         <div className="flex gap-x-s2 sm:flex-wrap sm:gap-y-s2">
@@ -2361,6 +2486,28 @@ function Roster({
                   </span>
                 </Arc>
 
+                {/* ⚠️ **الرتبةُ تُرى في القائمة لا في الملفّ وحدَه.** شارةُ
+                    «نزل إليك» داخل الملفّ تُقرأ بعد الفتح — وبعد الفتح فات
+                    نصفُ الفائدة: القائدُ يمسح القائمةَ ليختار من يبدأ به،
+                    وقرارُ «من أفتح؟» يقع هنا. فالرقمُ في الصفّ، وخلوُّه
+                    يعني رغبةً أولى. */}
+                {row.stage > 1 && (
+                  <span
+                    className="grid size-5 shrink-0 place-items-center rounded-md border text-[0.66rem] font-bold tabular-nums"
+                    style={{
+                      borderColor: `color-mix(in oklab, ${RANK_COLOR} 55%, transparent)`,
+                      background: `color-mix(in oklab, ${RANK_COLOR} 16%, transparent)`,
+                      color: RANK_COLOR,
+                    }}
+                    title={`${STAGE_LABELS[row.stage]} عنده — نزل إليك`}
+                  >
+                    <span aria-hidden dir="ltr">
+                      {row.stage}
+                    </span>
+                    <span className="sr-only">{STAGE_LABELS[row.stage]}</span>
+                  </span>
+                )}
+
                 <span className="min-w-0 flex-1">
                   <span className="text-fg block truncate text-[0.86rem] font-semibold">
                     {row.full_name}
@@ -2532,16 +2679,14 @@ function Dossier({
                 <p
                   className="mt-s2 inline-flex items-center gap-x-s2 rounded-full border px-s3 py-s1 text-[0.74rem] font-semibold"
                   style={{
-                    borderColor:
-                      "color-mix(in oklab, var(--st-referred) 55%, transparent)",
-                    background:
-                      "color-mix(in oklab, var(--st-referred) 16%, transparent)",
+                    borderColor: `color-mix(in oklab, ${RANK_COLOR} 55%, transparent)`,
+                    background: `color-mix(in oklab, ${RANK_COLOR} 16%, transparent)`,
                   }}
                 >
                   <span
                     aria-hidden
                     className="size-[7px] rounded-full"
-                    style={{ background: "var(--st-referred)" }}
+                    style={{ background: RANK_COLOR }}
                   />
                   نزل إليك — {STAGE_LABELS[row.stage]} عنده، وأولاه{" "}
                   <PreferenceName value={row.choice1} />
