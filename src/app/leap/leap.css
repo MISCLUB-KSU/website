@@ -1,0 +1,866 @@
+/* ==========================================================================
+   صفحة تسجيل حضور LEAP 2026 — لغةٌ بصريةٌ مقصورةٌ على هذا المسار
+
+   ⚠️ **كلُّ شيءٍ هنا محصورٌ تحت `.leap-root` عمدًا.** الصفحة تلبس هويةَ
+   مؤتمرٍ خارجيّ (خطٌّ لاتينيّ آخر، تتبّعٌ سالب، أرضيةٌ داكنةٌ ثابتة)، وأيُّ
+   قاعدةٍ تفلت إلى `globals.css` تصيب الموقعَ كلَّه.
+
+   ⚠️ **الصفحة داكنةٌ في الوضعين — قرارٌ لا سهو.** هويةُ LEAP داكنةٌ أصلًا،
+   والصفحةُ مستقلّةٌ بلا رأسِ الموقع ولا مبدّلِ الوضع، فلا ضابطَ ميّتٌ يَعِد
+   بتبديلٍ لا يحدث. ولأنها لا تنقلب، تُطلى الأرضيةُ صراحةً هنا ولا تُورَث.
+   ========================================================================== */
+
+.leap-root {
+  /* ---- أرضياتٌ وحبر ---- */
+  --l-ground: #141116; /* أسود LEAP — مائلٌ للبنفسجي لا للأزرق البارد */
+  --l-badge: #191428;
+  --l-field: #201b2e;
+  --l-ink: #f4f2f8;
+  --l-quiet: #a09aae;
+  --l-line: rgb(255 255 255 / 10%);
+  --l-line-strong: rgb(255 255 255 / 22%);
+
+  /* ⚠️ **النائبةُ لونٌ صلبٌ لا شفّاف.** كانت `rgb(160 154 174 / 55%)`
+     فقُيست **2.87:1** على أرضية البطاقة — تحت حدّ AA بكثير، ونصُّها
+     معلومةٌ يقرؤها المسجِّل لا زخرفة. */
+  --l-ph: #8a8499;
+  --l-ph-field: #918bA6; /* على أرضية الحقل، وهي أفتحُ من البطاقة */
+
+  /* ---- محطّاتُ LEAP الرسمية، منقولةٌ من ملفّ شعارهم ---- */
+  --l-magenta: #eb3df7;
+  --l-orchid: #c839e7;
+  --l-violet: #9e34d6;
+  --l-grape: #652dbd;
+  --l-indigo: #3b29ab;
+  --l-cyan: #73fafd;
+  --l-cyan-hover: #32e0e3;
+
+  /* ---- مقاسات ---- */
+  --l-r: 16px; /* نصفُ قطر LEAP الافتراضي — ٢٧٥ من ٥٠٠+ تعريفًا عندهم */
+  --l-r-sm: 8px;
+  --l-slant: 20deg; /* ميلانُ النادي */
+
+  color-scheme: dark;
+  /* ⚠️ **نغمةٌ واحدةٌ متّصلةٌ لا بقعةُ ضوء.** أرضيةٌ مسطّحةٌ تمامًا تحت
+     كلِّ شيءٍ بعد البطاقة تجعل الجوَّ يتوقّف عند أول شاشة. والرفعُ هنا
+     رأسيٌّ واحدٌ يمتدّ على الصفحة كلِّها ويستقرّ، فلا حدَّ بين قسمٍ وقسم
+     ولا حلقةَ ضوءٍ خلف عنصر — وتدرُّجُه بطيءٌ جدًّا (٣٨٪ من الطول بين
+     لونين متجاورين) فلا يتشرّط. */
+  background: linear-gradient(
+    180deg,
+    #1a1526 0%,
+    var(--l-ground) 38%,
+    var(--l-ground) 100%
+  );
+  color: var(--l-ink);
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+/* ==========================================================================
+   الطبقة اللاتينية
+
+   ⚠️ **التتبّعُ السالب لا يمسّ العربية أبدًا.** `-0.05em` توقيعُ LEAP
+   الطباعيّ على `Montserrat`، لكن العربية خطٌّ متّصل: التتبّعُ السالب يدفع
+   الحروفَ بعضَها في بعضٍ فتنكسر الوصلات. فالقاعدةُ على صنفٍ يُوضع على
+   العناصر اللاتينية وحدها، لا على الجذر.
+   ========================================================================== */
+.leap-lat {
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   قِرانُ العلامتين
+
+   علامةُ النادي بتدرّج LEAP، وشعارُ LEAP كما هو، والفاصلُ بينهما ميلانُ
+   النادي — فحتى أداةُ الفصل تنتمي إلى اللغة نفسِها. ولا صندوقَ خلف أيِّ
+   شعار: العلامتان عاريتان على السطح.
+   ========================================================================== */
+.leap-lockup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.leap-lockup-club {
+  height: 26px;
+  width: auto;
+}
+
+.leap-lockup-x {
+  width: 2px;
+  height: 26px;
+  background: var(--l-line-strong);
+  transform: skewX(calc(var(--l-slant) * -1));
+  flex: none;
+}
+
+.leap-lockup-leap {
+  height: 36px;
+  width: auto;
+}
+
+/* ==========================================================================
+   البادج المعلَّق ببطاقته الهولوغرافية — العنصر التوقيعي
+
+   الحبلُ والمشبكُ فيزيائيّان، والبطاقةُ المعلَّقةُ فيه هولوغرافيةٌ
+   تفاعلية: تتمايل حول نقطة تعليقها تمايلَ بندولٍ وتلتفّ نحو المؤشّر،
+   ويجري فوقها صفيحُ التقزّح والوهج — طبقتان مدموجتان (`color-dodge`
+   و`overlay`) تُحرَّكان بمتغيّراتٍ يكتبها معالجُ المؤشّر عبر `rAF`
+   مباشرةً، فلا إعادةَ رندرٍ من React في أثناء الملاحقة.
+
+   ⚠️ **الأصفار افتراضاتُ المتغيّرات**: بلا جافاسكربت يقف البادجُ ساكنًا
+   كاملَ المحتوى — التفاعلُ إثراءٌ لا شرطُ عرض.
+   ========================================================================== */
+.leap-rig {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* ⚠️ **الميلانُ أقوى إشارة واقعية.** المشهدُ الرأسيُّ المتناظر تمامًا
+     هو ما يفضح الرسم: لا بادج يتدلّى مستقيمًا. */
+  transform: rotate(-8deg);
+  margin: 6px 0 26px;
+  /* لا نصادر التمريرَ العموديَّ على الجوال */
+  touch-action: pan-y;
+}
+
+/* ⚠️ الدورانُ يوسّع صندوقَ الإحاطة: على 360px تُقصّ الزاوية بـ`overflow-x:
+   clip`. ميلٌ أخفُّ وبطاقةٌ أضيقُ وإزاحةٌ مقيسةٌ تُبقي المشهدَ كاملًا. */
+@media (max-width: 420px) {
+  .leap-rig {
+    transform: translateX(-6px) rotate(-5deg);
+  }
+
+  .leap-shell {
+    width: min(284px, 100%);
+  }
+}
+
+.leap-lanyard {
+  position: relative;
+  z-index: 3; /* المشبكُ يمرّ فوق حافّة البطاقة كما في الواقع */
+  display: block;
+  width: 240px;
+  height: auto;
+}
+
+@keyframes leap-sway {
+  0%,
+  100% {
+    transform: rotate(-0.55deg);
+  }
+  50% {
+    transform: rotate(0.55deg);
+  }
+}
+
+.leap-hang {
+  position: relative;
+  z-index: 1; /* فوق لا شيء، تحت المشبك */
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  /* يرفع البطاقةَ حتى يدخل طرفُ الخطّاف في فتحتها — مقيسٌ سابقًا */
+  margin-top: -30px;
+  perspective: 1500px;
+  transform-origin: 50% 0;
+  animation: leap-sway 7s ease-in-out infinite;
+}
+
+@property --l-ga {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes leap-ring {
+  to {
+    --l-ga: 360deg;
+  }
+}
+
+.leap-shell {
+  position: relative;
+  width: min(300px, 100%);
+  padding: 2px;
+  border-radius: 19px;
+  background: rgb(255 255 255 / 14%);
+  /* ⚠️ **بطاقةٌ معلَّقةٌ لا طائرة**: أصلُ التحويل نقطةُ التعليق (الفتحة)،
+     والدورانُ تمايلٌ حولها (`rotateZ`) والتفافٌ حول المحور العموديّ
+     (`rotateY`) فوق ميلِ السكون ‎−7°‎ — لا ميلَ أماميًّا حرًّا. */
+  transform-origin: 50% 21px;
+  transform: rotateZ(var(--rz, 0deg)) rotateY(calc(-7deg + var(--ry, 0deg)));
+  transform-style: preserve-3d;
+  transition:
+    transform 0.55s cubic-bezier(0.2, 0.8, 0.3, 1),
+    background 0.6s ease-out;
+  box-shadow: -12px 16px 30px -16px rgb(0 0 0 / 85%);
+}
+
+/* أثناء الملاحقة يقصر التنعيمُ فيلتصق الميلُ باليد؛ وعند المغادرة يطول
+   فترتدّ البطاقةُ بنعومة نابض */
+.leap-rig.is-live .leap-shell {
+  transition-duration: 0.09s, 0.6s;
+}
+
+/**
+ * الاكتمال — حلقةُ LEAP الدوّارة، جهازُهم حرفيًّا. لا تظهر إلّا حين
+ * تكتمل الخانات الخمس: مكافأةٌ مربوطةٌ بحالةٍ حقيقيّة لا زينةٌ دائمة.
+ */
+.leap-shell.is-complete {
+  --l-ga: 0deg;
+  background: conic-gradient(
+    from var(--l-ga),
+    transparent,
+    #eb3df7,
+    #9e34d6,
+    #3b29ab,
+    #73fafd,
+    transparent
+  );
+  animation: leap-ring 5s linear infinite;
+}
+
+/* غلافُ الوجه — بقي بعد حذف القلب لأن `.leap-shell` يعتمد ترتيبَه، وهو
+   الآن ساكنٌ بلا انتقالٍ ولا مستوًى ثلاثيّ */
+.leap-flip {
+  position: relative;
+}
+
+.leap-face {
+  /* يحصر إعادةَ الرسم داخل الوجه، ويعزل حقولَه المائلة عن الصفحة */
+  contain: paint;
+  isolation: isolate;
+  border-radius: 17px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ⚠️ **الوجهان يُفصلان في العمق 1px** — متحدا المستوى يتنازعان الرسمَ
+   فتظهر البطاقةُ مشطورةً (مرصودٌ سابقًا). */
+.leap-face-front {
+  position: relative;
+  transform: translateZ(1px);
+  min-height: 432px;
+  /* حبرٌ عميقٌ بحبيبات 3٪ — الحقولُ المائلةُ فوقه هي الضوء */
+  background-image:
+    radial-gradient(rgb(255 255 255 / 3%) 0.5px, transparent 0.9px),
+    linear-gradient(172deg, #16112a 0%, #100c1f 55%, #0c0917 100%);
+  background-size:
+    4px 4px,
+    100% 100%;
+}
+
+/* الفتحةُ المثقوبة — يدخل فيها طرفُ الخطّاف، ومقطعُ السلك الغاطس يُرسم
+   داخلها ويُقصّ على حدودها. حفرةٌ أدكنُ عند شفتها العليا، وحافّتها
+   السفلى تلتقط الضوء — سماكةُ البطاقة. */
+.leap-slot {
+  position: absolute;
+  top: 8px;
+  left: 88px;
+  width: 56px;
+  height: 26px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #060409 0%, #18131f 100%);
+  box-shadow:
+    inset 0 3px 5px rgb(0 0 0 / 95%),
+    inset 0 -1px 0 rgb(255 255 255 / 10%),
+    0 1px 0 rgb(255 255 255 / 24%),
+    0 0 0 1px rgb(0 0 0 / 35%);
+  z-index: 2;
+  overflow: hidden;
+}
+
+.leap-slot > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ==========================================================================
+   تشريحُ الوجه الأمامي — الحقل المائل
+
+   علامةُ النادي ستّةُ متوازياتٍ بزاوية 20°؛ الوجهُ تفجيرُها: حقولٌ مائلةٌ
+   بالزاوية نفسِها تعبر حبرًا عميقًا، ولوحا الاسمِ والرقمِ متوازيا أضلاعٍ
+   حقيقيّان — الحاويةُ تُمال بـ`skew` والمحتوى يُعدَّل بعكسها، نفسُ بناءِ
+   `.mis-slant` في الموقع كلِّه. جرأةُ الوجه كلُّها في حقلِ التدرّج الواحد؛
+   وما حولَه ساكن.
+   ========================================================================== */
+
+/* الحقولُ المائلة — أشرطةٌ أعرضُ من البطاقة تعبرها بزاوية العلامة،
+   و`overflow: hidden` في الوجه يقصّها على حدوده */
+.leap-fx-band {
+  position: absolute;
+  left: -30%;
+  width: 160%;
+  transform: rotate(-20deg);
+  pointer-events: none;
+}
+
+/* الحقلُ الرئيس: تدرّجُ LEAP الرسميُّ بحبيباتٍ تمنع التشريط */
+.leap-fx-band-ramp {
+  top: 118px;
+  height: 96px;
+  background-image:
+    radial-gradient(rgb(255 255 255 / 14%) 0.5px, transparent 0.9px),
+    linear-gradient(
+      96deg,
+      #eb3df7 0%,
+      #c839e7 22%,
+      #9e34d6 46%,
+      #652dbd 62%,
+      #3b29ab 78%,
+      #73fafd 100%
+    );
+  background-size:
+    3px 3px,
+    100% 100%;
+}
+
+/* خيطُ الغلاف السماويّ — يوازي الحقلَ الرئيس عن قرب */
+.leap-fx-band-line {
+  top: 236px;
+  height: 5px;
+  background: #73fafd;
+  opacity: 0.9;
+}
+
+/* حقلٌ بنفسجيٌّ خافتٌ قرب القاع — عمقٌ لا زينة */
+.leap-fx-band-dim {
+  top: 330px;
+  height: 58px;
+  background: #2a1d54;
+  opacity: 0.5;
+}
+
+/* ---- الصفُّ العلويّ: العلامتان عاريتين على الحبر ---- */
+.leap-fx-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* ⚠️ الحشوةُ العلوية تُخلي المشبكَ والفتحة (~70px) */
+  padding: 76px 20px 0;
+}
+
+.leap-fx-mark {
+  height: 17px;
+  width: auto;
+}
+
+.leap-fx-leap {
+  height: 15px;
+  width: auto;
+}
+
+/* ---- لوحُ الاسم — متوازي أضلاعٍ ثلجيّ ---- */
+.leap-fx-nameplate {
+  position: relative;
+  z-index: 1;
+  margin: 26px 30px 0;
+  background: #f4f1fa;
+  transform: skewX(calc(var(--l-slant) * -1));
+  /* ظلُّ طباعةٍ حادٌّ بلون الحبر — لا هالةَ ضبابية */
+  box-shadow: 4px 5px 0 rgb(8 5 15 / 55%);
+  padding: 16px 22px 17px;
+}
+
+.leap-fx-nameplate-in {
+  transform: skewX(var(--l-slant));
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: center;
+  /* ارتفاعٌ محجوزٌ — لا يقفز اللوحُ مع أول حرف */
+  min-height: 64px;
+  justify-content: center;
+}
+
+.leap-fx-ar {
+  font-family: var(--font-kufi, inherit);
+  font-size: clamp(19px, 5.4vw, 24px);
+  font-weight: 700;
+  line-height: 1.5;
+  color: #16101f;
+  overflow-wrap: anywhere;
+}
+
+.leap-fx-en {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #5c5476;
+  overflow-wrap: anywhere;
+}
+
+/* نائبةُ اللوح الثلجيّ — حبرٌ أهدأ يبقى فوق حدّ AA */
+.leap-fx-ph {
+  color: #675f7c;
+}
+
+/* ---- لوحُ رقم الحجز ---- */
+.leap-fx-seqplate {
+  position: relative;
+  z-index: 1;
+  margin: 20px 58px 0 44px;
+  background: #0b0814;
+  border: 1px solid rgb(115 250 253 / 35%);
+  transform: skewX(calc(var(--l-slant) * -1));
+  padding: 10px 18px;
+}
+
+.leap-fx-seqplate-in {
+  transform: skewX(var(--l-slant));
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 12px;
+  direction: ltr;
+}
+
+.leap-fx-seqlabel {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: #8f86b5;
+}
+
+.leap-fx-seq {
+  font-size: 17px;
+  font-weight: 800;
+  color: #73fafd;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+/* ---- الذيل ---- */
+.leap-fx-foot {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  padding: 18px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: center;
+}
+
+.leap-fx-org {
+  font-size: 10.5px;
+  line-height: 1.7;
+  color: #a89fce;
+}
+
+.leap-fx-event {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  color: #8f86b5;
+}
+
+/* ==========================================================================
+   المحتوى العام
+   ========================================================================== */
+.leap-wrap {
+  width: min(600px, 100%);
+  margin-inline: auto;
+  padding: 30px 20px 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 38px;
+}
+
+.leap-intro {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.leap-intro h1 {
+  font-size: clamp(21px, 5.4vw, 26px);
+  font-weight: 700;
+  line-height: 1.5;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.leap-intro p {
+  margin: 0;
+  color: var(--l-quiet);
+  font-size: 15px;
+  line-height: 1.85;
+}
+
+.leap-tick {
+  display: inline-block;
+  width: 5px;
+  height: 15px;
+  background: var(--l-cyan);
+  transform: skewX(calc(var(--l-slant) * -1));
+  flex: none;
+}
+
+.leap-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.leap-section-head h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   النموذج — ثلاثُ مجموعاتٍ لا خمسةُ حقولٍ متراصّة
+
+   خمسةُ حقولٍ في عمودٍ واحدٍ تُقرأ قائمةَ مهامّ. تجميعُها ثلاثًا (الاسم،
+   التواصل، رقم الحجز) يجعلها ثلاثَ خطواتٍ قصيرةٍ في الذهن لا خمسًا،
+   ورقمُ الحجز — وهو الوحيدُ الذي يحتاج جهدًا — يقف وحدَه فيأخذ حقَّه.
+   ========================================================================== */
+.leap-form {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.leap-group {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.leap-group-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  /* ⚠️ **بلا شرطةٍ جانبية.** كانت هنا شرطةٌ مائلةٌ صغيرة، ومثلُها في
+     رأس القسم وفي زرّ القلب — فصار الميلانُ في سبعة مواضعَ في شاشةٍ
+     واحدة. والتوقيعُ الذي يتكرّر يفقد كونَه توقيعًا، والشرطةُ الصغيرةُ
+     جنبَ كلِّ تسميةٍ زخرفةٌ لا بنية. الرتبةُ هنا من الحجم واللون. */
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: var(--l-quiet);
+}
+
+.leap-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 13px;
+}
+
+@media (min-width: 620px) {
+  .leap-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.leap-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* بلا هذا يفيض الحقلُ عن عمودِ الشبكة حين يطول نصُّه */
+  min-width: 0;
+}
+
+.leap-field > label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--l-ink);
+}
+
+.leap-hint {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--l-quiet);
+}
+
+.leap-input {
+  width: 100%;
+  background: var(--l-field);
+  color: var(--l-ink);
+  border: 1px solid var(--l-line-strong);
+  border-radius: var(--l-r);
+  padding: 13px 15px;
+  font: inherit;
+  font-size: 16px; /* دون ١٦ يقرّب iOS الشاشةَ عند التركيز */
+  line-height: 1.5;
+  transition: border-color 0.2s ease-out;
+}
+
+.leap-input::placeholder {
+  color: var(--l-ph-field);
+}
+
+.leap-input:hover {
+  border-color: rgb(255 255 255 / 34%);
+}
+
+.leap-input:focus-visible {
+  outline: 2px solid var(--l-cyan);
+  outline-offset: 2px;
+  border-color: transparent;
+}
+
+.leap-input[aria-invalid="true"] {
+  border-color: #fb7185;
+}
+
+.leap-error {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #fda4af;
+}
+
+/* الحقلُ المفتاح — رقم الحجز، وهو وحدَه الذي يحتاج جهدًا */
+.leap-field-key .leap-input {
+  font-size: 18px;
+  font-weight: 600;
+  padding: 15px 16px;
+}
+
+/* ==========================================================================
+   الإجراء
+
+   زرٌّ واحدٌ لا زوج: «مملوء + مفرَّغ» جنبًا إلى جنبٍ قالبٌ جاهز، ولا فعلَ
+   ثانيًا هنا. واللونُ سماويُّ LEAP الصلب — لونُ الفعل عندهم فعلًا.
+   ========================================================================== */
+.leap-submit {
+  width: 100%;
+  background: var(--l-cyan);
+  color: #1b1440;
+  border: 0;
+  border-radius: var(--l-r);
+  padding: 16px 32px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 0.3s ease-out,
+    color 0.3s ease-out;
+}
+
+.leap-submit:hover:not(:disabled) {
+  background: var(--l-cyan-hover);
+}
+
+.leap-submit:focus-visible {
+  outline: 2px solid var(--l-ink);
+  outline-offset: 3px;
+}
+
+/* ⚠️ التعطيلُ يخفت بلونٍ صلبٍ لا بشفافية: الشفافيةُ فوق أرضيةٍ داكنةٍ
+   أسقطت تباينَ النصّ إلى ما دون الحدّ وهو أهمُّ ما يُقرأ وقتَها. */
+.leap-submit:disabled {
+  cursor: progress;
+  background: #4e838a;
+  color: #0f2a2c;
+}
+
+.leap-form-error {
+  border: 1px solid rgb(251 113 133 / 45%);
+  border-radius: var(--l-r-sm);
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #fda4af;
+}
+
+/* ==========================================================================
+   «وين ألقى رقم الحجز» — آخر شيءٍ في الصفحة كما طُلب
+   ========================================================================== */
+.leap-steps {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--l-line);
+  border-radius: var(--l-r);
+  overflow: hidden;
+}
+
+.leap-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--l-line);
+}
+
+.leap-step:last-child {
+  border-bottom: 0;
+}
+
+.leap-step-n {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  background: var(--l-indigo);
+  color: var(--l-ink);
+  font-size: 12px;
+  font-weight: 700;
+  transform: skewX(calc(var(--l-slant) * -1));
+  margin-top: 2px;
+}
+
+/* الشكلُ مائلٌ والحرفُ مستقيم — نفسُ بناء العلامة */
+.leap-step-n > span {
+  display: block;
+  transform: skewX(var(--l-slant));
+}
+
+.leap-step p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: var(--l-quiet);
+}
+
+.leap-step p b {
+  color: var(--l-ink);
+  font-weight: 600;
+}
+
+.leap-step a {
+  color: var(--l-cyan);
+  text-underline-offset: 3px;
+}
+
+.leap-step a:focus-visible {
+  outline: 2px solid var(--l-cyan);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* السطرُ المقتبَس من رسالة LEAP — نصٌّ حقيقيٌّ يبحث عنه المسجِّل */
+.leap-quote {
+  margin-top: 10px;
+  /* الأرضيةُ وحدَها تفصله — الحدُّ الرفيعُ حول كلِّ صندوقٍ نمطُ قوالبَ */
+  background: var(--l-field);
+  border-radius: var(--l-r-sm);
+  padding: 11px 13px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--l-ink);
+  direction: ltr;
+  text-align: left;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.leap-quote i {
+  color: var(--l-cyan);
+  font-style: normal;
+}
+
+/* ==========================================================================
+   شاشة النجاح
+   ========================================================================== */
+.leap-done {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.leap-done h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.leap-done p {
+  margin: 0;
+  color: var(--l-quiet);
+  font-size: 15px;
+  line-height: 1.85;
+  max-width: 44ch;
+}
+
+/* ==========================================================================
+   الذيل
+   ========================================================================== */
+.leap-foot {
+  text-align: center;
+  font-size: 12.5px;
+  line-height: 1.9;
+  color: var(--l-quiet);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.leap-foot p {
+  margin: 0;
+}
+
+.leap-foot a {
+  color: var(--l-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--l-line-strong);
+}
+
+.leap-foot a:hover {
+  text-decoration-color: var(--l-cyan);
+}
+
+.leap-foot a:focus-visible {
+  outline: 2px solid var(--l-cyan);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ==========================================================================
+   النائبات — آخرَ الملفّ عمدًا
+
+   ⚠️ **الترتيبُ هو الإصلاح.** كانت قاعدةُ النائبة قبل `.leap-badge-ref`
+   وخصوصيّتُهما واحدة، فغلبَها المتأخّرُ في الملفّ: ظهرت الشرطاتُ بسماويِّ
+   رقم الحجز فقُرئت محتوًى لا خانةً فارغة. ووجودُها هنا يجعلها تغلب ألوانَ
+   الوجهين كلَّها بلا رفعِ خصوصيّةٍ مصطنع.
+   ========================================================================== */
+.leap-ph {
+  color: var(--l-ph);
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   تقليل الحركة
+   ========================================================================== */
+/**
+ * أثناء القلب وحدَه.
+ *
+ * ⚠️ **حركتان متداخلتان على مشهدٍ ثلاثيّ الأبعاد تخنقانه.** التأرجحُ يدور
+ * على حامل `perspective`، والقلبُ يدور داخله — فكلُّ إطارٍ يعيد تركيبَ
+ * الشجرة كلِّها. وداخل الجزء المقلوب **٨٩ عنصرًا منها ٦٠ عقدةَ SVG في
+ * أربع رسمات** (مقيسة)، والـSVG تُعاد رسترتُها مع كلِّ تغيّرِ مقياس. فيقف
+ * التأرجحُ ما دام القلبُ جاريًا، ويُرقّى المقلوبُ إلى طبقةٍ مستقلّة.
+ *
+ * و`will-change` **مؤقّتٌ لا دائم**: تركُه مشتعلًا يحجز ذاكرةَ طبقةٍ بلا
+ * سببٍ طوالَ الجلسة.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .leap-hang,
+  .leap-shell.is-complete {
+    animation: none;
+  }
+
+  .leap-input,
+  .leap-submit,
+  .leap-shell {
+    transition: none;
+  }
+}
