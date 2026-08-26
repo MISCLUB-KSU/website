@@ -4,3 +4,6 @@ node_modules/
 .env*.local
 .superpowers/
 .gstack/
+
+# ملفّات Supabase CLI المؤقّتة — محليّةٌ لا تُشارَك
+supabase/.temp
