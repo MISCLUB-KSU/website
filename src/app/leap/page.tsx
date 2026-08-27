@@ -122,12 +122,6 @@ export default function LeapPage() {
             نادي نظم المعلومات الإدارية — جامعة الملك سعود.{" "}
             <Link href="/">الموقع الرئيسي</Link>
           </p>
-          <p>
-            <span className="leap-lat" dir="ltr" lang="en">
-              LEAP
-            </span>{" "}
-            علامة تجارية تخص منظّمي المؤتمر، والنادي ليس جهة منظِّمة له.
-          </p>
         </footer>
       </div>
     </div>
