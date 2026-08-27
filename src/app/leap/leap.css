@@ -477,28 +477,6 @@
   gap: 38px;
 }
 
-.leap-intro {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.leap-intro h1 {
-  font-size: clamp(21px, 5.4vw, 26px);
-  font-weight: 700;
-  line-height: 1.5;
-  margin: 0;
-  text-wrap: balance;
-}
-
-.leap-intro p {
-  margin: 0;
-  color: var(--l-quiet);
-  font-size: 15px;
-  line-height: 1.85;
-}
-
 .leap-tick {
   display: inline-block;
   width: 5px;

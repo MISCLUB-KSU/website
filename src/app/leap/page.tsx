@@ -35,21 +35,7 @@ export default function LeapPage() {
         {/* القِران: علامتُنا بتدرّجهم، وشعارُهم كما هو */}
         <Lockup />
 
-        <LeapForm>
-          <div className="leap-intro">
-            <h1>
-              تسجيل حضور النادي في{" "}
-              <span className="leap-lat" dir="ltr" lang="en">
-                LEAP 2026
-              </span>
-            </h1>
-            <p>
-              هذا التسجيل لمن حجز تذكرته فعلًا وبيحضر. نجمع أسماء الحاضرين من
-              النادي، ونجهّز لكل واحد بزنس كارد يستخدمه هناك في التعارف
-              والشراكات. خمس خانات وخلصت.
-            </p>
-          </div>
-        </LeapForm>
+        <LeapForm />
 
         <section aria-labelledby="leap-ref-help">
           <div className="leap-section-head">
