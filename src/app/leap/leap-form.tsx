@@ -60,6 +60,8 @@ export function LeapForm({ children }: LeapFormProps) {
         <Badge
           nameAr={shown.nameAr}
           nameEn={shown.nameEn}
+          email={shown.email}
+          phone={shown.phone}
           reference={shown.reference}
           complete={complete}
         />

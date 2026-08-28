@@ -124,8 +124,16 @@
      هو ما يفضح الرسم: لا بادج يتدلّى مستقيمًا. */
   transform: rotate(-8deg);
   margin: 6px 0 26px;
+  transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.3, 1);
   /* لا نصادر التمريرَ العموديَّ على الجوال */
   touch-action: pan-y;
+}
+
+/* حين يُفتح الكارد يعتدل المشهدُ كلُّه — كمن يرفع بادجَه ليريك بطاقته:
+   الحاملُ يستقيم والبطاقةُ تستوي مواجهةً، فيُقرأ الكاردُ «مستويًا على
+   طول». تخصُّصية `:has` تغلب قاعدةَ الجوال أيضًا، ويعود الميلانُ بالرجوع. */
+.leap-rig:has(.leap-shell.is-open) {
+  transform: translateX(0) rotate(0deg);
 }
 
 /* ⚠️ الدورانُ يوسّع صندوقَ الإحاطة: على 360px تُقصّ الزاوية بـ`overflow-x:
@@ -183,69 +191,105 @@
   }
 }
 
+/* الغلافُ حاملُ التعليق فقط: نقطةُ الارتكاز وتحويلاتُ التمايل والملاحقة.
+   جسمُ البطاقة كلُّه (الإطارُ والحشوةُ والظلّ) على `.leap-flip` فيدور
+   قطعةً واحدة. نسخةٌ سابقة جعلت الجسمَ هنا ساكنًا ودوّرت الوجهين داخله،
+   فبدا القلبُ محتوًى يدور في كمٍّ أسودَ واقفٍ — وهو «السوادُ» المرصود. */
 .leap-shell {
   position: relative;
   width: min(300px, 100%);
-  padding: 2px;
-  border-radius: 19px;
-  background: rgb(255 255 255 / 14%);
   /* ⚠️ **بطاقةٌ معلَّقةٌ لا طائرة**: أصلُ التحويل نقطةُ التعليق (الفتحة)،
      والدورانُ تمايلٌ حولها (`rotateZ`) والتفافٌ حول المحور العموديّ
-     (`rotateY`) فوق ميلِ السكون ‎−7°‎ — لا ميلَ أماميًّا حرًّا. */
+     (`rotateY`) فوق ميلِ سكونٍ ‎−7°‎ يُستوى صفرًا حين يُفتح الكارد. */
   transform-origin: 50% 21px;
-  transform: rotateZ(var(--rz, 0deg)) rotateY(calc(-7deg + var(--ry, 0deg)));
+  transform: rotateZ(var(--rz, 0deg))
+    rotateY(calc(var(--l-yaw, -7deg) + var(--ry, 0deg)));
   transform-style: preserve-3d;
-  transition:
-    transform 0.55s cubic-bezier(0.2, 0.8, 0.3, 1),
-    background 0.6s ease-out;
-  box-shadow: -12px 16px 30px -16px rgb(0 0 0 / 85%);
+  transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+/* حين يُقلب للكارد تستوي البطاقةُ مواجهةً تمامًا فيُقرأ الكاردُ مستويًا
+   لا مائلًا — ويعود ميلُ السكون مع الرجوع لوجه الحضور. */
+.leap-shell.is-open {
+  --l-yaw: 0deg;
 }
 
 /* أثناء الملاحقة يقصر التنعيمُ فيلتصق الميلُ باليد؛ وعند المغادرة يطول
    فترتدّ البطاقةُ بنعومة نابض */
 .leap-rig.is-live .leap-shell {
-  transition-duration: 0.09s, 0.6s;
+  transition-duration: 0.09s;
 }
 
 /**
  * الاكتمال — حلقةُ LEAP الدوّارة، جهازُهم حرفيًّا. لا تظهر إلّا حين
  * تكتمل الخانات الخمس: مكافأةٌ مربوطةٌ بحالةٍ حقيقيّة لا زينةٌ دائمة.
  */
-.leap-shell.is-complete {
+.leap-shell.is-complete .leap-flip {
   --l-ga: 0deg;
-  background: conic-gradient(
-    from var(--l-ga),
-    transparent,
-    #eb3df7,
-    #9e34d6,
-    #3b29ab,
-    #73fafd,
-    transparent
-  );
+  /* الحلقةُ في الحدّ وحدَه، والوسطُ حشوةُ البطاقة الداكنة — وتدور الحلقةُ
+     مع البطاقة لأنها جزءٌ من جسمها. */
+  background:
+    linear-gradient(#0c0917, #0c0917) padding-box,
+    conic-gradient(
+        from var(--l-ga),
+        transparent,
+        #eb3df7,
+        #9e34d6,
+        #3b29ab,
+        #73fafd,
+        transparent
+      )
+      border-box;
   animation: leap-ring 5s linear infinite;
 }
 
-/* غلافُ الوجه — بقي بعد حذف القلب لأن `.leap-shell` يعتمد ترتيبَه، وهو
-   الآن ساكنٌ بلا انتقالٍ ولا مستوًى ثلاثيّ */
+/* غلافُ القلب — مستوًى ثلاثيٌّ يُدار نصفَ دورةٍ حول محوره العموديّ ليكشف
+   بزنس كارد النادي خلفه. الوجهُ الأماميُّ يبقى في السريان فيمنح الغلافَ
+   ارتفاعَه، والخلفيُّ مطلقٌ فوقه مقلوبًا 180°. بلا جافاسكربت لا قلبَ —
+   يظهر الأماميُّ كاملًا وهو الافتراض. */
+/* جسمُ البطاقة نفسُه: إطارُها المتدرّجُ وحشوتُها الداكنةُ وظلُّها عليه،
+   فيدور كلُّه قطعةً واحدة ولا يبقى خلفه إلّا أرضيّةُ الصفحة — لا حشوةَ
+   ساكنةً تنكشف أثناء الدوران، ولا وميضَ على الحرف. */
 .leap-flip {
   position: relative;
+  border: 2px solid transparent;
+  border-radius: 19px;
+  background:
+    linear-gradient(#0c0917, #0c0917) padding-box,
+    linear-gradient(rgb(255 255 255 / 18%), rgb(255 255 255 / 9%)) border-box;
+  box-shadow: -12px 16px 30px -16px rgb(0 0 0 / 85%);
+  transform-style: preserve-3d;
+  /* هبوطٌ حاسم. الذيلُ البطيء في منحنى ease-out طويلٍ (كان 0.7s) يزحف
+     بآخر درجات الدوران فيُقرأ زحفُه «تعليقًا» — المنحنى هنا يتسارع ويحطّ
+     بثبات. والحركاتُ المحيطة (التأرجح والحلقة) تُترك جاريةً عمدًا: إيقافُها
+     جمّد المشهدَ كلَّه مدّةَ القلب فبدا معلّقًا، والقياسُ لم يجد فيها
+     إطارًا واحدًا فوق 19ms. */
+  transition: transform 0.55s cubic-bezier(0.45, 0.05, 0.2, 1);
+  /* ترقيةٌ دائمةٌ مقصودة — خلافَ قاعدة «will-change مؤقّت» عمدًا: تبديلُ
+     الترقية مع كلِّ قلبٍ كان يضع كلفةَ بناء الطبقة داخل أوّل إطارٍ من
+     الدوران نفسِه. */
+  will-change: transform;
+}
+
+.leap-flip.is-flipped {
+  transform: rotateY(180deg);
 }
 
 .leap-face {
-  /* يحصر إعادةَ الرسم داخل الوجه، ويعزل حقولَه المائلة عن الصفحة */
+  /* يحصر إعادةَ الرسم داخل الوجه، ويعزل محتواه عن الصفحة */
   contain: paint;
   isolation: isolate;
   border-radius: 17px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  /* كلُّ وجهٍ يخفي ظهرَه — فلا يظهر الوجهان معًا في أثناء الدوران */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
-/* ⚠️ **الوجهان يُفصلان في العمق 1px** — متحدا المستوى يتنازعان الرسمَ
-   فتظهر البطاقةُ مشطورةً (مرصودٌ سابقًا). */
 .leap-face-front {
   position: relative;
-  transform: translateZ(1px);
   min-height: 432px;
   /* حبرٌ عميقٌ بحبيبات 3٪ — الحقولُ المائلةُ فوقه هي الضوء */
   background-image:
@@ -256,13 +300,303 @@
     100% 100%;
 }
 
-/* الفتحةُ المثقوبة — يدخل فيها طرفُ الخطّاف، ومقطعُ السلك الغاطس يُرسم
-   داخلها ويُقصّ على حدودها. حفرةٌ أدكنُ عند شفتها العليا، وحافّتها
-   السفلى تلتقط الضوء — سماكةُ البطاقة. */
+/* ==========================================================================
+   الوجه الخلفيّ — بزنس كارد النادي الفعليّ (طبق الطباعة، أفقيّ)
+
+   التصميمُ الذي اعتمدته الإدارة، مُعادٌ بترتيبه الأفقيِّ عينِه وبنسبته
+   (700:400): أزرقُ على أبيض، لوكبُ النادي، الاسمُ والنادي والتواصلُ و‏QR‏
+   حقيقيٌّ يشفّر بطاقةَ اتصال المسجِّل. الوجهُ مقلوبٌ مسبقًا 180° فيستوي حين
+   يُقلب الغلاف، واتجاهُه `ltr` كبطاقةٍ لا كصفحةٍ عربيّة. الكارد الأفقيُّ
+   يتوسّط ظهرَ البادج الطوليَّ على أرضيّةٍ كحليّة — كبطاقةٍ قائمةٍ بذاتها.
+   ========================================================================== */
+.leap-face-back {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+  direction: ltr;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 14px 10px;
+  /* أرضيّةٌ كحليّةٌ يطفو فوقها الكارد الأبيض فيبرز كشيءٍ قائمٍ بذاته */
+  background: radial-gradient(
+    120% 78% at 50% 12%,
+    #12274f 0%,
+    #0b1a37 66%,
+    #070f22 100%
+  );
+}
+
+/* شريطُ العنوان فوق الكارد */
+.bizL-caption {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgb(207 221 247 / 72%);
+}
+
+/* ==========================================================================
+   الكارد الأفقيّ — بنسبة الطباعة عينِها 700:400
+
+   ترتيبُ العناصر مطلقٌ داخل الكارد كما في ملفّ الطباعة: اللوكب أعلى اليسار،
+   الاسمُ وسطَ اليسار بشريطٍ عموديٍّ أزرق، التواصلُ أسفل اليسار، والـQR أسفل
+   اليمين؛ ومتوازياتُ العلامةِ والشريطان القطريّان زخرفةٌ خلف ذلك.
+   ========================================================================== */
+.bizL {
+  position: relative;
+  width: min(290px, 100%);
+  aspect-ratio: 700 / 400;
+  border-radius: 11px;
+  overflow: hidden;
+  color: #16264f;
+  background: linear-gradient(118deg, #ffffff 0%, #ffffff 50%, #e9f0fb 100%);
+  box-shadow:
+    0 20px 42px -16px rgb(0 0 0 / 70%),
+    0 3px 8px -3px rgb(0 0 0 / 40%);
+}
+
+/* متوازياتُ العلامة الباهتة تنزف من الزاوية العليا اليمنى */
+.bizL-deco-mark {
+  position: absolute;
+  top: -14px;
+  right: -12px;
+  width: 92px;
+  height: auto;
+  color: #d6e3f7;
+  opacity: 0.85;
+  z-index: 0;
+}
+
+/* الشريطان القطريّان الأزرقان أسفل الكارد، يرتفعان نحو اليمين */
+.bizL-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+}
+
+.bizL-band-light {
+  height: 40px;
+  background: #d7e4f7;
+  clip-path: polygon(0 55%, 100% 12%, 100% 100%, 0 100%);
+}
+
+.bizL-band-dark {
+  height: 30px;
+  background: linear-gradient(90deg, #1c3f8f 0%, #0f2a63 100%);
+  clip-path: polygon(0 74%, 100% 30%, 100% 100%, 0 100%);
+}
+
+/* اللوكب أعلى اليسار: علامةٌ + فاصلٌ رأسيٌّ + ووردمارك ثلاثةُ أسطر */
+.bizL-head {
+  position: absolute;
+  top: 13px;
+  left: 14px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.bizL-mark {
+  flex: none;
+  width: 26px;
+  height: auto;
+  color: #2f62c4;
+}
+
+.bizL-rule {
+  flex: none;
+  width: 1px;
+  align-self: stretch;
+  min-height: 22px;
+  background: rgb(22 38 79 / 22%);
+}
+
+.bizL-wordmark {
+  font-size: 6px;
+  font-weight: 700;
+  line-height: 1.42;
+  letter-spacing: 0.11em;
+  color: #16264f;
+}
+
+/* الاسمُ والنادي وسطَ اليسار، بشريطٍ عموديٍّ أزرق يسبق الاسم */
+.bizL-id {
+  position: absolute;
+  left: 14px;
+  top: 40%;
+  z-index: 1;
+  padding-left: 10px;
+  border-left: 3px solid #2f62c4;
+}
+
+.bizL-name {
+  display: block;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.015em;
+  color: #12306e;
+}
+
+.bizL-name.bizL-ph {
+  color: rgb(18 48 110 / 32%);
+}
+
+.bizL-org {
+  display: block;
+  margin-top: 5px;
+  font-size: 8px;
+  font-weight: 500;
+  color: #46577a;
+}
+
+/* التواصل أسفل اليسار: أيقونةٌ دائريّةٌ زرقاء + النصّ */
+.bizL-contact {
+  position: absolute;
+  left: 14px;
+  bottom: 13px;
+  z-index: 1;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.bizL-contact > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.bizL-ic {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #2f62c4;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bizL-ic svg {
+  width: 9px;
+  height: 9px;
+}
+
+.bizL-contact dd {
+  margin: 0;
+  font-size: 8.5px;
+  font-weight: 600;
+  color: #16294f;
+}
+
+.bizL-contact dd.bizL-ph {
+  color: rgb(22 41 79 / 42%);
+  font-weight: 500;
+}
+
+/* نصٌّ لقارئ الشاشة وحدَه — يبقى في الشجرة ويُقصّ عن العين */
+.leap-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* الـQR أسفل اليمين، في مربّعٍ أبيضَ مستديرٍ بظلٍّ خفيف */
+.bizL-qr {
+  position: absolute;
+  right: 13px;
+  bottom: 12px;
+  z-index: 1;
+  width: 60px;
+  height: 60px;
+  padding: 3px;
+  border-radius: 7px;
+  background: #fff;
+  box-shadow: 0 2px 7px -3px rgb(10 30 80 / 45%);
+}
+
+.bizL-qr img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* نائبةُ الـQR قبل توليده (أو بلا جافاسكربت): مربّعٌ فاتحٌ بشبكةٍ خفيفة */
+.bizL-qr-ph {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgb(47 98 196 / 16%) 0 3px,
+      transparent 3px 6px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgb(47 98 196 / 16%) 0 3px,
+      transparent 3px 6px
+    );
+}
+
+/* ضابطُ القلب — زرٌّ تحت البطاقة، خارجَ الحاويةِ المائلة فلا يميل معها.
+   سكونُه هادئٌ وحدُّه يضيء عند التمرير والتركيز. */
+.leap-flip-btn {
+  display: block;
+  width: fit-content;
+  margin: 6px auto 0;
+  padding: 9px 20px;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 20%);
+  background: rgb(255 255 255 / 6%);
+  color: #efeafc;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.leap-flip-btn:hover {
+  background: rgb(255 255 255 / 12%);
+  border-color: rgb(235 61 247 / 55%);
+}
+
+.leap-flip-btn:active {
+  transform: translateY(1px);
+}
+
+.leap-flip-btn:focus-visible {
+  outline: 2px solid #c839e7;
+  outline-offset: 2px;
+}
+
+/* الفتحةُ المثقوبة — ابنةُ `.leap-shell` لا جسمِ البطاقة، فلا تُقلب معها:
+   الثقبُ والخطّافُ يبقيان في القمّة والبطاقةُ تدور خلفهما (وتمرّ حافّتُها
+   القريبةُ أمامَهما في أثناء الدوران كما في الواقع). ‏translateZ‏ يبقيها
+   أمامَ البطاقة المستوية في المستوى الثلاثيّ. */
 .leap-slot {
   position: absolute;
   top: 8px;
   left: 88px;
+  transform: translateZ(2px);
   width: 56px;
   height: 26px;
   border-radius: 999px;
@@ -819,26 +1153,23 @@
    تقليل الحركة
    ========================================================================== */
 /**
- * أثناء القلب وحدَه.
- *
- * ⚠️ **حركتان متداخلتان على مشهدٍ ثلاثيّ الأبعاد تخنقانه.** التأرجحُ يدور
- * على حامل `perspective`، والقلبُ يدور داخله — فكلُّ إطارٍ يعيد تركيبَ
- * الشجرة كلِّها. وداخل الجزء المقلوب **٨٩ عنصرًا منها ٦٠ عقدةَ SVG في
- * أربع رسمات** (مقيسة)، والـSVG تُعاد رسترتُها مع كلِّ تغيّرِ مقياس. فيقف
- * التأرجحُ ما دام القلبُ جاريًا، ويُرقّى المقلوبُ إلى طبقةٍ مستقلّة.
- *
- * و`will-change` **مؤقّتٌ لا دائم**: تركُه مشتعلًا يحجز ذاكرةَ طبقةٍ بلا
- * سببٍ طوالَ الجلسة.
+ * تقليلُ الحركة: القلبُ يُلغى تنعيمُه فتنقلب البطاقةُ فورًا لا تدريجيًّا —
+ * يصل المحتوى بلا دوران. والتأرجحُ وحلقةُ الاكتمال والملاحقةُ تقف.
  */
 @media (prefers-reduced-motion: reduce) {
+  /* ⚠️ حلقةُ الاكتمال تدور على `.leap-shell.is-complete .leap-flip` لا على
+     الغلاف نفسِه — جسمُ البطاقة انتقل إلى العنصر الدوّار. استهدافُ الغلافِ
+     المجرّدِ هنا يترك الحلقةَ دائرةً لمن طلب تقليلَ الحركة. */
   .leap-hang,
-  .leap-shell.is-complete {
+  .leap-shell.is-complete .leap-flip {
     animation: none;
   }
 
   .leap-input,
   .leap-submit,
-  .leap-shell {
+  .leap-rig,
+  .leap-shell,
+  .leap-flip {
     transition: none;
   }
 }
