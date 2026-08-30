@@ -3,6 +3,8 @@
 import {
   echoLeap,
   leapSchema,
+  LEAP_CLOSED_MESSAGE,
+  LEAP_REGISTRATION_OPEN,
   type LeapField,
   type LeapState,
 } from "@/lib/leap";
@@ -20,6 +22,20 @@ export async function submitLeap(
   formData: FormData,
 ): Promise<LeapState> {
   const values = echoLeap(formData);
+
+  /* ⚠️ **الحارسُ قبل كلِّ شيء.** إخفاءُ النموذج راحةٌ للعين لا قفلٌ: من
+     عطّل الجافاسكربت، أو احتفظ بالصفحة مفتوحةً من قبل الإغلاق، أو أرسل
+     إلى الإجراء مباشرةً — كلُّهم يصلون هنا. فيُردّون قبل التحقّق وقبل
+     لمسِ القاعدة. */
+  if (!LEAP_REGISTRATION_OPEN) {
+    return {
+      status: "error",
+      message: LEAP_CLOSED_MESSAGE,
+      errors: {},
+      values,
+    };
+  }
+
   const parsed = leapSchema.safeParse(Object.fromEntries(formData));
 
   if (!parsed.success) {

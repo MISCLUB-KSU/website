@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import Link from "next/link";
 
+import { LEAP_REGISTRATION_OPEN } from "@/lib/leap";
+
 import { LeapForm } from "./leap-form";
 import { Lockup } from "./marks";
 import "./leap.css";
@@ -24,8 +26,9 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   title: "تسجيل حضور LEAP 2026 — نادي نظم المعلومات الإدارية",
-  description:
-    "سجّل حضورك مع النادي في مؤتمر LEAP 2026 (٣١ أغسطس – ٣ سبتمبر ٢٠٢٦، RECC ملهم بالرياض) ليُجهَّز لك بزنس كارد قبل الفعالية.",
+  description: LEAP_REGISTRATION_OPEN
+    ? "سجّل حضورك مع النادي في مؤتمر LEAP 2026 (٣١ أغسطس – ٣ سبتمبر ٢٠٢٦، RECC ملهم بالرياض) ليُجهَّز لك بزنس كارد قبل الفعالية."
+    : "أُغلق تسجيل الحضور مع النادي في مؤتمر LEAP 2026 (٣١ أغسطس – ٣ سبتمبر ٢٠٢٦، RECC ملهم بالرياض).",
 };
 
 export default function LeapPage() {
@@ -37,71 +40,76 @@ export default function LeapPage() {
 
         <LeapForm />
 
-        <section aria-labelledby="leap-ref-help">
-          <div className="leap-section-head">
-            <span className="leap-tick" aria-hidden />
-            <h2 id="leap-ref-help">وين ألقى رقم الحجز؟</h2>
-          </div>
+        {/* الشرحُ تابعٌ للنموذج: يدلُّ على رقمٍ يُكتب في خانةٍ لم تعد
+            موجودة. وإبقاؤه بعد الإغلاق يرسل الطالبَ ينبش بريدَه عن رقمٍ
+            لن يجد أين يضعه. */}
+        {LEAP_REGISTRATION_OPEN ? (
+          <section aria-labelledby="leap-ref-help">
+            <div className="leap-section-head">
+              <span className="leap-tick" aria-hidden />
+              <h2 id="leap-ref-help">وين ألقى رقم الحجز؟</h2>
+            </div>
 
-          <div className="leap-steps">
-            <Step n="١">
-              <p>
-                افتح بريدك ودوّر رسالة من{" "}
-                <b className="leap-lat" dir="ltr" lang="en">
-                  LEAP
-                </b>{" "}
-                عنوانها{" "}
-                <b className="leap-lat" dir="ltr" lang="en">
-                  Thank you for registering for LEAP and DeepFest 2026
-                </b>
-                . لو ما لقيتها، دوّر في بريدك عن المرسِل{" "}
-                <b className="leap-lat" dir="ltr" lang="en">
-                  noreply@visitcloud.com
-                </b>{" "}
-                وشِف مجلد الرسائل المزعجة.
-              </p>
-            </Step>
+            <div className="leap-steps">
+              <Step n="١">
+                <p>
+                  افتح بريدك ودوّر رسالة من{" "}
+                  <b className="leap-lat" dir="ltr" lang="en">
+                    LEAP
+                  </b>{" "}
+                  عنوانها{" "}
+                  <b className="leap-lat" dir="ltr" lang="en">
+                    Thank you for registering for LEAP and DeepFest 2026
+                  </b>
+                  . لو ما لقيتها، دوّر في بريدك عن المرسِل{" "}
+                  <b className="leap-lat" dir="ltr" lang="en">
+                    noreply@visitcloud.com
+                  </b>{" "}
+                  وشِف مجلد الرسائل المزعجة.
+                </p>
+              </Step>
 
-            <Step n="٢">
-              <p>
-                داخل الرسالة تحت عنوان{" "}
-                <b className="leap-lat" dir="ltr" lang="en">
-                  Your Registration Details
-                </b>{" "}
-                بتلقى قائمة فيها اسمك وبريدك. السطر المطلوب هو:
-              </p>
-              {/* السطرُ منقولٌ بنصِّه من الرسالة — هذا ما تبحث عنه عينُه فعلًا */}
-              <p className="leap-quote leap-lat" dir="ltr" lang="en">
-                Unique Reference Number: <i>XXXXXXXX</i>
-              </p>
-            </Step>
+              <Step n="٢">
+                <p>
+                  داخل الرسالة تحت عنوان{" "}
+                  <b className="leap-lat" dir="ltr" lang="en">
+                    Your Registration Details
+                  </b>{" "}
+                  بتلقى قائمة فيها اسمك وبريدك. السطر المطلوب هو:
+                </p>
+                {/* السطرُ منقولٌ بنصِّه من الرسالة — هذا ما تبحث عنه عينُه فعلًا */}
+                <p className="leap-quote leap-lat" dir="ltr" lang="en">
+                  Unique Reference Number: <i>XXXXXXXX</i>
+                </p>
+              </Step>
 
-            <Step n="٣">
-              <p>
-                انسخ الرقم اللي بعد النقطتين — <b>هو وحده بلا العنوان</b> —
-                والصقه في خانة رقم الحجز فوق.
-              </p>
-            </Step>
+              <Step n="٣">
+                <p>
+                  انسخ الرقم اللي بعد النقطتين — <b>هو وحده بلا العنوان</b> —
+                  والصقه في خانة رقم الحجز فوق.
+                </p>
+              </Step>
 
-            <Step n="٤">
-              <p>
-                ما سجّلت في{" "}
-                <b className="leap-lat" dir="ltr" lang="en">
-                  LEAP
-                </b>{" "}
-                أصلًا؟ سجّل عندهم أول من{" "}
-                <a
-                  href="https://onegiantleap.com/attend/2026-tickets"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                >
-                  صفحة التذاكر
-                </a>
-                ، وبعدها ترجع هنا برقم حجزك.
-              </p>
-            </Step>
-          </div>
-        </section>
+              <Step n="٤">
+                <p>
+                  ما سجّلت في{" "}
+                  <b className="leap-lat" dir="ltr" lang="en">
+                    LEAP
+                  </b>{" "}
+                  أصلًا؟ سجّل عندهم أول من{" "}
+                  <a
+                    href="https://onegiantleap.com/attend/2026-tickets"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                  >
+                    صفحة التذاكر
+                  </a>
+                  ، وبعدها ترجع هنا برقم حجزك.
+                </p>
+              </Step>
+            </div>
+          </section>
+        ) : null}
 
         <footer className="leap-foot">
           <p>

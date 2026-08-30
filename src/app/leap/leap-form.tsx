@@ -2,7 +2,12 @@
 
 import { useActionState, useState, type ReactNode } from "react";
 
-import { emptyLeapState, type LeapField, type LeapState } from "@/lib/leap";
+import {
+  emptyLeapState,
+  LEAP_REGISTRATION_OPEN,
+  type LeapField,
+  type LeapState,
+} from "@/lib/leap";
 
 import { submitLeap } from "./actions";
 import { Badge } from "./badge";
@@ -67,7 +72,23 @@ export function LeapForm({ children }: LeapFormProps) {
         />
       </div>
 
-      {done ? (
+      {!LEAP_REGISTRATION_OPEN && !done ? (
+        /* البابُ مغلق. ولا يُترك نموذجٌ معطَّلٌ ولا زرٌّ لا يعمل: ضابطٌ
+           ميّتٌ يجعل الطالب يظنّ العطلَ في جهازه فيعيد المحاولة. يُقال
+           ما حدث صراحةً، ويُدلُّ على مَن يسأل. */
+        <div className="leap-done leap-closed">
+          <h2>التسجيل مقفل</h2>
+          <p>
+            انتهت مهلة تسجيل الحضور مع النادي في{" "}
+            <b className="leap-lat" dir="ltr" lang="en">
+              LEAP 2026
+            </b>
+            . من سجّل قبل الإغلاق وصله دوره ولا يحتاج شيئًا — قادة النادي
+            بيتواصلون معه على رقمه قبل الفعالية.
+          </p>
+          <p>عندك سؤال أو تظن أن تسجيلك ما وصل؟ كلّم قادة النادي مباشرة.</p>
+        </div>
+      ) : done ? (
         <div className="leap-done">
           <h2>تم تسجيلك</h2>
           <p>
