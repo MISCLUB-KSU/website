@@ -3119,6 +3119,28 @@ function StatusPicker({
    */
   const [shown, showNow] = useOptimistic(row.status);
 
+  /**
+   * **امتلأ سقفُ جهته — فزرُّ «مقبول» يُعطَّل ويُقال السبب.**
+   *
+   * ⚠️ **السقفُ صار قفلًا في القاعدة** بطلب الرئاسة في ٣١ أغسطس ٢٠٢٦، وهو
+   * نقضٌ صريحٌ لما كُتب هنا يوم وُضع عدّادًا («يمديك في حالات استثناء
+   * أعلى»). والقاعدةُ ترفض بأيّ حال — فتعطيلُ الزرّ لا يمنع شيئًا تسمح به
+   * القاعدة، بل يوفّر على القائد ضغطةً تُردّ.
+   *
+   * ⚠️ **و`capSeason` لا `cap`.** الثاني مقصوصٌ بالمرحلة (`min(15, …)` في
+   * الأولى) والقاعدةُ لا تعرف ذلك القصّ — فقياسُ الزرّ عليه يعطّله على
+   * قائدٍ تقبل القاعدةُ ضغطتَه.
+   *
+   * ⚠️ **والعدّادُ هنا تقديرٌ والقاعدةُ هي الحكم.** صفوفُ القارئ مقصوصةٌ
+   * بنطاقه، فقد يسبقه غيرُه إلى آخر مقعدٍ قبل أن تصله الشاشةُ الجديدة —
+   * ولذلك تبقى رسالةُ القاعدة معروضةً تحت الأزرار.
+   */
+  const capFull =
+    capHere !== null &&
+    capHere.capSeason !== null &&
+    capHere.accepted >= capHere.capSeason &&
+    row.status !== "accepted";
+
   return (
     <div>
       <p
@@ -3133,14 +3155,19 @@ function StatusPicker({
              ثانيةَ له (`choice2` فارغة)، فالزرّ يُعطَّل ويُقال السبب — لا
              يُخفى، وإلّا ظنّ القائد أن اللوحة معطوبة. */
           const noTarget = s.key === "referred" && !row.choice2;
+          const blocked = s.key === "accepted" && capFull;
           return (
             <button
               key={s.key}
               type="button"
               title={
-                noTarget ? "لا رغبةَ ثانية — وصل الطلب برابطٍ مباشر" : undefined
+                noTarget
+                  ? "لا رغبةَ ثانية — وصل الطلب برابطٍ مباشر"
+                  : blocked
+                    ? `امتلأ سقفُ ${capHere?.label} — ${capHere?.accepted} من ${capHere?.capSeason}`
+                    : undefined
               }
-              disabled={pending || on || noTarget}
+              disabled={pending || on || noTarget || blocked}
               aria-current={on ? "true" : undefined}
               onClick={() =>
                 start(async () => {
@@ -3156,7 +3183,7 @@ function StatusPicker({
               className={`flex min-h-11 lg:min-h-10 items-center gap-x-s2 rounded-xl border px-s4 text-[0.82rem] font-semibold transition-all ${
                 on
                   ? "cursor-default"
-                  : noTarget
+                  : noTarget || blocked
                     ? "cursor-not-allowed opacity-30"
                     : "opacity-70 hover:opacity-100"
               }`}
@@ -3184,6 +3211,20 @@ function StatusPicker({
           className={`mt-s2 text-[0.8rem] ${dark ? "text-snow" : "text-danger"}`}
         >
           {error}
+        </p>
+      )}
+
+      {/* ⚠️ **يُقال قبل الضغط لا بعده.** زرٌّ معطَّلٌ بلا سببٍ مقروء هو
+          العطلُ الذي حُذِّر منه يوم كان السقفُ عدّادًا، والسطرُ هنا هو
+          الفرقُ بين قفلٍ مفهومٍ وشاشةٍ تبدو معطوبة. */}
+      {capFull && !error && (
+        <p
+          role="status"
+          className="mt-s2 text-[0.76rem] leading-relaxed"
+          style={{ color: dark ? "var(--sky)" : "var(--danger)" }}
+        >
+          امتلأ سقفُ <strong>{capHere?.label}</strong> — {capHere?.accepted} من{" "}
+          {capHere?.capSeason}. لا يُقبل أحدٌ فوقه؛ رفعُ السقف بيد الرئاسة.
         </p>
       )}
 

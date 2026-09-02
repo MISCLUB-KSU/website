@@ -29,6 +29,24 @@ const ALLOWED = [
 type Status = (typeof ALLOWED)[number];
 
 /**
+ * **رمزُ رفضِ السقف — و«تعذّر الحفظ» لا تصلح جوابًا عنه.**
+ *
+ * السقفُ صار قفلًا في القاعدة (`applications_capacity_update`) بطلب
+ * الرئاسة في ٣١ أغسطس ٢٠٢٦: لا يُقبل أحدٌ فوقه ولو كان الضاغطُ رئاسة.
+ *
+ * ⚠️ **وقفلٌ بلا سببٍ مقروء هو العطلُ الذي حُذِّر منه يوم كُتب السقفُ
+ * عدّادًا:** «قائدٌ يقف أمام زرٍّ معطَّلٍ في ليلة الحسم بلا من يفتحه له».
+ * فرسالةُ القاعدة تُمرَّر كما هي — تسمّي الجهةَ وتقول كم من كم — ولا
+ * تحمل اسمَ أحدٍ ولا رقمَه، فلا شيءَ فيها يُخفى.
+ */
+const CAPACITY_FULL = "P0011";
+
+/** رسالةُ القاعدة إن كان الرفضُ رفضَ سقف، و`null` لغيره */
+function capacityMessage(error: { code?: string; message?: string }): string | null {
+  return error.code === CAPACITY_FULL ? (error.message ?? null) : null;
+}
+
+/**
  * ══════════════════════════════════════════════════════════════════════
  * **قاعدةُ `revalidatePath` في هذا الملفّ — تُقرأ قبل تعديل أيّ فعلٍ هنا**
  * ══════════════════════════════════════════════════════════════════════
@@ -79,8 +97,14 @@ export async function setStatus(id: string, status: string) {
     .select("id");
 
   if (error) {
-    console.error("[admin] تعذّر تغيير الحالة", error.message);
-    return { ok: false as const, message: "تعذّر الحفظ" };
+    console.error("[admin] تعذّر تغيير الحالة", {
+      code: error.code,
+      message: error.message,
+    });
+    return {
+      ok: false as const,
+      message: capacityMessage(error) ?? "تعذّر الحفظ",
+    };
   }
   if (!data || data.length === 0) {
     /* صفر صفّ = خارج النطاق أو غير موجود. لا نفرّق بينهما في الرسالة. */
@@ -612,7 +636,17 @@ export async function setStatusMany(ids: readonly string[], status: string) {
       code: error.code,
       message: error.message,
     });
-    return { ok: false as const, changed: 0, skipped: 0, message: "تعذّر الحفظ" };
+    /* ⚠️ **الدفعةُ كلُّها تسقط، ولا تُقبل جزئيًّا.** الفحصُ على مستوى
+       الجملة لا الصفّ — وهو ما يمنع مرورَ عشرةٍ على مقعدٍ واحدٍ باقٍ.
+       فيُقال للقائد إن شيئًا لم يُحفظ، وإلّا ظنّ بعضَهم قُبل. */
+    return {
+      ok: false as const,
+      changed: 0,
+      skipped: 0,
+      message: capacityMessage(error)
+        ? `${capacityMessage(error)} ولم يُقبل أحدٌ من الدفعة.`
+        : "تعذّر الحفظ",
+    };
   }
 
   /* ⚠️ **المُرجَعُ ما غُيّر فعلًا لا ما أُرسل.** `RLS` تقصّ داخل الاستعلام،
